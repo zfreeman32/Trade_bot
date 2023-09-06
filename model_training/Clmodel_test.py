@@ -30,63 +30,13 @@ avg_loss = loss.rolling(window=14).mean()
 rs = avg_gain / avg_loss
 rsi = 100 - (100 / (1 + rs))
 
-# calculate MACD
-ema_12 = qqq_data['Close'].ewm(span=12, adjust=False).mean()
-ema_26 = qqq_data['Close'].ewm(span=26, adjust=False).mean()
-macd = ema_12 - ema_26
-signal = macd.ewm(span=9, adjust=False).mean()
-hist = macd - signal
-
-# calculate ADX
-tr = pd.DataFrame({'h': qqq_data['High'], 'l': qqq_data['Low'], 'c': qqq_data['Close']})
-tr['tr1'] = abs(tr['h'] - tr['l'])
-tr['tr2'] = abs(tr['h'] - tr['c'].shift())
-tr['tr3'] = abs(tr['l'] - tr['c'].shift())
-tr['tr'] = tr[['tr1', 'tr2', 'tr3']].max(axis=1)
-atr = tr['tr'].rolling(window=14).mean()
-up = qqq_data['High'].diff()
-down = -qqq_data['Low'].diff()
-pos_di = 100 * up.ewm(span=14, adjust=False).mean() / atr
-neg_di = 100 * down.ewm(span=14, adjust=False).mean() / atr
-adx = 100 * abs(pos_di - neg_di) / (pos_di + neg_di)
-
-# calculate Trailing Stop
-trailing_stop = qqq_data['Close'].rolling(14).max() - qqq_data['Close'] * 0.07
-
-# calculate Exponential Moving Average
-ema = qqq_data['Close'].ewm(span=20, adjust=False).mean()
-
-# calculate Pivot Points
-pivot_points = (qqq_data['High'].shift(1) + qqq_data['Low'].shift(1) + qqq_data['Close'].shift(1)) / 3
-
-# calculate Stochastic Oscillator
-min_low = qqq_data['Low'].rolling(window=14).min()
-max_high = qqq_data['High'].rolling(window=14).max()
-slowk = 100 * (qqq_data['Close'] - min_low) / (max_high - min_low)
-slowd = slowk.rolling(window=3).mean()
-
-# calculate Volume Weighted Average Price (VWAP)
-vwap = (qqq_data['Volume'] * (qqq_data['High'] + qqq_data['Low'] + qqq_data['Close'])) / (3 * qqq_data['Volume'])
 
 Volume = qqq_data['Volume']
 Close = qqq_data['Close']
 
 # combine all the data into one dataframe
 technical_indicators = pd.DataFrame({
-    'RSI': rsi,
-    'MACD': macd,
-    'Signal': signal,
-    'hist':hist,
-    'atr':atr,
-    'adx':adx,
-    'trstp':trailing_stop,
-    'ema':ema,
-    'pivotpoints':pivot_points,
-    'slowk':slowk,
-    'slowd':slowd,
-    'VWAP':vwap,
-    'volume':Volume,
-    'close':Close})
+    'RSI': rsi })
 
 technical_indicators.dropna()
 df = technical_indicators[20:]

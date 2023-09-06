@@ -57,6 +57,7 @@ def donchian_channel_strategy(stock_df, window=20):
 
     return signals
 
+#%%
 # Define a function for the trading strategy
 def keltner_channel_strategy(stock_df, window=20, window_atr=10, multiplier=2):
     # Create Keltner Channel indicator
@@ -79,33 +80,4 @@ def keltner_channel_strategy(stock_df, window=20, window_atr=10, multiplier=2):
 
     return signals
 
-# Example usage:
-if __name__ == "__main__":
-    # Load your stock price data into a DataFrame
-    # Replace this with your actual data loading code
-    data = {
-        'Date': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
-        'High': [105, 110, 108, 112, 109],
-        'Low': [95, 100, 99, 103, 101],
-        'Close': [100, 105, 103, 110, 107],
-    }
-    stock_data = pd.DataFrame(data)
-    
-    # Apply the Keltner Channel trading strategy function
-    keltner_signals = keltner_channel_strategy(stock_data)
-    print(keltner_signals)
-
-    # Plot the Keltner Channel and trading signals
-    plt.figure(figsize=(12, 6))
-    plt.plot(stock_data['Close'], label='Close Price', color='black')
-    plt.plot(volatility.KeltnerChannel.keltner_channel_hband(Self), label='Keltner Channel Upper', linestyle='--', color='blue')
-    plt.plot(volatility.KeltnerChannel.keltner_channel_lband(Self), label='Keltner Channel Lower', linestyle='--', color='red')
-    plt.scatter(keltner_signals[keltner_signals['Signal'] == 1].index, stock_data['Close'][keltner_signals['Signal'] == 1], label='Buy Signal', marker='^', color='green', alpha=1)
-    plt.scatter(keltner_signals[keltner_signals['Signal'] == -1].index, stock_data['Close'][keltner_signals['Signal'] == -1], label='Sell Signal', marker='v', color='red', alpha=1)
-    plt.title('Keltner Channel Trading Strategy')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.legend()
-    plt.grid()
-    plt.show()
 # %%

@@ -1,33 +1,9 @@
 #%%
-# Read in Library
 import pandas as pd
-import numpy as np
-import pandas as pd
-import statistics
-import matplotlib.pyplot as plt
-import pandas as pd
-from ta import add_all_ta_features
-from ta import momentum
 import all_Strategies
 
-#%%
-# Read in Price Data
-csv_file = 'SPY.csv'
-stock_df = pd.read_csv(csv_file)
+stock_df = pd.read_csv('SPY.csv')
 
-# Stock Financial Data
-
-#%%
-# Indicators
-indicators_df = pd.DataFrame(index=stock_df.index)
-
-# Add all technical indicators using TA library
-indicators_df = add_all_ta_features(
-    stock_df, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
-)
-print(indicators_df.columns)
-
-# Strategy Signals
 # Call your functions and store their results in separate DataFrames
 ppo_signals_df = all_Strategies.ppo_signals(stock_df)
 awesome_oscillator_signals_df = all_Strategies.Awesome_Oscillator_signals(stock_df)
@@ -59,18 +35,4 @@ strategy_w5_8_13_df = all_Strategies.strategy_w5_8_13(stock_df)
 # Concatenate the results into one large DataFrame
 all_signals_df = pd.concat([strategy_w5_8_13_df, mfi_signals_df, eom_signals_df, cmf_signals_df, keltner_channel_strategy_df, atr_signals_df, cmf_signals_df, strategy_5_8_13_df, short_ma_signals_df, golden_ma_signals_df, macd_signals_df, kst_signals_df, ichimoku_signals_df, ema_signals_df, dpo_signals_df, cci_signals_df, aroon_signals_df, roc_signals_df, rsi_signals_df, stochrsi_signals_df, stoch_signals_df, tsi_signals_df, williams_signals_df, kama_cross_signals_df, ppo_signals_df, awesome_oscillator_signals_df], axis=1)
 print(all_signals_df)
-
-# Analyst Rating and Events
-
-#%% 
-column_names = pd.DataFrame(indicators_df.columns)
-# Pre-process Data
-
-
-# Models
-
-# Predict Buy/Sell Condition
-
-# Evaluate
-
 # %%
