@@ -93,19 +93,19 @@ def ppo_signals(stock_data, fast_window=12, slow_window=26, signal_window=9):
     ppo_values = ppo.ppo()
     ppo_signal = ppo.ppo_signal()
 
-    # Generate buy (1) and sell (-1) signals based on PPO and its signal line
+    # Generate long (1) and short (-1) signals based on PPO and its signal line
     for i in range(1, len(stock_data)):
         if ppo_values[i] > ppo_signal[i] and ppo_values[i - 1] <= ppo_signal[i - 1]:
-            signals.loc[stock_data.index[i], 'PPO_signal'] = 'buy'  # Buy signal (PPO crosses above signal line)
+            signals.loc[stock_data.index[i], 'PPO_signal'] = 'long'  # long signal (PPO crosses above signal line)
         elif ppo_values[i] < ppo_signal[i] and ppo_values[i - 1] >= ppo_signal[i - 1]:
-            signals.loc[stock_data.index[i], 'PPO_signal'] = 'sell'  # Sell signal (PPO crosses below signal line)
+            signals.loc[stock_data.index[i], 'PPO_signal'] = 'short'  # short signal (PPO crosses below signal line)
 
     return signals
 
 #%%
 # Awesome Oscilator 0 cross
 def Awesome_Oscillator_signals(stock_df):
-    # Define buy and sell signals
+    # Define long and short signals
     signals = pd.DataFrame(index=stock_df.index)
     ao_indicator = momentum.AwesomeOscillatorIndicator(high=stock_df['High'], low=stock_df['Low'])
     signals['Ao_signal'] = 0
@@ -116,12 +116,12 @@ def Awesome_Oscillator_signals(stock_df):
             stock_df['momentum_ao'].iloc[i-1] < 0 and
             stock_df['momentum_ao'].iloc[i] >= 0
         ):
-            signals['Ao_signal'].iloc[i] = 'buy' # Buy signal
+            signals['Ao_signal'].iloc[i] = 'long' # long signal
         elif (
             stock_df['momentum_ao'].iloc[i-1] >= 0 and
             stock_df['momentum_ao'].iloc[i] < 0
         ):
-            signals['Ao_signal'].iloc[i] = 'sell'  # Sell signal
+            signals['Ao_signal'].iloc[i] = 'short'  # short signal
     
     return signals
 
@@ -139,13 +139,13 @@ def kama_cross_signals(stock_df, fast_period=10, slow_period=20):
     slow_kama = momentum.kama(stock_df['Close'], window=slow_period)
     for i in range(1, len(stock_df)):
         if fast_kama[i] > slow_kama[i] and fast_kama[i - 1] <= slow_kama[i - 1] and stock_df['Close'][i] > fast_kama[i]:
-            signals['kama_cross_signal'].iloc[i] = 'buy'  # Buy signal (fast KAMA above slow KAMA and price above fast KAMA)
+            signals['kama_cross_signal'].iloc[i] = 'long'  # long signal (fast KAMA above slow KAMA and price above fast KAMA)
         elif fast_kama[i] < slow_kama[i] and fast_kama[i - 1] >= slow_kama[i - 1] and stock_df['Close'][i] < fast_kama[i]:
-            signals['kama_cross_signal'].iloc[i] = 'sell'  # Sell signal (fast KAMA below slow KAMA and price below fast KAMA)
+            signals['kama_cross_signal'].iloc[i] = 'short'  # short signal (fast KAMA below slow KAMA and price below fast KAMA)
         elif stock_df['Close'][i] > fast_kama[i] and stock_df['Close'][i - 1] <= fast_kama[i - 1]:
-            stock_df.loc[i, 'kama_signal'] = 'buy' # Buy signal (price crosses above KAMA)
+            stock_df.loc[i, 'kama_signal'] = 'long' # long signal (price crosses above KAMA)
         elif stock_df['Close'][i] < fast_kama[i] and stock_df['Close'][i - 1] >= fast_kama[i - 1]:
-            stock_df.loc[i, 'kama_signal'] = 'sell'
+            stock_df.loc[i, 'kama_signal'] = 'short'
 
     return signals
 
@@ -161,12 +161,12 @@ def stoch_signals(stock_df, fast_period=10, slow_period=20):
     signals['%K'] = stoch.stoch()
     signals['%D'] = stoch.stoch_signal()
 
-    # Generate buy (1) and sell (-1) signals based on Stochastic Oscillator
+    # Generate long (1) and short (-1) signals based on Stochastic Oscillator
     for i in range(1, len(signals)):
         if signals['%K'][i] > signals['%D'][i] and signals['%K'][i - 1] <= signals['%D'][i - 1]:
-            signals.loc[i, 'stoch_signal'] = 'buy'  # Buy signal (%K crosses above %D)
+            signals.loc[i, 'stoch_signal'] = 'long'  # long signal (%K crosses above %D)
         elif signals['%K'][i] < signals['%D'][i] and signals['%K'][i - 1] >= signals['%D'][i - 1]:
-            signals.loc[i, 'stoch_signal'] = 'sell'  # Sell signal (%K crosses below %D)
+            signals.loc[i, 'stoch_signal'] = 'short'  # short signal (%K crosses below %D)
 
     signals.drop(['%K', '%D'], axis=1, inplace=True)
 
@@ -183,12 +183,12 @@ def tsi_signals(stock_df, window_slow=25, window_fast=13):
 
     signals['TSI'] = tsi.tsi()
 
-    # Generate buy (1) and sell (-1) signals based on TSI
+    # Generate long (1) and short (-1) signals based on TSI
     for i in range(1, len(signals)):
         if signals['TSI'][i] > 0 and signals['TSI'][i - 1] <= 0:
-            signals.loc[i, 'tsi_signal'] = 'buy'  # Buy signal (TSI crosses above 0)
+            signals.loc[i, 'tsi_signal'] = 'long'  # long signal (TSI crosses above 0)
         elif signals['TSI'][i] < 0 and signals['TSI'][i - 1] >= 0:
-            signals.loc[i, 'tsi_signal'] = 'sell'  # Sell signal (TSI crosses below 0)
+            signals.loc[i, 'tsi_signal'] = 'short'  # short signal (TSI crosses below 0)
 
     signals.drop(['TSI'], axis=1, inplace=True)
 
@@ -303,13 +303,13 @@ def aroon_strategy(stock_df, window=25):
     signals['aroon_direction_signal'] = 'bearish'
     signals.loc[signals['Aroon_Up'] > signals['Aroon_Down'], 'aroon_direction_signal'] = 'bullish'
     
-    # Generate buy (1) and sell (-1) signals based on Aroon crossovers
+    # Generate long (1) and short (-1) signals based on Aroon crossovers
     signals['aroon_signal'] = 0
     for i in range(1, len(signals)):
         if signals['aroon_direction_signal'][i] == 'bullish' and signals['aroon_direction_signal'][i - 1] == 'bearish':
-            signals.loc[signals.index[i], 'aroon_signal'] = 'long'  # Buy signal (Aroon Up crosses above Aroon Down)
+            signals.loc[signals.index[i], 'aroon_signal'] = 'long'  # long signal (Aroon Up crosses above Aroon Down)
         elif signals['aroon_direction_signal'][i] == 'bearish' and signals['aroon_direction_signal'][i - 1] == 'bullish':
-            signals.loc[signals.index[i], 'aroon_signal'] = 'short'  # Sell signal (Aroon Down crosses above Aroon Up)
+            signals.loc[signals.index[i], 'aroon_signal'] = 'short'  # short signal (Aroon Down crosses above Aroon Up)
 
     signals.drop(['Aroon_Up', 'Aroon_Down'], axis=1, inplace=True)
 
@@ -331,21 +331,21 @@ def cci_signals(stock_df, window=20, constant=0.015, overbought=100, oversold=-1
     for i in range(window, len(signals)):
         cci_value = signals['CCI'][i]
 
-        # Bullish market and buy signal
+        # Bullish market and long signal
         if cci_value > oversold:
             signals.loc[signals.index[i], 'cci_direction'] = 'bullish'
 
-        # Bearish market and sell signal
+        # Bearish market and short signal
         elif cci_value < overbought:
             signals.loc[signals.index[i], 'cci_direction'] = 'bearish'
 
-                # Bullish market and buy signal
+                # Bullish market and long signal
         if cci_value > overbought and signals['CCI'][i - 1] <= overbought:
-            signals.loc[signals.index[i], 'cci_Signal'] = 'buy'
+            signals.loc[signals.index[i], 'cci_Signal'] = 'long'
 
-        # Bearish market and sell signal
+        # Bearish market and short signal
         elif cci_value < oversold and signals['CCI'][i - 1] >= oversold:
-            signals.loc[signals.index[i], 'cci_Signal'] = 'sell'
+            signals.loc[signals.index[i], 'cci_Signal'] = 'short'
     signals.drop(['CCI'], axis=1, inplace=True)
 
     return signals
@@ -370,9 +370,9 @@ def dpo_signals(stock_df, window=20):
         elif dpo_values[i] < 0:
             signals.loc[signals.index[i], 'dpo_direction_Signal'] = 'bearish'  # Bearish signal
         if dpo_values[i] > 0 and dpo_values[i - 1] <= 0:
-            signals.loc[signals.index[i], 'dpo_Signal'] = 'buy'  # Buy signal (DPO crosses above zero)
+            signals.loc[signals.index[i], 'dpo_Signal'] = 'long'  # long signal (DPO crosses above zero)
         elif dpo_values[i] < 0 and dpo_values[i - 1] >= 0:
-            signals.loc[signals.index[i], 'dpo_Signal'] = 'sell'
+            signals.loc[signals.index[i], 'dpo_Signal'] = 'short'
     
     return signals
 
@@ -391,13 +391,13 @@ def ema_signals(stock_df, short_window=12, long_window=26):
     # Generate EMA signals
     for i in range(1, len(stock_df)):
         if ema_short[i] > ema_long[i] and ema_short[i - 1] <= ema_long[i - 1]:
-            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'buy'  # Bullish (Buy) Signal
+            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'long'  # Bullish (long) Signal
         elif ema_short[i] < ema_long[i] and ema_short[i - 1] >= ema_long[i - 1]:
-            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'sell'  # Bearish (Sell) Signal
+            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'short'  # Bearish (short) Signal
         if ema_short[i] > ema_long[i]:
-            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bullish'  # Bullish (Buy) Signal
+            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bullish'  # Bullish (long) Signal
         elif ema_short[i] < ema_long[i]:
-            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bearish'  # Bearish (Sell) Signal
+            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bearish'  # Bearish (short) Signal
 
     return signals
 
@@ -423,9 +423,9 @@ def ichimoku_signals(stock_df, window1=9, window2=26):
     # Generate signals based on crossovers
     for i in range(1, len(signals)):
         if tenkan_sen[i] > kijun_sen[i] and tenkan_sen[i - 1] <= kijun_sen[i - 1]:
-            signals.loc[signals.index[i], 'ichi_signal'] = 'buy'
+            signals.loc[signals.index[i], 'ichi_signal'] = 'long'
         elif tenkan_sen[i] < kijun_sen[i] and tenkan_sen[i - 1] >= kijun_sen[i - 1]:
-            signals.loc[signals.index[i], 'ichi_signal'] = 'sell'
+            signals.loc[signals.index[i], 'ichi_signal'] = 'short'
 
         if tenkan_sen[i] > kijun_sen[i] :
             signals.loc[signals.index[i], 'ichi_direction'] = 'bullish'
@@ -457,9 +457,9 @@ def kst_signals(stock_df, roc1=10, roc2=15, roc3=20, roc4=30, window1=10, window
     # Generate bullish (1) and bearish (-1) signals based on KST crossovers
     for i in range(1, len(stock_df)):
         if kst_values[i] > kst_signal_line[i] and kst_values[i - 1] <= kst_signal_line[i - 1]:
-            signals.loc[signals.index[i], 'kst_signal'] = 'buy'  # Bullish crossover
+            signals.loc[signals.index[i], 'kst_signal'] = 'long'  # Bullish crossover
         elif kst_values[i] < kst_signal_line[i] and kst_values[i - 1] >= kst_signal_line[i - 1]:
-            signals.loc[signals.index[i], 'kst_signal'] = 'sell'  # Bearish crossover
+            signals.loc[signals.index[i], 'kst_signal'] = 'short'  # Bearish crossover
 
         if kst_values[i] > kst_signal_line[i]:
             signals.loc[signals.index[i], 'kst_direction'] = 'bullish'  # Bullish crossover
@@ -486,9 +486,9 @@ def macd_signals(stock_df, window_slow=26, window_fast=12, window_sign=9):
     # Generate trading signals
     for i in range(1, len(signals)):
         if macd_line[i] > signal_line[i] and macd_line[i - 1] <= signal_line[i - 1]:
-            signals.loc[signals.index[i], 'macd_signal'] = 'buy'  # Bullish crossover (Buy signal)
+            signals.loc[signals.index[i], 'macd_signal'] = 'long'  # Bullish crossover (long signal)
         elif macd_line[i] < signal_line[i] and macd_line[i - 1] >= signal_line[i - 1]:
-            signals.loc[signals.index[i], 'macd_signal'] = 'sell'  # Bearish crossover (Sell signal)
+            signals.loc[signals.index[i], 'macd_signal'] = 'short'  # Bearish crossover (short signal)
 
         if macd_line[i] > signal_line[i] :
             signals.loc[signals.index[i], 'macd_direction'] = 'bullish'
@@ -512,11 +512,11 @@ def golden_ma_signals(stock_df, short_period=50, long_period=200):
     signals.loc[short_sma.sma_indicator() > long_sma.sma_indicator(), 'ma_direction'] = 'bullish'
     signals.loc[short_sma.sma_indicator() <= long_sma.sma_indicator(), 'ma_direction'] = 'bearish'
 
-    # Generate buy and sell signals
+    # Generate long and short signals
     signals.loc[(short_sma.sma_indicator() > long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'buy'
+                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'long'
     signals.loc[(short_sma.sma_indicator() <= long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'sell'
+                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'short'
 
     return signals
 
@@ -535,11 +535,11 @@ def short_ma_signals(stock_df, short_period=13, long_period=26):
     signals.loc[short_sma.sma_indicator() > long_sma.sma_indicator(), 'ma_direction'] = 'bullish'
     signals.loc[short_sma.sma_indicator() <= long_sma.sma_indicator(), 'ma_direction'] = 'bearish'
 
-    # Generate buy and sell signals
+    # Generate long and short signals
     signals.loc[(short_sma.sma_indicator() > long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'buy'
+                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'long'
     signals.loc[(short_sma.sma_indicator() <= long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'sell'
+                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'short'
 
     return signals
 
@@ -638,12 +638,12 @@ def cmf_signals(stock_df, window=20, threshold=0.1):
 
     signals['CMF'] = cmf.chaikin_money_flow()
 
-    # Generate buy (1) and sell (-1) signals based on CMF
+    # Generate long (1) and short (-1) signals based on CMF
     for i in range(1, len(signals)):
         if signals['CMF'][i] > threshold:  # You can adjust this threshold as needed
-            signals.loc[i, 'cmf_signal'] = 'bearish'  # Buy signal (CMF is positive)
+            signals.loc[i, 'cmf_signal'] = 'bearish'  # long signal (CMF is positive)
         elif signals['CMF'][i] < -threshold:  # You can adjust this threshold as needed
-            signals.loc[i, 'cmf_signal'] = 'bullish'  # Sell signal (CMF is negative)
+            signals.loc[i, 'cmf_signal'] = 'bullish'  # short signal (CMF is negative)
 
     signals.drop(['CMF'], axis=1, inplace=True)
 
@@ -660,12 +660,12 @@ def mfi_signals(stock_df, window=14):
 
     signals['MFI'] = mfi.money_flow_index()
 
-    # Generate buy (1) and sell (-1) signals based on MFI
+    # Generate long (1) and short (-1) signals based on MFI
     for i in range(1, len(signals)):
         if signals['MFI'][i] > 80:  # You can adjust this overbought threshold as needed
-            signals.loc[i, 'mfi_signal'] = 'overbought'  # Sell signal (MFI is overbought)
+            signals.loc[i, 'mfi_signal'] = 'overbought'  # short signal (MFI is overbought)
         elif signals['MFI'][i] < 20:  # You can adjust this oversold threshold as needed
-            signals.loc[i, 'mfi_signal'] = 'oversold' # Buy signal (MFI is oversold)
+            signals.loc[i, 'mfi_signal'] = 'oversold' # long signal (MFI is oversold)
 
     signals.drop(['MFI'], axis=1, inplace=True)
 
@@ -697,7 +697,7 @@ def eom_signals(stock_df, window=14):
 #%%
 #RSI Divergence strategy
 
-# def rsi_signals_with_divergence(stock_data, window=14, buy_threshold=30, sell_threshold=70, width=10):
+# def rsi_signals_with_divergence(stock_data, window=14, long_threshold=30, short_threshold=70, width=10):
 #     signals = pd.DataFrame(index=stock_data.index)
 #     signals['RSI_signal'] = 0  # Initialize the signal column with zeros
 
@@ -762,9 +762,9 @@ def mass_index_signals(stock_data, fast_window=9, slow_window=25):
 
     for i in range(len(signals)):
         if in_downtrend[i] is True and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-            signals.loc[signals.index[i], 'Signal'] = 'Buy'
+            signals.loc[signals.index[i], 'Signal'] = 'long'
         elif in_downtrend[i] is False and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-            signals.loc[signals.index[i], 'Signal'] = 'Sell'
+            signals.loc[signals.index[i], 'Signal'] = 'short'
 
     return signals
 
@@ -784,9 +784,9 @@ def psar_signals(stock_df, step=0.02, max_step=0.2):
 
     for i in range(1, len(signals)):
         if stock_df['Close'][i] > psar[i] and stock_df['Close'][i - 1] <= psar[i - 1]:
-            signals.loc[signals.index[i], 'psar_signal'] = 'buy'  # Bullish crossover (Buy signal)
+            signals.loc[signals.index[i], 'psar_signal'] = 'long'  # Bullish crossover (long signal)
         elif stock_df['Close'][i] < psar[i] and stock_df['Close'][i - 1] >= psar[i - 1]:
-            signals.loc[signals.index[i], 'psar_signal'] = 'sell'  # Bearish crossover (Sell signal)
+            signals.loc[signals.index[i], 'psar_signal'] = 'short'  # Bearish crossover (short signal)
 
         if stock_df['Close'][i] > psar[i] :
             signals.loc[signals.index[i], 'psar_direction'] = 'bullish'
@@ -851,12 +851,12 @@ def vortex_signals(stock_df, window=14, threshold=1.0):
 
     for i in range(1, len(signals)):
         if signals['Positive'][i] > signals['Negative'][i] and signals['Positive'][i - 1] <= signals['Negative'][i - 1]:
-            signals.loc[signals.index[i], 'vortex_signal'] = 'buy'  # Buy signal
+            signals.loc[signals.index[i], 'vortex_signal'] = 'long'  # long signal
         elif signals['Positive'][i] < signals['Negative'][i] and signals['Positive'][i - 1] >= signals['Negative'][i - 1]:
-            signals.loc[signals.index[i], 'vortex_signal'] = 'sell'  # Sell signal
+            signals.loc[signals.index[i], 'vortex_signal'] = 'short'  # short signal
 
         if signals['Positive'][i] > signals['Negative'][i] :
-            signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bullish'  # Buy signal
+            signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bullish'  # long signal
         elif signals['Positive'][i] < signals['Negative'][i]:
             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bearish'
 
@@ -881,11 +881,11 @@ def golden_wma_signals(stock_df, short_period=50, long_period=200):
     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
     signals.loc[short_wma.wma() <= long_wma.wma(), 'mwa_direction'] = 'bearish'
 
-    # Generate buy and sell signals
+    # Generate long and short signals
     signals.loc[(short_wma.wma() > long_wma.wma()) &
-                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'buy'
+                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
     signals.loc[(short_wma.wma() <= long_wma.wma()) &
-                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'sell'
+                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
 
     return signals
 
@@ -907,11 +907,11 @@ def short_wma_signals(stock_df, short_period=13, long_period=26):
     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
     signals.loc[short_wma.wma() <= long_wma.wma(), 'wma_direction'] = 'bearish'
 
-    # Generate buy and sell signals
+    # Generate long and short signals
     signals.loc[(short_wma.wma() > long_wma.wma()) &
-                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'buy'
+                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
     signals.loc[(short_wma.wma() <= long_wma.wma()) &
-                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'sell'
+                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
 
     return signals
 
@@ -927,15 +927,15 @@ def donchian_channel_strategy(stock_df, window=20):
     # Calculate Donchian Channel
     donchian = volatility.DonchianChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
 
-    # Determine buy and sell signals
+    # Determine long and short signals
     for i in range(window, len(signals)):
         upper_channel = donchian.donchian_channel_hband()[i]
         lower_channel = donchian.donchian_channel_lband()[i]
         current_close = stock_df['Close'][i]
 
         if current_close > upper_channel:
-            signals.loc[signals.index[i], 'dc_signal'] = 'buy'  # Buy signal (breakout above upper channel)
+            signals.loc[signals.index[i], 'dc_signal'] = 'long'  # long signal (breakout above upper channel)
         elif current_close < lower_channel:
-            signals.loc[signals.index[i], 'dc_signal'] = 'sell'  # Sell signal (breakout below lower channel)
+            signals.loc[signals.index[i], 'dc_signal'] = 'short'  # short signal (breakout below lower channel)
 
     return signals
