@@ -1,4 +1,6 @@
 #%%
+from sklearn.metrics import accuracy_score
+from ta import add_all_ta_features
 import yfinance as yf
 import datetime
 import pandas as pd
@@ -19,19 +21,13 @@ from sklearn.metrics import confusion_matrix, classification_report
 seed = 7
 np.random.seed(seed)
 #%%
-NUM_DAYS = 10000     # The number of days of historical data to retrieve
-INTERVAL = '1d'     # Sample rate of historical data
-symbol = 'SPY'      # Symbol of the desired stock
-
-# List of symbols for technical indicators
-INDICATORS = ['RSI', 'MACD', 'STOCH','ADL', 'ATR', 'MOM', 'MFI', 'ROC', 'OBV', 'CCI', 'EMV', 'VORTEX']
+csv_file = 'C:/Users/zebfr/Desktop/All Files/TRADING/Trading_Bot/SPY.csv'
+data = pd.read_csv(csv_file)
+# Use yfinance to get the stock data
 
 
-
-start = (datetime.date.today() - datetime.timedelta( NUM_DAYS ) )
-end = datetime.datetime.today()
-
-data = yf.download(symbol, start=start, end=end, interval=INTERVAL)
+# Convert the data to a Pandas DataFrame
+data = pd.DataFrame(data).reset_index(drop=True)
 data.rename(columns={"Close": 'close', "High": 'high', "Low": 'low', 'Volume': 'volume', 'Open': 'open'}, inplace=True)
 print(data.head())
 
@@ -53,18 +49,39 @@ tmp1['close'].plot()
 # %%
 def _get_indicator_data(data):
 
+    # combine all the data into one dataframe
+    data = pd.DataFrame(index=data.index)
 
+    # Add all technical indicators using TA library
+    data = add_all_ta_features(
+        data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
+    )
     
     return data
 
 #%%
+# Prepare your data for training
+def prepare_data(data):
+    # Add technical indicators using TA-Lib
+    data = add_all_ta_features(
+        data, open="open", high="high", low="low", close="close", volume="volume", fillna=False
+    )
+    
+    # Define X and Y
+    X = data.drop(columns=['close'])  # Exclude the 'close' column for X
+    Y = data['close']  # Only the 'close' column for Y
 
-dataset = data.values 
-X = dataset[:,0:6]
+    return X, Y
+
+# Prepare your data
+X, Y = prepare_data(data)
+
+X = X.dropna()
+Y = Y[X.index]
+
 scaler=MinMaxScaler()
 scaler.fit(X)
 X1=scaler.transform(X)
-Y = dataset[:,6]
 
 X_Train, X_Test, Y_Train, Y_Test = train_test_split(X1, Y, test_size=0.2, random_state=seed)
 # %%
@@ -112,7 +129,7 @@ def _train_random_forest(X_train, y_train, X_test, y_test):
     
     return rf_best
     
-rf_model = _train_random_forest(X_train, y_train, X_test, y_test)
+rf_model = _train_random_forest(X_Train, Y_Train, X_Test, Y_Test)
 
 #%%
 def _train_KNN(X_train, y_train, X_test, y_test):
@@ -140,7 +157,7 @@ def _train_KNN(X_train, y_train, X_test, y_test):
     
     return knn_best
 
-knn_model = _train_KNN(X_train, y_train, X_test, y_test)
+knn_model = _train_KNN(X_Train, Y_Train, X_Test, Y_Test)
 
     
 #%%
@@ -165,7 +182,7 @@ def _ensemble_model(rf_model, knn_model, gbt_model, X_train, y_train, X_test, y_
     
     return ensemble
 
-ensemble_model = _ensemble_model(rf_model, knn_model, gbt_model, X_train, y_train, X_test, y_test)
+ensemble_model = _ensemble_model(rf_model, knn_model, gbt_model, X_Train, Y_Train, X_Test, Y_Test)
 
 
 #%%

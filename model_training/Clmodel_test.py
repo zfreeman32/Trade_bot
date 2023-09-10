@@ -1,7 +1,6 @@
 #In[1]
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score
@@ -10,41 +9,38 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from keras.models import Sequential
 from keras.layers import LSTM, GRU, Dense, Dropout, Conv1D, MaxPooling1D
+from ta import add_all_ta_features
+from call_Strategies import generate_all_signals
 
 #In[2]
-symbol = "AAPL"
-start_date = "2021-01-01"
-end_date = "2021-12-31"
-
-# Use yfinance to get the stock data
-qqq_data = yf.download(symbol, start=start_date, end=end_date)
-
+csv_file = '../Trading_Bot/SPY.csv'
+spy_data = pd.read_csv(csv_file)
 # Convert the data to a Pandas DataFrame
-qqq_data = pd.DataFrame(qqq_data).reset_index(drop=True)
-# calculate RSI
-delta = qqq_data['Close'].diff()
-gain = delta.mask(delta < 0, 0)
-loss = -delta.mask(delta > 0, 0)
-avg_gain = gain.rolling(window=14).mean()
-avg_loss = loss.rolling(window=14).mean()
-rs = avg_gain / avg_loss
-rsi = 100 - (100 / (1 + rs))
+spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
 
+#%%
+# read in all features
+indicators_df = pd.DataFrame(index=spy_data.index)
+# Add all technical indicators using TA library
+indicators_df = add_all_ta_features(
+    spy_data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
+)
+print(indicators_df.columns)
 
-Volume = qqq_data['Volume']
-Close = qqq_data['Close']
+all_signals_df = generate_all_signals('SPY.csv', 'VIX.csv')
+print(all_signals_df)
 
-# combine all the data into one dataframe
-technical_indicators = pd.DataFrame({
-    'RSI': rsi })
+# True Signals (The most Optimal Buy/Sell Points since 1993)
+true_signals_df = pd.read_csv("./true_signals/SPY_true_signals.csv")
 
-technical_indicators.dropna()
-df = technical_indicators[20:]
-df.round(3)
-print(df)
+# Analyst Rating and Events
+
+#%% 
+# Pre-process Data
+df = pd.concat([indicators_df, all_signals_df, true_signals_df], axis = 1)
 
 #In[3]
-
+df.drop(['Date'], axis=1, inplace=True)
 # Split the data into training and testing sets
 train_size = int(len(df) * 0.8)
 train_data, test_data = df.iloc[:train_size], df.iloc[train_size:]

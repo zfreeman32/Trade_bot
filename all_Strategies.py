@@ -2,85 +2,6 @@
 from ta import momentum, trend, volatility, volume
 import numpy as np
 import pandas as pd
-from scipy.signal import argrelextrema
-from collections import deque
-
-#%%
-# Higher Highs
-def getHigherHighs(data: np.array, order=5, K=2):
-    high_idx = argrelextrema(data, np.greater, order=order)[0]
-    highs = data[high_idx]
-    extrema = []
-    ex_deque = deque(maxlen=K)
-    
-    for i, idx in enumerate(high_idx):
-        if i == 0:
-            ex_deque.append(idx)
-            continue
-        if highs[i] < highs[i-1]:
-            ex_deque.clear()
-        ex_deque.append(idx)
-        if len(ex_deque) == K:
-            extrema.append(ex_deque.copy())
-
-    return extrema
-
-# Lower Lows
-def getLowerLows(data: np.array, order=5, K=2):
-    low_idx = argrelextrema(data, np.less, order=order)[0]
-    lows = data[low_idx]
-    extrema = []
-    ex_deque = deque(maxlen=K)
-    
-    for i, idx in enumerate(low_idx):
-        if i == 0:
-            ex_deque.append(idx)
-            continue
-        if lows[i] > lows[i-1]:
-            ex_deque.clear()
-        ex_deque.append(idx)
-        if len(ex_deque) == K:
-            extrema.append(ex_deque.copy())
-
-    return extrema
-
-# Higher Lows
-def getHigherLows(data: np.array, order=5, K=2):
-    low_idx = argrelextrema(data, np.less, order=order)[0]
-    lows = data[low_idx]
-    extrema = []
-    ex_deque = deque(maxlen=K)
-    
-    for i, idx in enumerate(low_idx):
-        if i == 0:
-            ex_deque.append(idx)
-            continue
-        if lows[i] > lows[i-1]:
-            ex_deque.clear()
-        ex_deque.append(idx)
-        if len(ex_deque) == K:
-            extrema.append(ex_deque.copy())
-
-    return extrema
-
-# Lower Highs
-def getLowerHighs(data: np.array, order=5, K=2):
-    high_idx = argrelextrema(data, np.greater, order=order)[0]
-    highs = data[high_idx]
-    extrema = []
-    ex_deque = deque(maxlen=K)
-    
-    for i, idx in enumerate(high_idx):
-        if i == 0:
-            ex_deque.append(idx)
-            continue
-        if highs[i] < highs[i-1]:
-            ex_deque.clear()
-        ex_deque.append(idx)
-        if len(ex_deque) == K:
-            extrema.append(ex_deque.copy())
-
-    return extrema
 
 #%%
 # PPO
@@ -711,231 +632,231 @@ def eom_signals(stock_df, window=14):
 
 #NEEDS WORK
 
-def adx_strength_direction(stock_df, window=14):
-    # Create ADX indicator
-    adx = trend.ADXIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+# def adx_strength_direction(stock_df, window=14):
+#     # Create ADX indicator
+#     adx = trend.ADXIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
 
-    # Create a DataFrame to store the results
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['ADX'] = adx.adx()  # Call the adx method to get the ADX values
-    signals['adx_Trend_Strength'] = 0
-    signals['adx_Direction'] = 0
+#     # Create a DataFrame to store the results
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['ADX'] = adx.adx()  # Call the adx method to get the ADX values
+#     signals['adx_Trend_Strength'] = 0
+#     signals['adx_Direction'] = 0
 
-    # Determine trend strength and direction based on ADX values
-    for i in range(window, len(signals)):
-        if signals['ADX'][i] > 25:
-            signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'strong'
-        elif signals['ADX'][i] < 20:
-            signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'weak'
+#     # Determine trend strength and direction based on ADX values
+#     for i in range(window, len(signals)):
+#         if signals['ADX'][i] > 25:
+#             signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'strong'
+#         elif signals['ADX'][i] < 20:
+#             signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'weak'
 
-        if adx.adx_pos()[i] > adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
-            signals.loc[signals.index[i], 'adx_Direction'] = 'bullish'
-        elif adx.adx_pos()[i] < adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
-            signals.loc[signals.index[i], 'adx_Direction'] = 'bearish'
+#         if adx.adx_pos()[i] > adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
+#             signals.loc[signals.index[i], 'adx_Direction'] = 'bullish'
+#         elif adx.adx_pos()[i] < adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
+#             signals.loc[signals.index[i], 'adx_Direction'] = 'bearish'
 
-    return signals
+#     return signals
 
-# %%
-# Mass Index
+# # %%
+# # Mass Index
 
-# NEEDS WORK
+# # NEEDS WORK
 
-def mass_index_signals(stock_data, fast_window=9, slow_window=25):
-    # Create a DataFrame to store the trading signals
-    signals = pd.DataFrame(index=stock_data.index)
-    signals['Signal'] = 0
+# def mass_index_signals(stock_data, fast_window=9, slow_window=25):
+#     # Create a DataFrame to store the trading signals
+#     signals = pd.DataFrame(index=stock_data.index)
+#     signals['Signal'] = 0
 
-    # Calculate Mass Index
-    mass_index = trend.MassIndex(stock_data['High'], stock_data['Low'], fast_window, slow_window)
+#     # Calculate Mass Index
+#     mass_index = trend.MassIndex(stock_data['High'], stock_data['Low'], fast_window, slow_window)
     
-    # Calculate Short and Long EMAs
-    short_ema = trend.EMAIndicator(stock_data['Close'], window=fast_window)
-    long_ema = trend.EMAIndicator(stock_data['Close'], window=slow_window)
+#     # Calculate Short and Long EMAs
+#     short_ema = trend.EMAIndicator(stock_data['Close'], window=fast_window)
+#     long_ema = trend.EMAIndicator(stock_data['Close'], window=slow_window)
 
-    # Calculate the Mass Index and its reversal thresholds
-    mass_index_values = mass_index.mass_index()
-    reversal_bulge_threshold = 27
-    reversal_bulge_exit_threshold = 26.50
+#     # Calculate the Mass Index and its reversal thresholds
+#     mass_index_values = mass_index.mass_index()
+#     reversal_bulge_threshold = 27
+#     reversal_bulge_exit_threshold = 26.50
 
-    # Generate trading signals
-    in_downtrend = short_ema.ema_indicator() > long_ema.ema_indicator()
+#     # Generate trading signals
+#     in_downtrend = short_ema.ema_indicator() > long_ema.ema_indicator()
 
-    for i in range(len(signals)):
-        if in_downtrend[i] is True and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-            signals.loc[signals.index[i], 'Signal'] = 'long'
-        elif in_downtrend[i] is False and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-            signals.loc[signals.index[i], 'Signal'] = 'short'
+#     for i in range(len(signals)):
+#         if in_downtrend[i] is True and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
+#             signals.loc[signals.index[i], 'Signal'] = 'long'
+#         elif in_downtrend[i] is False and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
+#             signals.loc[signals.index[i], 'Signal'] = 'short'
 
-    return signals
+#     return signals
 
-# %%
-# PSAR 
+# # %%
+# # PSAR 
  
-# NEEDS WORK
+# # NEEDS WORK
 
-def psar_signals(stock_df, step=0.02, max_step=0.2):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['psar_direction'] = ''
-    signals['psar_signal'] = ''
+# def psar_signals(stock_df, step=0.02, max_step=0.2):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['psar_direction'] = ''
+#     signals['psar_signal'] = ''
 
-    # Calculate Parabolic SAR (PSAR)
-    psar = trend.PSARIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], step, max_step)
-    psar = psar.psar_down_indicator
+#     # Calculate Parabolic SAR (PSAR)
+#     psar = trend.PSARIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], step, max_step)
+#     psar = psar.psar_down_indicator
 
-    for i in range(1, len(signals)):
-        if stock_df['Close'][i] > psar[i] and stock_df['Close'][i - 1] <= psar[i - 1]:
-            signals.loc[signals.index[i], 'psar_signal'] = 'long'  # Bullish crossover (long signal)
-        elif stock_df['Close'][i] < psar[i] and stock_df['Close'][i - 1] >= psar[i - 1]:
-            signals.loc[signals.index[i], 'psar_signal'] = 'short'  # Bearish crossover (short signal)
+#     for i in range(1, len(signals)):
+#         if stock_df['Close'][i] > psar[i] and stock_df['Close'][i - 1] <= psar[i - 1]:
+#             signals.loc[signals.index[i], 'psar_signal'] = 'long'  # Bullish crossover (long signal)
+#         elif stock_df['Close'][i] < psar[i] and stock_df['Close'][i - 1] >= psar[i - 1]:
+#             signals.loc[signals.index[i], 'psar_signal'] = 'short'  # Bearish crossover (short signal)
 
-        if stock_df['Close'][i] > psar[i] :
-            signals.loc[signals.index[i], 'psar_direction'] = 'bullish'
-        elif stock_df['Close'][i] < psar[i] :
-            signals.loc[signals.index[i], 'psar_direction'] = 'bearish'
+#         if stock_df['Close'][i] > psar[i] :
+#             signals.loc[signals.index[i], 'psar_direction'] = 'bullish'
+#         elif stock_df['Close'][i] < psar[i] :
+#             signals.loc[signals.index[i], 'psar_direction'] = 'bearish'
 
-    return signals
+#     return signals
 
-csv_file = 'SPY.csv'
-stock_df = pd.read_csv(csv_file)
-ao_signals = pd.DataFrame(psar_signals(stock_df))
-print(ao_signals)
-
-
-# %%
-# STC
-
-#NEEDS WORK
-
-def stc_signals(stock_df, window_slow=50, window_fast=23, cycle=10, smooth1=3, smooth2=3):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['stc_signal'] = 0
-    signals['stc_direction'] = 0
-
-    # Calculate STC (Stochastic RSI)
-    stc = trend.STCIndicator(stock_df['Close'], window_slow, window_fast, cycle, smooth1, smooth2)
-
-    # Determine overbought/oversold conditions
-    overbought_condition = stc > 75
-    oversold_condition = stc < 25
-
-    # Determine bullish/bearish trend
-    bullish_condition = stc > 50
-    bearish_condition = stc < 50
-
-    # Generate signals and directions
-    signals.loc[overbought_condition, 'stc_signal'] = 'overbought'
-    signals.loc[oversold_condition, 'stc_signal'] = 'oversold'
-
-    signals.loc[bullish_condition, 'stc_direction'] = 'Bullish'
-    signals.loc[bearish_condition, 'stc_direction'] = 'Bearish'
+# csv_file = 'SPY.csv'
+# stock_df = pd.read_csv(csv_file)
+# ao_signals = pd.DataFrame(psar_signals(stock_df))
+# print(ao_signals)
 
 
-    return signals
+# # %%
+# # STC
 
-# %%
-# Vortex
+# #NEEDS WORK
 
-# NEEDS WORK
+# def stc_signals(stock_df, window_slow=50, window_fast=23, cycle=10, smooth1=3, smooth2=3):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['stc_signal'] = 0
+#     signals['stc_direction'] = 0
 
-def vortex_signals(stock_df, window=14, threshold=1.0):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['vortex_signal'] = 0
-    signals['vortex_direction_signal'] = 0
+#     # Calculate STC (Stochastic RSI)
+#     stc = trend.STCIndicator(stock_df['Close'], window_slow, window_fast, cycle, smooth1, smooth2)
 
-    # Calculate the Vortex Indicator
-    vortex = trend.VortexIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+#     # Determine overbought/oversold conditions
+#     overbought_condition = stc > 75
+#     oversold_condition = stc < 25
 
-    # Create signals based on the crossover of the positive and negative vortex indicators
-    signals['Positive'] = vortex.vortex_indicator_pos
-    signals['Negative'] = vortex.vortex_indicator_neg
+#     # Determine bullish/bearish trend
+#     bullish_condition = stc > 50
+#     bearish_condition = stc < 50
 
-    for i in range(1, len(signals)):
-        if signals['Positive'][i] > signals['Negative'][i] and signals['Positive'][i - 1] <= signals['Negative'][i - 1]:
-            signals.loc[signals.index[i], 'vortex_signal'] = 'long'  # long signal
-        elif signals['Positive'][i] < signals['Negative'][i] and signals['Positive'][i - 1] >= signals['Negative'][i - 1]:
-            signals.loc[signals.index[i], 'vortex_signal'] = 'short'  # short signal
+#     # Generate signals and directions
+#     signals.loc[overbought_condition, 'stc_signal'] = 'overbought'
+#     signals.loc[oversold_condition, 'stc_signal'] = 'oversold'
 
-        if signals['Positive'][i] > signals['Negative'][i] :
-            signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bullish'  # long signal
-        elif signals['Positive'][i] < signals['Negative'][i]:
-            signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bearish'
+#     signals.loc[bullish_condition, 'stc_direction'] = 'Bullish'
+#     signals.loc[bearish_condition, 'stc_direction'] = 'Bearish'
 
-    return signals
 
-# %%
-# Weighted Moving Average
-# Golden Cross WMA
+#     return signals
 
-# NEEDS WORK
+# # %%
+# # Vortex
 
-def golden_wma_signals(stock_df, short_period=50, long_period=200):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['wma_direction'] = 0
-    signals['wma_signal'] = 0
+# # NEEDS WORK
 
-    # Calculate short and long SMAs
-    short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
-    long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
+# def vortex_signals(stock_df, window=14, threshold=1.0):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['vortex_signal'] = 0
+#     signals['vortex_direction_signal'] = 0
 
-    # Determine market direction (Bullish or Bearish)
-    signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
-    signals.loc[short_wma.wma() <= long_wma.wma(), 'mwa_direction'] = 'bearish'
+#     # Calculate the Vortex Indicator
+#     vortex = trend.VortexIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
 
-    # Generate long and short signals
-    signals.loc[(short_wma.wma() > long_wma.wma()) &
-                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
-    signals.loc[(short_wma.wma() <= long_wma.wma()) &
-                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
+#     # Create signals based on the crossover of the positive and negative vortex indicators
+#     signals['Positive'] = vortex.vortex_indicator_pos
+#     signals['Negative'] = vortex.vortex_indicator_neg
 
-    return signals
+#     for i in range(1, len(signals)):
+#         if signals['Positive'][i] > signals['Negative'][i] and signals['Positive'][i - 1] <= signals['Negative'][i - 1]:
+#             signals.loc[signals.index[i], 'vortex_signal'] = 'long'  # long signal
+#         elif signals['Positive'][i] < signals['Negative'][i] and signals['Positive'][i - 1] >= signals['Negative'][i - 1]:
+#             signals.loc[signals.index[i], 'vortex_signal'] = 'short'  # short signal
 
-#%%
-# 13-26 MA STrategy
+#         if signals['Positive'][i] > signals['Negative'][i] :
+#             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bullish'  # long signal
+#         elif signals['Positive'][i] < signals['Negative'][i]:
+#             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bearish'
 
-# NEEDS WORK
+#     return signals
 
-def short_wma_signals(stock_df, short_period=13, long_period=26):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['wma_direction'] = 0
-    signals['wma_signal'] = 0
+# # %%
+# # Weighted Moving Average
+# # Golden Cross WMA
 
-    # Calculate short and long SMAs
-    short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
-    long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
+# # NEEDS WORK
 
-    # Determine market direction (Bullish or Bearish)
-    signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
-    signals.loc[short_wma.wma() <= long_wma.wma(), 'wma_direction'] = 'bearish'
+# def golden_wma_signals(stock_df, short_period=50, long_period=200):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['wma_direction'] = 0
+#     signals['wma_signal'] = 0
 
-    # Generate long and short signals
-    signals.loc[(short_wma.wma() > long_wma.wma()) &
-                (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
-    signals.loc[(short_wma.wma() <= long_wma.wma()) &
-                (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
+#     # Calculate short and long SMAs
+#     short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
+#     long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
 
-    return signals
+#     # Determine market direction (Bullish or Bearish)
+#     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
+#     signals.loc[short_wma.wma() <= long_wma.wma(), 'mwa_direction'] = 'bearish'
 
-# %%
-# Donchain Channel
+#     # Generate long and short signals
+#     signals.loc[(short_wma.wma() > long_wma.wma()) &
+#                 (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
+#     signals.loc[(short_wma.wma() <= long_wma.wma()) &
+#                 (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
 
-# NEEDS WORK
+#     return signals
 
-def donchian_channel_strategy(stock_df, window=20):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['dc_signal'] = 0
+# #%%
+# # 13-26 MA STrategy
 
-    # Calculate Donchian Channel
-    donchian = volatility.DonchianChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+# # NEEDS WORK
 
-    # Determine long and short signals
-    for i in range(window, len(signals)):
-        upper_channel = donchian.donchian_channel_hband()[i]
-        lower_channel = donchian.donchian_channel_lband()[i]
-        current_close = stock_df['Close'][i]
+# def short_wma_signals(stock_df, short_period=13, long_period=26):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['wma_direction'] = 0
+#     signals['wma_signal'] = 0
 
-        if current_close > upper_channel:
-            signals.loc[signals.index[i], 'dc_signal'] = 'long'  # long signal (breakout above upper channel)
-        elif current_close < lower_channel:
-            signals.loc[signals.index[i], 'dc_signal'] = 'short'  # short signal (breakout below lower channel)
+#     # Calculate short and long SMAs
+#     short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
+#     long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
 
-    return signals
+#     # Determine market direction (Bullish or Bearish)
+#     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
+#     signals.loc[short_wma.wma() <= long_wma.wma(), 'wma_direction'] = 'bearish'
+
+#     # Generate long and short signals
+#     signals.loc[(short_wma.wma() > long_wma.wma()) &
+#                 (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
+#     signals.loc[(short_wma.wma() <= long_wma.wma()) &
+#                 (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
+
+#     return signals
+
+# # %%
+# # Donchain Channel
+
+# # NEEDS WORK
+
+# def donchian_channel_strategy(stock_df, window=20):
+#     signals = pd.DataFrame(index=stock_df.index)
+#     signals['dc_signal'] = 0
+
+#     # Calculate Donchian Channel
+#     donchian = volatility.DonchianChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+
+#     # Determine long and short signals
+#     for i in range(window, len(signals)):
+#         upper_channel = donchian.donchian_channel_hband()[i]
+#         lower_channel = donchian.donchian_channel_lband()[i]
+#         current_close = stock_df['Close'][i]
+
+#         if current_close > upper_channel:
+#             signals.loc[signals.index[i], 'dc_signal'] = 'long'  # long signal (breakout above upper channel)
+#         elif current_close < lower_channel:
+#             signals.loc[signals.index[i], 'dc_signal'] = 'short'  # short signal (breakout below lower channel)
+
+#     return signals

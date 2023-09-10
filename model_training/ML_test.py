@@ -21,12 +21,6 @@ from keras.layers import Dropout
 import tensorflow as tf
 from keras import backend
 
-# Value > Avg and
-# ADX[1] < ADX and
-# RSI[1] < RSI and
-# price[1] < trail[1] and
-# price > trail
-
 # In[10]:
 # fix random seed for reproducibility
 seed = 7
@@ -34,18 +28,31 @@ np.random.seed(seed)
 
 # In[11]:
 
-symbol = "AAPL"
-start_date = "2021-01-01"
-end_date = "2021-12-31"
-
-# Use yfinance to get the stock data
-qqq_data = yf.download(symbol, start=start_date, end=end_date)
-
+csv_file = '../Trading_Bot/SPY.csv'
+spy_data = pd.read_csv(csv_file)
 # Convert the data to a Pandas DataFrame
-qqq_data = pd.DataFrame(qqq_data).reset_index(drop=True)
+spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
 
-indicator = Indicators(qqq_data, start_date, end_date)
+#%%
+# read in all features
+indicators_df = pd.DataFrame(index=spy_data.index)
+# Add all technical indicators using TA library
+indicators_df = add_all_ta_features(
+    spy_data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
+)
+print(indicators_df.columns)
 
+all_signals_df = generate_all_signals('SPY.csv', 'VIX.csv')
+print(all_signals_df)
+
+# True Signals (The most Optimal Buy/Sell Points since 1993)
+true_signals_df = pd.read_csv("./true_signals/SPY_true_signals.csv")
+
+# Analyst Rating and Events
+
+#%% 
+# Pre-process Data
+df = pd.concat([indicators_df, all_signals_df, true_signals_df], axis = 1)
 
 # %%
 
