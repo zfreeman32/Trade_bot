@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #%%
-data = pd.read_csv("../Trading_Bot/SPY.csv")
+data = pd.read_csv("../data/SPY.csv")
 data.drop(columns=['Date', 'Adj Close'], inplace=True)
-signal = pd.read_csv("./true_signals/SPY_true_signals.csv")
+signal = pd.read_csv("../data/SPY_true_signals.csv")
 signal.drop(columns=['Close'], inplace=True)
 # Encode the 'signals' column
 signal['signals'] = signal['signals'].map({'long': 1, 'short': -1, 0: 0})

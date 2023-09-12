@@ -1,12 +1,13 @@
 #%%
 # Read in Library
+
 import pandas as pd
 from ta import add_all_ta_features
-import call_Strategies 
+from Strategies import call_Strategies
 
 #%%
 # Read in Price Data
-csv_file = 'SPY.csv'
+csv_file = './data/SPY.csv'
 stock_df = pd.read_csv(csv_file)
 
 # Stock Financial Data
@@ -21,11 +22,11 @@ indicators_df = add_all_ta_features(
 )
 print(indicators_df.columns)
 
-all_signals_df = call_Strategies.generate_all_signals('SPY.csv', 'VIX.csv')
+all_signals_df = call_Strategies.generate_all_signals('./data/SPY.csv', './data/VIX.csv')
 print(all_signals_df)
 
 # True Signals (The most Optimal Buy/Sell Points since 1993)
-true_signals_df = pd.read_csv("./true_signals/SPY_true_signals.csv")
+true_signals_df = pd.read_csv("./data/SPY_true_signals.csv")
 
 # Analyst Rating and Events
 

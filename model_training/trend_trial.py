@@ -1,11 +1,9 @@
 #%%
 from sklearn.metrics import accuracy_score
 from ta import add_all_ta_features
-import yfinance as yf
 import datetime
 import pandas as pd
 import numpy as np
-from finta import TA
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import svm
@@ -21,7 +19,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 seed = 7
 np.random.seed(seed)
 #%%
-csv_file = 'C:/Users/zebfr/Desktop/All Files/TRADING/Trading_Bot/SPY.csv'
+csv_file = '../data/SPY.csv'
 data = pd.read_csv(csv_file)
 # Use yfinance to get the stock data
 

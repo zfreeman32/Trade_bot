@@ -1,5 +1,11 @@
+#%%
+import sys
+sys.path.append('./Strategies/all_Strategies.py')
 import pandas as pd
-import all_Strategies
+from . import all_Strategies
+
+
+
 
 def generate_all_signals(stock_csv_path, vix_csv_path):
     # Read the stock data from the CSV file
@@ -42,5 +48,6 @@ def generate_all_signals(stock_csv_path, vix_csv_path):
     
     return all_signals_df
 
-signals_df = generate_all_signals('SPY.csv', 'VIX.csv')
+signals_df = generate_all_signals('./data/SPY.csv', './data/VIX.csv')
 print(signals_df)
+# %%

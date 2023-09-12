@@ -1,4 +1,6 @@
 #In[1]
+import sys
+sys.path.append(r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot')
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -9,11 +11,11 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from keras.models import Sequential
 from keras.layers import LSTM, GRU, Dense, Dropout, Conv1D, MaxPooling1D
-from ta import add_all_ta_features
-from call_Strategies import generate_all_signals
+from ta import add_all_ta_features 
+from Strategies import call_Strategies
 
 #In[2]
-csv_file = '../Trading_Bot/SPY.csv'
+csv_file = '../data/SPY.csv'
 spy_data = pd.read_csv(csv_file)
 # Convert the data to a Pandas DataFrame
 spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
@@ -21,19 +23,16 @@ spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
 #%%
 # read in all features
 indicators_df = pd.DataFrame(index=spy_data.index)
-# Add all technical indicators using TA library
 indicators_df = add_all_ta_features(
     spy_data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
 )
 print(indicators_df.columns)
 
-all_signals_df = generate_all_signals('SPY.csv', 'VIX.csv')
+all_signals_df = call_Strategies.generate_all_signals('../data/SPY.csv', '../data/VIX.csv')
 print(all_signals_df)
 
-# True Signals (The most Optimal Buy/Sell Points since 1993)
-true_signals_df = pd.read_csv("./true_signals/SPY_true_signals.csv")
-
-# Analyst Rating and Events
+# True Signals as prediction column(The most Optimal Buy/Sell Points since 1993)
+true_signals_df = pd.read_csv("../data/SPY_true_signals.csv")
 
 #%% 
 # Pre-process Data

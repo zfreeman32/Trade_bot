@@ -357,7 +357,7 @@ def ichimoku_signals(stock_df, window1=9, window2=26):
             signals.loc[signals.index[i], 'ichi_direction'] = 'bullish'
         else:
             signals.loc[signals.index[i], 'ichi_direction'] = 'bearish'
-   
+
     return signals
 
 # %%
@@ -691,7 +691,7 @@ def eom_signals(stock_df, window=14):
 
 # # %%
 # # PSAR 
- 
+
 # # NEEDS WORK
 
 # def psar_signals(stock_df, step=0.02, max_step=0.2):
