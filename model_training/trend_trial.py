@@ -1,8 +1,10 @@
 #%%
+import sys
+sys.path.append(r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot')
+import pandas as pd
 from sklearn.metrics import accuracy_score
 from ta import add_all_ta_features
 import datetime
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
@@ -14,68 +16,47 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import VotingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import confusion_matrix, classification_report
+from Strategies import call_Strategies
+import ta
 
 
 seed = 7
 np.random.seed(seed)
 #%%
-csv_file = '../data/SPY.csv'
-data = pd.read_csv(csv_file)
-# Use yfinance to get the stock data
 
-
+data = pd.read_csv('../Trading_Bot/data/SPY.csv')
 # Convert the data to a Pandas DataFrame
 data = pd.DataFrame(data).reset_index(drop=True)
-data.rename(columns={"Close": 'close', "High": 'high', "Low": 'low', 'Volume': 'volume', 'Open': 'open'}, inplace=True)
-print(data.head())
 
-tmp = data.iloc[-60:]
-tmp['close'].plot()
-# %%
-def _exponential_smooth(data, alpha):
-    """
-    Function that exponentially smooths dataset so values are less 'rigid'
-    :param alpha: weight factor to weight recent values more
-    """
-    
-    return data.ewm(alpha=alpha).mean()
+# read in all features
+indicators_df = pd.DataFrame(index=data.index)
+# Add all technical indicators using TA library
+indicators_df = ta.add_all_ta_features(
+    data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
+)
+print(indicators_df.columns)
 
-data = _exponential_smooth(data, 0.65)
+all_signals_df = call_Strategies.generate_all_signals('../Trading_Bot/data/SPY.csv', '../Trading_Bot/data/VIX.csv')
+print(all_signals_df)
 
-tmp1 = data.iloc[-60:]
-tmp1['close'].plot()
-# %%
-def _get_indicator_data(data):
+# True Signals (The most Optimal Buy/Sell Points since 1993)
+true_signals_df = pd.read_csv("../Trading_Bot/data/SPY_true_signals.csv")
 
-    # combine all the data into one dataframe
-    data = pd.DataFrame(index=data.index)
+# Pre-process Data
+df = pd.concat([indicators_df, all_signals_df, true_signals_df], axis = 1)
+df = df.fillna(0)
+df = df.replace('nan', 0)
+df['Date'] = df.index.astype(float)
+categorical_columns = df.select_dtypes(include=['object', 'category']).columns
 
-    # Add all technical indicators using TA library
-    data = add_all_ta_features(
-        data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
-    )
-    
-    return data
+# Apply one-hot encoding to categorical columns
+data_encoded = pd.get_dummies(df, columns=categorical_columns)
+print(data_encoded)
+print(data_encoded.columns)
 
-#%%
-# Prepare your data for training
-def prepare_data(data):
-    # Add technical indicators using TA-Lib
-    data = add_all_ta_features(
-        data, open="open", high="high", low="low", close="close", volume="volume", fillna=False
-    )
-    
-    # Define X and Y
-    X = data.drop(columns=['close'])  # Exclude the 'close' column for X
-    Y = data['close']  # Only the 'close' column for Y
+X = data_encoded.iloc[:, :-2].values
+Y = data_encoded['signals_long'].values
 
-    return X, Y
-
-# Prepare your data
-X, Y = prepare_data(data)
-
-X = X.dropna()
-Y = Y[X.index]
 
 scaler=MinMaxScaler()
 scaler.fit(X)
@@ -87,15 +68,16 @@ live_pred_data = data.iloc[-16:-11]
 
 # %%
 def _produce_prediction(data, window):
+    data['pred'] = 0
     
-    prediction = (data.shift(-window)['close'] >= data['close'])
+    prediction = (data.shift(-window)['Close'] >= data['Close'])
     prediction = prediction.iloc[:-window]
     data['pred'] = prediction.astype(int)
     
     return data
 
 data = _produce_prediction(data, window=15)
-del (data['close'])
+del (data['Close'])
 data = data.dropna() # Some indicators produce NaN values for the first few rows, we just remove them here
 data.tail()
 # %%
@@ -156,6 +138,42 @@ def _train_KNN(X_train, y_train, X_test, y_test):
     return knn_best
 
 knn_model = _train_KNN(X_Train, Y_Train, X_Test, Y_Test)
+
+
+def train_GBT(X_train, y_train, X_test, y_test):
+    # Create a GBT classifier
+    gbt = GradientBoostingClassifier()
+    
+    # Define hyperparameters to search
+    params_gbt = {
+        'n_estimators': [100, 200, 300],  # Number of boosting stages to be used
+        'learning_rate': [0.01, 0.1, 0.2],  # Step size shrinkage
+        'max_depth': [3, 4, 5]  # Maximum depth of individual trees
+    }
+    
+    # Use grid search to find the best hyperparameters
+    gbt_gs = GridSearchCV(gbt, params_gbt, cv=5)
+    
+    # Fit the model to the training data
+    gbt_gs.fit(X_train, y_train)
+    
+    # Get the best GBT model
+    best_gbt = gbt_gs.best_estimator_
+    
+    # Print the best hyperparameters
+    print("Best Hyperparameters:", gbt_gs.best_params_)
+    
+    # Make predictions on the test data
+    predictions = best_gbt.predict(X_test)
+
+    # Evaluate the model
+    print("Classification Report:\n", classification_report(y_test, predictions))
+    print("Confusion Matrix:\n", confusion_matrix(y_test, predictions))
+    
+    return best_gbt
+
+# Usage example:
+gbt_model = train_GBT(X_Train, Y_Train, X_Test, Y_Test)
 
     
 #%%
