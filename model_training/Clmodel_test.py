@@ -1,21 +1,24 @@
 #In[1]
 import sys
-sys.path.append(r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot')
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score
+from sklearn.ensemble import BaggingRegressor
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from keras.models import Sequential
 from keras.layers import LSTM, GRU, Dense, Dropout, Conv1D, MaxPooling1D
 from ta import add_all_ta_features 
+from sklearn.preprocessing import MinMaxScaler
 from Strategies import call_Strategies
+import ta
 
 #In[2]
-csv_file = '../data/SPY.csv'
+csv_file = r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv'
 spy_data = pd.read_csv(csv_file)
 # Convert the data to a Pandas DataFrame
 spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
@@ -26,17 +29,23 @@ indicators_df = pd.DataFrame(index=spy_data.index)
 indicators_df = add_all_ta_features(
     spy_data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
 )
-print(indicators_df.columns)
 
-all_signals_df = call_Strategies.generate_all_signals('../data/SPY.csv', '../data/VIX.csv')
-print(all_signals_df)
+all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 
 # True Signals as prediction column(The most Optimal Buy/Sell Points since 1993)
-true_signals_df = pd.read_csv("../data/SPY_true_signals.csv")
+true_signals_df = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY_true_signals.csv')
 
 #%% 
 # Pre-process Data
 df = pd.concat([indicators_df, all_signals_df, true_signals_df], axis = 1)
+df = df.fillna(0)
+df = df.replace('nan', 0)
+df['Date'] = df.index.astype(float)
+categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+
+# Apply one-hot encoding to categorical columns
+df = pd.get_dummies(df, columns=categorical_columns)
+print(df)
 
 #In[3]
 df.drop(['Date'], axis=1, inplace=True)
@@ -48,13 +57,18 @@ train_data, test_data = df.iloc[:train_size], df.iloc[train_size:]
 scaler = MinMaxScaler(feature_range=(0, 1))
 train_data = scaler.fit_transform(train_data)
 test_data = scaler.transform(test_data)
+print("Shapes - train_data:", train_data.shape, "test_data:", test_data.shape)
 
 data = np.concatenate((train_data, test_data), axis=0)
-X_train, y_train = data[:-1], data[-1]
+X_train, y_train = df.iloc[:-1], pd.DataFrame(df['signals_short']) #signals_short
+# y_train is (225,)
+print(y_train)
+print("Shapes - X_train:", X_train.shape, "y_train:", y_train.shape)
 
 # Define the input and output data
 X_train, y_train = train_data[:, :-1], train_data[:, -1]
 X_test, y_test = test_data[:, :-1], test_data[:, -1]
+
 
 # Reshape the data for LSTM and GRU models
 X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
@@ -92,8 +106,16 @@ for name, model in models.items():
         model.compile(loss='mean_squared_error', optimizer='adam')
         model.fit(X_train, y_train, epochs=50, batch_size=72, validation_data=(X_test, y_test), verbose=0)
         y_pred = model.predict(X_test)
-        y_pred = scaler.inverse_transform(y_pred)
-        y_test = scaler.inverse_transform(y_test.reshape(-1, 1)).flatten() # Reshape y_test to match y_pred shape
+# Reshape y_pred to match the shape of y_test
+        y_pred = y_pred.reshape(-1, 1)
+
+        # Apply inverse_transform
+        y_test = scaler.inverse_transform(y_test.reshape(-1, 1)).flatten()
+        y_pred = scaler.inverse_transform(y_pred).flatten()
+
+
+        print("Shapes - y_pred:", y_pred.shape, "y_test:", y_test.shape)
+
         accuracy = accuracy_score(y_test, y_pred.flatten().round())
         print(f'{name} accuracy: {accuracy}')
     else:

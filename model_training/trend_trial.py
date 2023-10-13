@@ -1,6 +1,6 @@
 #%%
 import sys
-sys.path.append(r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot')
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from ta import add_all_ta_features
@@ -24,7 +24,7 @@ seed = 7
 np.random.seed(seed)
 #%%
 
-data = pd.read_csv('../Trading_Bot/data/SPY.csv')
+data = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv')
 # Convert the data to a Pandas DataFrame
 data = pd.DataFrame(data).reset_index(drop=True)
 
@@ -36,11 +36,11 @@ indicators_df = ta.add_all_ta_features(
 )
 print(indicators_df.columns)
 
-all_signals_df = call_Strategies.generate_all_signals('../Trading_Bot/data/SPY.csv', '../Trading_Bot/data/VIX.csv')
+all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 print(all_signals_df)
 
 # True Signals (The most Optimal Buy/Sell Points since 1993)
-true_signals_df = pd.read_csv("../Trading_Bot/data/SPY_true_signals.csv")
+true_signals_df = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY_true_signals.csv')
 
 # Pre-process Data
 df = pd.concat([indicators_df, all_signals_df, true_signals_df], axis = 1)
@@ -64,7 +64,7 @@ X1=scaler.transform(X)
 
 X_Train, X_Test, Y_Train, Y_Test = train_test_split(X1, Y, test_size=0.2, random_state=seed)
 # %%
-live_pred_data = data.iloc[-16:-11]
+live_pred_data = data_encoded.iloc[-30:-11]
 
 # %%
 def _produce_prediction(data, window):
@@ -173,14 +173,14 @@ def train_GBT(X_train, y_train, X_test, y_test):
     return best_gbt
 
 # Usage example:
-gbt_model = train_GBT(X_Train, Y_Train, X_Test, Y_Test)
+# gbt_model = train_GBT(X_Train, Y_Train, X_Test, Y_Test)
 
     
 #%%
-def _ensemble_model(rf_model, knn_model, gbt_model, X_train, y_train, X_test, y_test):
+def _ensemble_model(rf_model, knn_model, X_train, y_train, X_test, y_test):
     
     # Create a dictionary of our models
-    estimators=[('knn', knn_model), ('rf', rf_model), ('gbt', gbt_model)]
+    estimators=[('knn', knn_model), ('rf', rf_model)]
     
     # Create our voting classifier, inputting our models
     ensemble = VotingClassifier(estimators, voting='hard')
@@ -198,7 +198,7 @@ def _ensemble_model(rf_model, knn_model, gbt_model, X_train, y_train, X_test, y_
     
     return ensemble
 
-ensemble_model = _ensemble_model(rf_model, knn_model, gbt_model, X_Train, Y_Train, X_Test, Y_Test)
+ensemble_model = _ensemble_model(rf_model, knn_model, X_Train, Y_Train, X_Test, Y_Test)
 
 
 #%%
@@ -253,9 +253,23 @@ def cross_Validation(data):
         ensemble_RESULTS.append(ensemble_accuracy)
         
         
-    print('RF Accuracy = ' + str( sum(rf_RESULTS) / len(rf_RESULTS)))
-    print('KNN Accuracy = ' + str( sum(knn_RESULTS) / len(knn_RESULTS)))
-    print('Ensemble Accuracy = ' + str( sum(ensemble_RESULTS) / len(ensemble_RESULTS)))
+        if len(rf_RESULTS) > 0:
+            rf_accuracy = sum(rf_RESULTS) / len(rf_RESULTS)
+            print('RF Accuracy = ' + str(rf_accuracy))
+        else:
+            print('No RF results to calculate accuracy.')
+
+        if len(knn_RESULTS) > 0:
+            knn_accuracy = sum(knn_RESULTS) / len(knn_RESULTS)
+            print('KNN Accuracy = ' + str(knn_accuracy))
+        else:
+            print('No KNN results to calculate accuracy.')
+
+        if len(ensemble_RESULTS) > 0:
+            ensemble_accuracy = sum(ensemble_RESULTS) / len(ensemble_RESULTS)
+            print('Ensemble Accuracy = ' + str(ensemble_accuracy))
+        else:
+            print('No Ensemble results to calculate accuracy.')
     
     
 cross_Validation(data)
@@ -263,6 +277,6 @@ cross_Validation(data)
 #%%
 live_pred_data.head()
 
-del(live_pred_data['close'])
+del(live_pred_data['Close'])
 prediction = ensemble_model.predict(live_pred_data)
 print(prediction)

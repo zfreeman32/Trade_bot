@@ -1,6 +1,6 @@
 # In[1]
 import sys
-sys.path.append(r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot')
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ seed = 7
 np.random.seed(seed)
 
 # In[11]:
-spy_data = pd.read_csv('../Trading_Bot/data/SPY.csv')
+spy_data = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv')
 # Convert the data to a Pandas DataFrame
 spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
 
@@ -43,11 +43,11 @@ indicators_df = ta.add_all_ta_features(
 )
 print(indicators_df.columns)
 
-all_signals_df = call_Strategies.generate_all_signals('../Trading_Bot/data/SPY.csv', '../Trading_Bot/data/VIX.csv')
+all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 print(all_signals_df)
 
 # True Signals (The most Optimal Buy/Sell Points since 1993)
-true_signals_df = pd.read_csv("../Trading_Bot/data/SPY_true_signals.csv")
+true_signals_df = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY_true_signals.csv')
 
 # Analyst Rating and Events
 
@@ -89,14 +89,44 @@ plt.subplot(1,2,1)
 plt.bar(data_encoded.columns[et_indices], feature_importance[et_indices])
 plt.xticks(rotation=90)
 plt.ylabel('Feature Importances')
-plt.title('Extra Trees Feature Importances')
+plt.title('Extra Trees Feature Importances for Short Signals')
 plt.subplots_adjust(bottom=0.3, top=0.9)
 #
 plt.subplot(1,2,2)
 plt.bar(data_encoded.columns[rf_indices], feature_importance_RF[rf_indices], color='green')
 plt.xticks(rotation=90)
 plt.ylabel('Feature Importances')
-plt.title('Random Forest Feature Importances')
+plt.title('Random Forest Feature Importances for Short Signals')
+plt.subplots_adjust(bottom=0.3, top=0.9)
+plt.show()
+
+# Do it again for long signals
+#Feature Importance from ExtraTrees and Random Forest
+model = ExtraTreesRegressor()
+model.fit(X1,Y)
+feature_importance = model.feature_importances_
+
+et_indices = np.argsort(feature_importance)[::-1]
+
+model = RandomForestRegressor()
+model.fit(X1,Y)
+feature_importance_RF = model.feature_importances_
+
+rf_indices=np.argsort(feature_importance_RF)[::-1]
+#####Plotting of feature importances
+plt.figure(figsize=(12,6))
+plt.subplot(1,2,1)
+plt.bar(data_encoded.columns[et_indices], feature_importance[et_indices])
+plt.xticks(rotation=90)
+plt.ylabel('Feature Importances')
+plt.title('Extra Trees Feature Importances for Long Signals')
+plt.subplots_adjust(bottom=0.3, top=0.9)
+#
+plt.subplot(1,2,2)
+plt.bar(data_encoded.columns[rf_indices], feature_importance_RF[rf_indices], color='green')
+plt.xticks(rotation=90)
+plt.ylabel('Feature Importances')
+plt.title('Random Forest Feature Importances for Long Signals')
 plt.subplots_adjust(bottom=0.3, top=0.9)
 plt.show()
 
@@ -123,7 +153,7 @@ DNNmodel.add(Dropout(0.1))
 DNNmodel.add(keras.layers.Dense(25, activation='relu'))
 DNNmodel.add(keras.layers.Dense(1, activation='relu'))
 DNNmodel.compile(optimizer='adam', loss='mae',metrics=['mse'])
-print('Training: Neural Network with Dropout')
+print('Training: Neural Network with Dropout Long Signals')
 DNNmodel.fit(X_Train, Y_Train, epochs=30, batch_size=10, verbose=0)
 
 #Defining NN without dropout for compressor decay
@@ -133,7 +163,7 @@ SNNmodel.add(keras.layers.Dense(50, activation='relu'))
 SNNmodel.add(keras.layers.Dense(25, activation='relu'))
 SNNmodel.add(keras.layers.Dense(1, activation='relu'))
 SNNmodel.compile(optimizer='adam', loss='mae',metrics=['mse'])
-print('Training: Neural Network without Dropout')
+print('Training: Neural Network without Dropout Long Signals')
 SNNmodel.fit(X_Train, Y_Train, epochs=30, batch_size=10, verbose=0)
 
 #Defining many different Regression models for comparison purposes
@@ -162,8 +192,8 @@ for name, model in models:
     plt.subplot(3,3,i)
     i=i+1
     plt.rcParams["font.size"] = "5.4"
-    plt.plot(Y_Test[0:49], 'b-')
-    plt.plot(predictions[0:49], 'r--')
+    plt.plot(Y_Test[7000:7200], 'b-')
+    plt.plot(predictions[7000:7200], 'r--')
     plt.title("%s %s" % (name,'Model Prediction for signals_long'))
     plt.ylabel('Prediction/Actual Signal')
     plt.xlabel('Observation #')
@@ -273,8 +303,8 @@ names.append(name)
 predictions=SNNmodel.predict(X_Test)
 name='NNwoDropout'
 plt.subplot(3,3,9)
-plt.plot(Y_Test[0:49], 'b-')
-plt.plot(predictions[0:49], 'r--')
+plt.plot(Y_Test[7000:7200], 'b-')
+plt.plot(predictions[7000:7200], 'r--')
 plt.title("%s %s" % (name, 'Model Prediction for signals_short'))
 plt.ylabel('Prediction/Actul Signal')
 plt.xlabel('Observation #')
