@@ -57,7 +57,7 @@ train_data, test_data = df.iloc[:train_size], df.iloc[train_size:]
 scaler = MinMaxScaler(feature_range=(0, 1))
 train_data = scaler.fit_transform(train_data)
 test_data = scaler.transform(test_data)
-print("Shapes - train_data:", train_data.shape, "test_data:", test_data.shape)
+
 
 data = np.concatenate((train_data, test_data), axis=0)
 X_train, y_train = df.iloc[:-1], pd.DataFrame(df['signals_short']) #signals_short
@@ -71,8 +71,10 @@ X_test, y_test = test_data[:, :-1], test_data[:, -1]
 
 
 # Reshape the data for LSTM and GRU models
-X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
-X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
+# Reshape the data for LSTM and GRU models
+X_train = np.reshape(X_train, (X_train.shape[0], 224, 1))
+X_test = np.reshape(X_test, (X_test.shape[0], 224, 1))
+print("Shapes - X_train:", X_train.shape, "X_test:", X_test.shape)
 
 # Define the models
 models = {
@@ -100,27 +102,26 @@ models = {
     'LogReg': LogisticRegression()
 }
 #In[4]
-# Train and evaluate each model
-for name, model in models.items():
-    if name in ['LSTM', 'GRU', 'CNN']:
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.fit(X_train, y_train, epochs=50, batch_size=72, validation_data=(X_test, y_test), verbose=0)
+# Create an empty dictionary to store model accuracies
+model_accuracies = {}
+
+# Loop through each model and calculate accuracy
+for model_name, model in models.items():
+    if isinstance(model, Sequential):  # For Keras models
+        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        model.fit(X_train, y_train, epochs=10, batch_size=64, validation_data=(X_test, y_test), verbose=0)
         y_pred = model.predict(X_test)
-# Reshape y_pred to match the shape of y_test
-        y_pred = y_pred.reshape(-1, 1)
-
-        # Apply inverse_transform
-        y_test = scaler.inverse_transform(y_test.reshape(-1, 1)).flatten()
-        y_pred = scaler.inverse_transform(y_pred).flatten()
-
-
-        print("Shapes - y_pred:", y_pred.shape, "y_test:", y_test.shape)
-
-        accuracy = accuracy_score(y_test, y_pred.flatten().round())
-        print(f'{name} accuracy: {accuracy}')
-    else:
+        y_pred = (y_pred > 0.5)  # Convert probabilities to binary predictions
+        accuracy = accuracy_score(y_test, y_pred)
+    else:  # For scikit-learn models
         model.fit(X_train, y_train)
-        accuracy = model.score(X_test, y_test)
-        print(f'{name} accuracy: {accuracy}')
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
 
-# %%
+    model_accuracies[model_name] = accuracy
+    print(f'{model_name} Accuracy: {accuracy:.2f}')
+
+# Print the accuracies for all models
+print("Model Accuracies:")
+for model_name, accuracy in model_accuracies.items():
+    print(f"{model_name}: {accuracy:.2f}")
