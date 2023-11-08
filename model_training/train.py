@@ -1,3 +1,5 @@
+import sys
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 from sklearn.linear_model import LinearRegression, Ridge, LogisticRegression, ElasticNet, Lasso
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeRegressor
@@ -13,8 +15,8 @@ from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Conv1D, MaxPooling1D, Flatten, SimpleRNN
 
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import torch
+# from transformers import GPT2LMHeadModel, GPT2Tokenizer
+# import torch
 
 
 import pandas as pd
@@ -158,6 +160,14 @@ mse = mean_squared_error(Y_test, Y_pred)
 print("Elastic Net Mean Squared Error:", mse)
 
 #%%
+# Lasso
+elastic_net = Lasso(alpha=0.5, l1_ratio=0.5)
+elastic_net.fit(X_train, Y_train)
+Y_pred = elastic_net.predict(X_test)
+mse = mean_squared_error(Y_test, Y_pred)
+print("Elastic Net Mean Squared Error:", mse)
+
+#%%
 # SVM
 svm_classifier = SVC(kernel='linear')
 svm_classifier.fit(X_train, Y_train)
@@ -193,12 +203,12 @@ print("DNN Mean Squared Error:", mse)
 
 #%%
 # Load pre-trained GPT-2 model and tokenizer
-model_name = "gpt2"  # You can use other models like "gpt2-medium" for better performance
-model = GPT2LMHeadModel.from_pretrained(model_name)
-tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-input_text = "Today's close price is $100. Tomorrow's close price will be "
-input_ids = tokenizer.encode(input_text, return_tensors="pt")
-with torch.no_grad():
-    output = model.generate(input_ids, max_length=20, num_return_sequences=1, no_repeat_ngram_size=2, top_k=50)
-predicted_prices = [tokenizer.decode(output[0], skip_special_tokens=True)]
-print("Predicted Close Prices:", predicted_prices)
+# model_name = "gpt2"  # You can use other models like "gpt2-medium" for better performance
+# model = GPT2LMHeadModel.from_pretrained(model_name)
+# tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+# input_text = "Today's close price is $100. Tomorrow's close price will be "
+# input_ids = tokenizer.encode(input_text, return_tensors="pt")
+# with torch.no_grad():
+#     output = model.generate(input_ids, max_length=20, num_return_sequences=1, no_repeat_ngram_size=2, top_k=50)
+# predicted_prices = [tokenizer.decode(output[0], skip_special_tokens=True)]
+# print("Predicted Close Prices:", predicted_prices)
