@@ -5,3 +5,4 @@ backtesting
 scikit-learn
 tensorflow
 keras
+matplotlib
