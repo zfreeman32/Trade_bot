@@ -1,7 +1,7 @@
 #%%
-from ta import momentum, trend, volatility, volume
 import numpy as np
 import pandas as pd
+from ta import momentum, trend, volatility, volume
 
 #%%
 # PPO

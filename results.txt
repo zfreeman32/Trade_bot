@@ -11,7 +11,6 @@ vix_close w5_8_13_signal mfi_signal  ... kama_signal PPO_signal Ao_signal
 7913  17.940001            NaN        NaN  ...         NaN        NaN       NaN
 7914  15.650000            NaN        NaN  ...         NaN        NaN       NaN
 7915  14.600000            NaN        NaN  ...         NaN        NaN       NaN
-
 [7916 rows x 38 columns]
 
 Index(['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume',
@@ -41,20 +40,7 @@ Index(['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume',
        'momentum_pvo_hist', 'momentum_kama', 'others_dr', 'others_dlr',
        'others_cr'],
       dtype='object')
-      vix_close w5_8_13_signal mfi_signal  ... kama_signal PPO_signal Ao_signal
-0           NaN              0          0  ...         0.0          0         0
-1     12.330000              0          0  ...         0.0          0         0
-2     12.250000              0          0  ...         0.0          0         0
-3     12.120000              0          0  ...         0.0          0         0
-4     12.290000              0          0  ...         0.0          0         0
-...         ...            ...        ...  ...         ...        ...       ...
-7911        NaN            NaN        NaN  ...         NaN        NaN       NaN
-7912  17.459999            NaN        NaN  ...         NaN        NaN       NaN
-7913  17.940001            NaN        NaN  ...         NaN        NaN       NaN
-7914  15.650000            NaN        NaN  ...         NaN        NaN       NaN
-7915  14.600000            NaN        NaN  ...         NaN        NaN       NaN
 
-[7916 rows x 38 columns]
         Date      Open      High  ...  signals_0  signals_long  signals_short
 0        0.0  43.96875  43.96875  ...      False          True          False
 1        1.0  43.96875  44.25000  ...       True         False          False
@@ -67,12 +53,9 @@ Index(['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume',
 7913  7913.0   0.00000   0.00000  ...       True         False          False
 7914  7914.0   0.00000   0.00000  ...       True         False          False
 7915  7915.0   0.00000   0.00000  ...       True         False          False
-
 [7916 rows x 227 columns]
 
-
 LONG Signals Machine Learning Prediction
-
       Regression Model  Explained Variance Score  Mean Absolute Error
 0                  LiR             -9.910084e+09           362.658513
 1                Ridge              5.850395e-01             0.040735
@@ -84,9 +67,7 @@ LONG Signals Machine Learning Prediction
 7           NNwDropout              1.998735e-08             0.021465
 8          NNwoDropout              1.998735e-08             0.021465
 
-
 SHORT Signals Machine Learning Prediciton
-
       Regression Model  Explained Variance Score  Mean Absolute Error
 0                  LiR             -1.394929e+10           362.658513
 1                Ridge              4.155791e-01             0.040717
@@ -122,7 +103,6 @@ Confusion Matrix
 [[1550    0]
  [  12   22]]
 
-
 KNN
 Best Hyperparameter: {'n_neighbors': 3}
 Classification Report
@@ -137,7 +117,6 @@ weighted avg       0.97      0.98      0.97      1584
 Confusion Matrix
 [[1545    5]
  [  31    3]]
-
 
 Ensemble
 Ensemble Score: 0.9804292929292929
@@ -159,3 +138,183 @@ Confusion Matrix: This matrix shows the number of true positives, true negatives
 For example, in the Random Forest model, it correctly predicted 1550 "False" values and 22 "True" values. However, it incorrectly predicted 12 "True" values as "False."
 In these classification models, "Random Forest" has high accuracy and performs better than "KNN." The "Ensemble" section indicates that the ensemble 
 model combines these two models and also performs well.
+
+train.py:
+
+Linear Regression Stats:
+Mean Squared Error: 1.2187524660680467
+Explained Variance Score: 0.9998874576295881
+R^2 Score: 0.999887386535229
+
+Ridge Regression Stats:
+Mean Squared Error: 0.9746393399248
+Explained Variance Score: 0.9999099609229404
+R^2 Score: 0.9999099427356852
+Best Parameters: {'alpha': 0.1, 'solver': 'svd'}
+Best Ridge Regression Model: Ridge(alpha=0.1, max_iter=10000, solver='svd')
+
+Decision Tree Stats:
+Mean Squared Error: 0.0875507322157879
+Explained Variance Score: 0.9999919132092684
+R^2 Score: 0.9999919102594066
+Best Parameters: {'max_depth': 40, 'min_samples_leaf': 4, 'min_samples_split': 2}
+Best Model: DecisionTreeRegressor(max_depth=40, min_samples_leaf=4)
+
+Random Forest Stats:
+Mean Squared Error: 0.05583113407796384
+Explained Variance Score: 0.9999948431791869
+R^2 Score: 0.9999948411694535
+Best Parameters: {'max_depth': 10, 'n_estimators': 100}
+Best Model: RandomForestRegressor(max_depth=10)
+
+Lasso Stats:
+Mean Squared Error: 1.2068376878071454
+R^2 Score: 0.9998884874679445
+Best Parameters: {'alpha': 0.01, 'tol': 1e-06}
+Best Model: Lasso(alpha=0.01, max_iter=100000, tol=1e-06)
+
+LSTM Stats:
+Mean Squared Error: 36403.04451033533
+R^2 Score: -767609.9627440673
+Best Parameters: {'batch_size': 32, 'optimizer': 'adam'}
+Best Model: KerasRegressor(
+        model=<function create_lstm_model at 0x0000020B9737A670>
+        build_fn=None
+        warm_start=False
+        random_state=None
+        optimizer=adam
+        loss=None
+        metrics=None
+        batch_size=32
+        validation_batch_size=None
+        verbose=0
+        callbacks=None
+        validation_split=0.0
+        shuffle=True
+        run_eagerly=False
+        epochs=10
+)
+
+DNN Stats:
+Mean Squared Error: 1.2461859201746874
+R^2 Score: 0.9998848516674822
+Best Parameters: {'batch_size': 16, 'epochs': 30, 'units': 32}
+Best Model: KerasRegressor(
+        model=<function create_dnn_model at 0x00000278405795E0>
+        build_fn=None
+        warm_start=False
+        random_state=None
+        optimizer=rmsprop
+        loss=None
+        metrics=None
+        batch_size=16
+        validation_batch_size=None
+        verbose=0
+        callbacks=None
+        validation_split=0.0
+        shuffle=True
+        run_eagerly=False
+        epochs=30
+        units=32
+)
+
+RNN Stats:
+Mean Squared Error: 35114.431171161144
+R^2 Score: -740437.6825352648
+Best Parameters: {'units': 50, 'optimizer': 'sgd'}
+Best Model: KerasRegressor(
+        model=None
+        build_fn=<function create_rnn_model at 0x00000191D43E75E0>
+        warm_start=False
+        random_state=None
+        optimizer=sgd
+        loss=None
+        metrics=None
+        batch_size=32
+        validation_batch_size=None
+        verbose=0
+        callbacks=None
+        validation_split=0.0
+        shuffle=True
+        run_eagerly=False
+        epochs=10
+        units=50
+)
+
+regression_training.py
+Ridge Stats:
+Mean Squared Error: 0.9746393399248
+Explained Variance Score: 0.9999099609229404
+R^2 Score: 0.9999099427356852
+Best Parameters: {'alpha': 0.1, 'solver': 'svd'}
+Best Model: Ridge(alpha=0.1, max_iter=10000, solver='svd')
+
+Lasso Stats:
+Mean Squared Error: 1.2068376878071454
+Explained Variance Score: 0.9998885562032119
+R^2 Score: 0.9998884874679445
+Best Parameters: {'alpha': 0.01, 'tol': 1e-06}
+Best Model: Lasso(alpha=0.01, max_iter=100000, tol=1e-06)
+
+DecisionTreeRegressor Stats:
+Mean Squared Error: 0.13324700806069636
+Explained Variance Score: 0.9999877402872241
+R^2 Score: 0.9999876878958888
+Best Parameters: {'max_depth': None, 'min_samples_leaf': 4, 'min_samples_split': 5}
+Best Model: DecisionTreeRegressor(min_samples_leaf=4, min_samples_split=5)
+
+RandomForestRegressor Stats:
+Mean Squared Error: 0.06927601484394325
+Explained Variance Score: 0.9999936053186438
+R^2 Score: 0.9999935988543414
+Best Parameters: {'max_depth': None, 'n_estimators': 100}
+Best Model: RandomForestRegressor()
+
+CCA Stats:
+Mean Squared Error: 5.253466568775266
+Explained Variance Score: 0.9995146937239838
+R^2 Score: 0.9995145765125901
+Best Parameters: {'n_components': 1}
+Best Model: CCA(n_components=1)
+
+PLSCanonical Stats:
+Mean Squared Error: 245410.77512474757
+Explained Variance Score: -21.674450122377916
+R^2 Score: -21.67610400665294
+Best Parameters: {'n_components': 1}
+Best Model: PLSCanonical(n_components=1)
+
+PLSRegression Stats:
+Mean Squared Error: 334.1961731150638
+Explained Variance Score: 0.9691351452082279
+R^2 Score: 0.969120071535855
+Best Parameters: {'n_components': 1}
+Best Model: PLSRegression(n_components=1)
+
+DummyRegressor Stats:
+Mean Squared Error: 10822.591440505772
+Explained Variance Score: 0.0
+R^2 Score: -1.3992872445856008e-05
+Best Parameters: {'constant': None, 'quantile': None, 'strategy': 'mean'}
+Best Model: DummyRegressor()
+
+AdaBoostRegressor Stats:
+Mean Squared Error: 109.94963241475666
+Explained Variance Score: 0.9898707286650577
+R^2 Score: 0.9898405874849509
+Best Parameters: {'learning_rate': 1.0, 'n_estimators': 200}
+Best Model: AdaBoostRegressor(n_estimators=200)
+
+BaggingRegressor Stats:
+Mean Squared Error: 0.06700909621461838
+Explained Variance Score: 0.999993813426679
+R^2 Score: 0.9999938083189934
+Best Parameters: {'max_features': 1.0, 'max_samples': 1.0, 'n_estimators': 20}
+Best Model: BaggingRegressor(n_estimators=20)
+
+ExtraTreesRegressor Stats:
+Mean Squared Error: 0.15249990432727398
+Explained Variance Score: 0.9999859131612975
+R^2 Score: 0.9999859089166326
+Best Parameters: {'max_depth': 20, 'n_estimators': 200}
+Best Model: ExtraTreesRegressor(max_depth=20, n_estimators=200)

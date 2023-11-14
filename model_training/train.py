@@ -6,8 +6,8 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
-from sklearn.metrics import mean_squared_error, accuracy_score
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error, explained_variance_score, r2_score
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import GradientBoostingClassifier
 import tensorflow as tf
@@ -15,7 +15,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Conv1D, MaxPooling1D, Flatten, SimpleRNN
-from keras.wrappers.scikit_learn import KerasRegressor
+from scikeras.wrappers import KerasRegressor
+from tensorflow.keras.metrics import MeanSquaredError, RootMeanSquaredError
 from prophet import Prophet
 from prophet.serialize import model_to_json
 # from transformers import GPT2LMHeadModel, GPT2Tokenizer
@@ -25,7 +26,7 @@ from Strategies import call_Strategies
 import ta
 import numpy as np
 
-seed = 4
+seed = 42
 np.random.seed(seed)
 
 # In[11]:
@@ -55,46 +56,71 @@ data_encoded = pd.get_dummies(df, columns=categorical_columns)
 print(data_encoded)
 print(data_encoded.columns)
 
-# In[]
-X = data_encoded.iloc[:, :-2].values
+# %%
+X = data_encoded.drop('Close', axis=1)
 scaler = MinMaxScaler()
 X1 = scaler.fit_transform(X)
 Y = data_encoded['Close'].values
 X_train, X_test, Y_train, Y_test = train_test_split(X1, Y, test_size=0.2, random_state=seed)
 
-#In[]
+#%%
 # Linear Regression model
 linear_reg = linear_model.LinearRegression()
 linear_reg.fit(X_train, Y_train)
 linear_reg_predictions = linear_reg.predict(X_test)
 mse_linear_reg = mean_squared_error(Y_test, linear_reg_predictions)
-print("Linear Regression Mean Squared Error:", mse_linear_reg)
+evs_linear_reg = explained_variance_score(Y_test, linear_reg_predictions)
+r2_linear_reg = r2_score(Y_test, linear_reg_predictions)
+print(f"\nLinear Regression Stats:\n"
+      f"Mean Squared Error: {mse_linear_reg}\n"
+      f"Explained Variance Score: {evs_linear_reg}\n"
+      f"R^2 Score: {r2_linear_reg}\n")
 
-#In[]
+#%%
 # Ridge Regression model
-ridge_reg = linear_model.Ridge() 
-param_grid = {'alpha': [0.1, 1.0, 10.0]}
+ridge_reg = linear_model.Ridge(max_iter=10000) 
+param_grid = {
+    'alpha': [0.1, 1.0, 10.0],
+    'solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'saga']  
+}
 grid_search = GridSearchCV(ridge_reg, param_grid, cv=5, scoring='neg_mean_squared_error')
 grid_search.fit(X_train, Y_train)
-best_params = grid_search.best_params_
-best_model = grid_search.best_estimator_ # You can adjust the alpha parameter
-ridge_reg_predictions = best_model.predict(X_test)
+best_ridge_params = grid_search.best_params_
+best_ridge_model = grid_search.best_estimator_ # You can adjust the alpha parameter
+ridge_reg_predictions = best_ridge_model.predict(X_test)
 mse_ridge_reg = mean_squared_error(Y_test, ridge_reg_predictions)
-print("Ridge Regression Mean Squared Error:", mse_ridge_reg)
-print(best_params)
-print(best_model)
+evs_ridge_reg = explained_variance_score(Y_test, ridge_reg_predictions)
+r2_ridge_reg = r2_score(Y_test, ridge_reg_predictions)
+print(f"Ridge Regression Stats:\n"
+      f"Mean Squared Error: {mse_ridge_reg}\n"
+      f"Explained Variance Score: {evs_ridge_reg}\n"
+      f"R^2 Score: {r2_ridge_reg}\n"
+      f"Best Parameters: {best_ridge_params}\n"
+      f"Best Ridge Regression Model: {best_ridge_model}\n")
 
-#In[]
-# Logistic Regression model
-# logistic_reg = linear_model.LogisticRegression()
-# logistic_reg.fit(X_train, Y_train)
-# logistic_reg_predictions = logistic_reg.predict(X_test)
-# accuracy = accuracy_score(Y_test, logistic_reg_predictions)  # You'll need to import accuracy_score
-# print("Logistic Regression Accuracy:", accuracy)
+#%%
+# Lasso
+lasso = linear_model.Lasso(max_iter=100000)
+param_grid = {
+    'alpha': [0.01, .05, 0.1, 0.5, 1.0, 5.0, 10.0],
+    'tol': [.000001, .00001, .0001, .001, .01, .1]
+}
+grid_search = GridSearchCV(estimator=lasso, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
+grid_search.fit(X_train, Y_train)
+best_params = grid_search.best_params_
+optimal_lasso = grid_search.best_estimator_
+optimal_lasso.fit(X_train, Y_train)
+Y_pred = optimal_lasso.predict(X_test)
+mse_lasso = mean_squared_error(Y_test, Y_pred)
+r2_lasso = r2_score(Y_test, Y_pred)
+print(f"Lasso Stats:\n"
+      f"Mean Squared Error: {mse_lasso}\n"
+      f"R^2 Score: {r2_lasso}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {optimal_lasso}\n")
 
-# %%
+#%%
 # Decision Tree model
-# Define a parameter grid to search
 param_grid = {
     'max_depth': [None, 10, 20, 30, 40],
     'min_samples_split': [2, 5, 10],
@@ -107,17 +133,20 @@ best_params = grid_search.best_params_
 best_decision_tree = grid_search.best_estimator_
 decision_tree_predictions = best_decision_tree.predict(X_test)
 mse_decision_tree = mean_squared_error(Y_test, decision_tree_predictions)
-print("Best Decision Tree Mean Squared Error:", mse_decision_tree)
-print(best_params)
-print(best_decision_tree)
+evs_decision_tree = explained_variance_score(Y_test, decision_tree_predictions)
+r2_decision_tree = r2_score(Y_test, decision_tree_predictions)
+print(f"Decision Tree Stats:\n"
+      f"Mean Squared Error: {mse_decision_tree}\n"
+      f"Explained Variance Score: {evs_decision_tree}\n"
+      f"R^2 Score: {r2_decision_tree}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {best_decision_tree}\n")
 
 #%%
 # Random Forest model
 param_grid = {
-    'n_estimators': [10, 50, 100, 200],  # You can adjust the number of estimators
-    'max_depth': [None, 10, 20, 30, 40],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4]
+    'n_estimators': [10, 50, 100],  # You can adjust the number of estimators
+    'max_depth': [None, 10, 20, 30, 40]
 }
 random_forest = RandomForestRegressor()  # You can adjust the number of estimators
 grid_search = GridSearchCV(random_forest, param_grid, cv=5, scoring='neg_mean_squared_error')
@@ -126,202 +155,117 @@ best_params = grid_search.best_params_
 best_random_forest = grid_search.best_estimator_
 random_forest_predictions = best_random_forest.predict(X_test)
 mse_random_forest = mean_squared_error(Y_test, random_forest_predictions)
-print("Best Random Forest Mean Squared Error:", mse_random_forest)
-print(best_params)
-print(best_random_forest)
+evs_random_forest = explained_variance_score(Y_test, random_forest_predictions)
+r2_random_forest = r2_score(Y_test, random_forest_predictions)
+print(f"Random Forest Stats:\n"
+      f"Mean Squared Error: {mse_random_forest}\n"
+      f"Explained Variance Score: {evs_random_forest}\n"
+      f"R^2 Score: {r2_random_forest}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {best_random_forest}\n")
 
 #%%
-# LSTM
-
-# Define a function to create your LSTM model
-def create_lstm_model(units=50, optimizer='adam'):
-    model = Sequential()
-    model.add(LSTM(units, input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=True))
-    model.add(Dense(1))
+# deep neural network model
+def create_dnn_model(optimizer='adam', units=64):
+    model = keras.Sequential([
+        keras.layers.Dense(units, activation='relu', input_shape=(X_train.shape[1],)),
+        keras.layers.Dense(64, activation='relu'),
+        keras.layers.Dense(1)  # Output layer
+    ])
     model.compile(optimizer=optimizer, loss='mean_squared_error')
     return model
 
-lstm_model = KerasRegressor(build_fn=create_lstm_model, epochs=10, batch_size=32, verbose=0)
-param_dist = {
-    'units': [50, 100, 150],
-    'optimizer': ['adam', 'sgd', 'rmsprop']
+dnn_regressor = KerasRegressor(model=create_dnn_model, verbose=0, units=64)
+param_grid = {
+    'units': [4, 8, 16, 32, 64],  # Change 'neurons' to 'units'
+    'batch_size': [16, 32, 64],
+    'epochs': [10, 20, 30],
 }
-random_search = RandomizedSearchCV(lstm_model, param_distributions=param_dist, cv=3, n_iter=10, scoring='neg_mean_squared_error', n_jobs=-1)
-random_search.fit(X_train, Y_train)
-best_params = random_search.best_params_
-best_lstm_model = random_search.best_estimator_
-loss = best_lstm_model.model.evaluate(X_test, Y_test)
-print("Best LSTM Test Loss:", loss)
-print(best_params)
-print(best_lstm_model)
-
-#%%
-# GBT
-gbt = GradientBoostingClassifier()
-params_gbt = {
-    'n_estimators': [100, 200, 300],  # Number of boosting stages to be used
-    'learning_rate': [0.01, 0.1, 0.2],  # Step size shrinkage
-    'max_depth': [3, 4, 5]  # Maximum depth of individual trees
-}
-gbt_gs = GridSearchCV(gbt, params_gbt, cv=5)
-gbt_gs.fit(X_train, Y_train)
-best_gbt = gbt_gs.best_estimator_
-print("Best Hyperparameters:", gbt_gs.best_params_)
-predictions = best_gbt.predict(X_test)
-loss = best_gbt.model.evaluate(X_test, Y_test)
-print("Best LSTM Test Loss:", loss)
-
-#%%
-# 1D CNN
-# Create a function to build the CNN model
-def create_cnn_model(filters=32, kernel_size=3, optimizer='adam'):
-    model = Sequential()
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2])))
-    model.add(MaxPooling1D(pool_size=2))
-    model.add(Flatten())
-    model.add(Dense(1))
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
-    return model
-cnn_model = KerasRegressor(build_fn=create_cnn_model, epochs=10, batch_size=32, verbose=0)
-cnn_param_dist = {
-    'filters': [16, 32, 64],
-    'kernel_size': [3, 5, 7],
-    'optimizer': ['adam', 'sgd', 'rmsprop']
-}
-random_search = RandomizedSearchCV(cnn_model, param_distributions=param_dist, cv=3, n_iter=10, scoring='neg_mean_squared_error', n_jobs=-1)
-random_search.fit(X_train, Y_train)
-best_params = random_search.best_params_
-best_cnn_model = random_search.best_estimator_
-loss = best_cnn_model.model.evaluate(X_test, Y_test)
-print("Best LSTM Test Loss:", loss)
-print(best_params)
-print(best_cnn_model)
+grid_search = GridSearchCV(estimator=dnn_regressor, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3)
+grid_search.fit(X_train, Y_train)
+best_units = grid_search.best_params_['units']  # Update to 'units'
+best_batch_size = grid_search.best_params_['batch_size']
+best_epochs = grid_search.best_params_['epochs']
+best_params = grid_search.best_params_
+best_dnn_model = grid_search.best_estimator_
+optimal_dnn_model = create_dnn_model(units=best_units)  # Update to 'units'
+optimal_dnn_model.fit(X_train, Y_train, batch_size=best_batch_size, epochs=best_epochs, verbose=0)
+Y_pred = optimal_dnn_model.predict(X_test)
+mse_dnn = mean_squared_error(Y_test, Y_pred)
+r2_dnn = r2_score(Y_test, Y_pred)
+print(f"DNN Stats:\n"
+      f"Mean Squared Error: {mse_dnn}\n"
+      f"R^2 Score: {r2_dnn}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {best_dnn_model}\n")
 
 #%%
 # RNN
+X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
+X_test = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
+scaler_y = MinMaxScaler()
+Y_train = scaler_y.fit_transform(Y_train.reshape(-1, 1)).reshape(-1)
+Y_test = scaler_y.transform(Y_test.reshape(-1, 1)).reshape(-1)
+
 def create_rnn_model(units=50, optimizer='adam'):
     model = Sequential()
     model.add(SimpleRNN(units, input_shape=(X_train.shape[1], X_train.shape[2])))
     model.add(Dense(1))
     model.compile(optimizer=optimizer, loss='mean_squared_error')
     return model
-rnn_model = KerasRegressor(build_fn=create_cnn_model, epochs=10, batch_size=32, verbose=0)
+
+rnn_model = KerasRegressor(model=create_rnn_model, units = 50, epochs=10, batch_size=32, verbose=0)
 rnn_param_dist = {
     'units': [50, 100, 150],
     'optimizer': ['adam', 'sgd', 'rmsprop']
 }
-random_search = RandomizedSearchCV(rnn_model, param_distributions=param_dist, cv=3, n_iter=10, scoring='neg_mean_squared_error', n_jobs=-1)
+random_search = RandomizedSearchCV(rnn_model, param_distributions=rnn_param_dist, cv=3, n_iter=10, scoring='neg_mean_squared_error', n_jobs=-1)
 random_search.fit(X_train, Y_train)
 best_params = random_search.best_params_
 best_rnn_model = random_search.best_estimator_
-loss = best_rnn_model.model.evaluate(X_test, Y_test)
-print("Best LSTM Test Loss:", loss)
-print(best_params)
-print(best_rnn_model)
+y_pred = best_rnn_model.predict(X_test)
+y_pred = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).reshape(-1)
+mse_rnn = mean_squared_error(Y_test, y_pred)
+r2_rnn = r2_score(Y_test, y_pred)
+print(f"RNN Stats:\n"
+      f"Mean Squared Error: {mse_rnn}\n"
+      f"R^2 Score: {r2_rnn}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {best_rnn_model}\n")
 
 #%%
-# Multinomial Naive Bayes classifier
-nb_classifier = MultinomialNB()
-nb_classifier.fit(X_train, Y_train)
-Y_pred = nb_classifier.predict(X_test)
-accuracy = accuracy_score(Y_test, Y_pred)
-print("Naive Bayes Accuracy:", accuracy)
+# LSTM
+X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
+X_test = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
+scaler_y = MinMaxScaler()
+Y_train = scaler_y.fit_transform(Y_train.reshape(-1, 1)).reshape(-1)
+Y_test = scaler_y.transform(Y_test.reshape(-1, 1)).reshape(-1)
 
-#%%
-# Elastic Net
-elastic_net = linear_model.ElasticNet()
-param_grid = {
-    'alpha': [0.01, 0.1, 1.0, 10.0],
-    'l1_ratio': [0.1, 0.5, 0.9],
-}
-grid_search = GridSearchCV(estimator=elastic_net, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
-grid_search.fit(X_train, Y_train)
-best_alpha = grid_search.best_params_['alpha']
-best_l1_ratio = grid_search.best_params_['l1_ratio']
-optimal_elastic_net = linear_model.ElasticNet(alpha=best_alpha, l1_ratio=best_l1_ratio)
-optimal_elastic_net.fit(X_train, Y_train)
-Y_pred = optimal_elastic_net.predict(X_test)
-mse = mean_squared_error(Y_test, Y_pred)
-print("Optimized Elastic Net Mean Squared Error:", mse)
-print(best_alpha)
-print(optimal_elastic_net)
-
-#%%
-# Lasso
-lasso = linear_model.Lasso()
-param_grid = {
-    'alpha': [0.01, 0.1, 1.0, 10.0],
-}
-grid_search = GridSearchCV(estimator=lasso, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
-grid_search.fit(X_train, Y_train)
-best_alpha = grid_search.best_params_['alpha']
-optimal_lasso = linear_model.Lasso(alpha=best_alpha)
-optimal_lasso.fit(X_train, Y_train)
-Y_pred = optimal_lasso.predict(X_test)
-mse = mean_squared_error(Y_test, Y_pred)
-print("Optimized Lasso Mean Squared Error:", mse)
-print(best_alpha)
-print(optimal_lasso)
-
-#%%
-# SVM
-svm = SVR()
-param_grid = {
-    'C': [1, 10, 100],
-    'epsilon': [0.01, 0.1, 1],
-    'kernel': ['linear', 'rbf'],
-}
-grid_search = GridSearchCV(estimator=svm, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
-grid_search.fit(X_train, Y_train)
-best_C = grid_search.best_params_['C']
-best_epsilon = grid_search.best_params_['epsilon']
-best_kernel = grid_search.best_params_['kernel']
-optimal_svm = SVR(C=best_C, epsilon=best_epsilon, kernel=best_kernel)
-optimal_svm.fit(X_train, Y_train)
-Y_pred = optimal_svm.predict(X_test)
-mse = mean_squared_error(Y_test, Y_pred)
-print("Optimized SVM Mean Squared Error:", mse)
-print(best_C)
-print(optimal_svm)
-#%%
-# Deep Boltzmann Machines
-pretrained_dbm = keras.applications.VGG16(weights='imagenet', include_top=False)
-model = keras.Sequential()
-model.add(pretrained_dbm)
-model.add(layers.Flatten())
-model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dense(1, activation='sigmoid'))
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.fit(X_train, Y_train, epochs=10, batch_size=32)
-accuracy = model.evaluate(X_test, Y_test)
-print("DBM Model Accuracy:", accuracy)
-
-#%%
-# deep neural network model
-def create_dnn_model(optimizer='adam', neurons=128):
-    model = keras.Sequential([
-        keras.layers.Dense(neurons, activation='relu', input_shape=(X_train.shape[1],)),
-        keras.layers.Dense(64, activation='relu'),
-        keras.layers.Dense(1)  # Output layer
-    ])
+def create_lstm_model(units=50, optimizer='adam'):
+    model = Sequential()
+    model.add(LSTM(units, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(Dense(1, activation='linear'))  # Linear activation for regression
     model.compile(optimizer=optimizer, loss='mean_squared_error')
     return model
-dnn_regressor = KerasRegressor(build_fn=create_dnn_model, verbose=0)
-param_grid = {
-    'neurons': [64, 128, 256],
-    'batch_size': [16, 32, 64],
-    'epochs': [10, 20, 30],
+
+lstm_model = KerasRegressor(model=create_lstm_model, epochs=10, batch_size=32, verbose=0)
+param_dist = {
+    'batch_size': [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+    'optimizer': ['adam', 'sgd', 'rmsprop']
 }
-grid_search = GridSearchCV(estimator=dnn_regressor, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3)
+grid_search = GridSearchCV(lstm_model, param_dist, cv=3)
 grid_search.fit(X_train, Y_train)
-best_neurons = grid_search.best_params_['neurons']
-best_batch_size = grid_search.best_params_['batch_size']
-best_epochs = grid_search.best_params_['epochs']
-optimal_dnn_model = create_dnn_model(neurons=best_neurons)
-optimal_dnn_model.fit(X_train, Y_train, batch_size=best_batch_size, epochs=best_epochs, verbose=0)
-Y_pred = optimal_dnn_model.predict(X_test)
-mse = mean_squared_error(Y_test, Y_pred)
-print("Optimized DNN Mean Squared Error:", mse)
+best_params = grid_search.best_params_
+best_lstm_model = grid_search.best_estimator_
+y_pred = best_lstm_model.predict(X_test)
+y_pred = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).reshape(-1)
+mse_lstm = mean_squared_error(Y_test, y_pred)
+r2_lstm = r2_score(Y_test, y_pred)
+print(f"LSTM Stats:\n"
+      f"Mean Squared Error: {mse_lstm}\n"
+      f"R^2 Score: {r2_lstm}\n"
+      f"Best Parameters: {best_params}\n"
+      f"Best Model: {best_lstm_model}\n")
 
 #%%
 # Prophet
@@ -335,13 +279,56 @@ print("Optimized DNN Mean Squared Error:", mse)
 # prophet_predictions = prophet_forecast.tail(len(Y_test))['yhat'].values
 
 #%%
-# Load pre-trained GPT-2 model and tokenizer
-# model_name = "gpt2"  # You can use other models like "gpt2-medium" for better performance
-# model = GPT2LMHeadModel.from_pretrained(model_name)
-# tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-# input_text = "Today's close price is $100. Tomorrow's close price will be "
-# input_ids = tokenizer.encode(input_text, return_tensors="pt")
-# with torch.no_grad():
-#     output = model.generate(input_ids, max_length=20, num_return_sequences=1, no_repeat_ngram_size=2, top_k=50)
-# predicted_prices = [tokenizer.decode(output[0], skip_special_tokens=True)]
-# print("Predicted Close Prices:", predicted_prices)
+# Elastic Net
+# scaler = StandardScaler()
+# X_train_scaled = scaler.fit_transform(X_train)
+# X_test_scaled = scaler.transform(X_test)
+# param_grid = {
+#     'l1_ratio': [0.1, 0.5, 0.7, 0.9],
+# }
+# elastic_net = linear_model.ElasticNetCV(alphas=[0.0001, 0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1], cv=5, random_state=0)
+# grid_search = GridSearchCV(estimator=elastic_net, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
+# grid_search.fit(X_train_scaled, Y_train)
+# best_l1_ratio = grid_search.best_params_['l1_ratio']
+# best_alpha = grid_search.best_params_['alphas']
+# best_params = grid_search.best_params_
+# optimal_elastic_net = linear_model.ElasticNetCV(l1_ratio=best_l1_ratio, alphas=best_alpha, cv=5, random_state=0)
+# optimal_elastic_net.fit(X_train_scaled, Y_train)
+# Y_pred = optimal_elastic_net.predict(X_test_scaled)
+# mse_elastic = mean_squared_error(Y_test, Y_pred)
+# r2_elastic = r2_score(Y_test, Y_pred)
+# print(f"Elastic-Net Stats:\n"
+#       f"Mean Squared Error: {mse_elastic}\n"
+#       f"R^2 Score: {r2_elastic}\n"
+#       f"Best Parameters: {best_params}\n"
+#       f"Best Model: {optimal_elastic_net}\n\n")
+
+# #%%
+# # SVM
+# scaler = MinMaxScaler()
+# X_scaled = scaler.fit_transform(X)
+# X_train_scaled, X_test_scaled, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.2, random_state=seed)
+# print(data_encoded.shape)
+
+# svm = SVR(max_iter=10000, epsilon= 0)
+# param_grid = {
+#     'C': [1, 10, 100],
+#     'tol': [.000001, .00001, .0001, .001],
+#     'degree': [1, 3, 5, 10, 100]
+# }
+# grid_search = GridSearchCV(estimator=svm, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
+# grid_search.fit(X_train_scaled, Y_train)
+# best_C = grid_search.best_params_['C']
+# best_epsilon = grid_search.best_params_['epsilon']
+# best_kernel = grid_search.best_params_['kernel']
+# best_params = grid_search.best_params_
+# optimal_svm = SVR(C=best_C, epsilon=best_epsilon, kernel=best_kernel)
+# optimal_svm.fit(X_train_scaled, Y_train)
+# Y_pred = optimal_svm.predict(X_test_scaled)
+# mse_svm = mean_squared_error(Y_test, Y_pred)
+# r2_svm = r2_score(Y_test, Y_pred)
+# print(f"RNN Stats:\n"
+#       f"Mean Squared Error: {mse_svm}\n"
+#       f"R^2 Score: {r2_svm}\n"
+#       f"Best Parameters: {best_params}\n"
+#       f"Best Model: {optimal_svm}\n\n")

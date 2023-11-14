@@ -46,5 +46,4 @@ def generate_all_signals(stock_csv_path, vix_csv_path):
     return all_signals_df
 
 signals_df = generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
-print(signals_df)
 # %%
