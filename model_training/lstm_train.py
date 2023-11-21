@@ -1,177 +1,89 @@
-
+#%%
+import sys
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
-import matplotlib.pyplot as plt
-import datetime
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import layers
-from copy import deepcopy
+from tensorflow import keras
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+import ta 
+from Strategies import call_Strategies
 
-df = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv')
+# Load your OHLCV and indicator/strategies datasets
+# Assuming df_ohlc is the OHLCV dataset and df_indicators is the indicators/strategies dataset
+# Make sure your datasets are appropriately preprocessed before loading
+#%%
+spy_data = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv')
+spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
+indicators_df = pd.DataFrame(index=spy_data.index)
+indicators_df = ta.add_all_ta_features(
+    spy_data, open="Open", high="High", low="Low", close="Close", volume="Volume", fillna=False
+)
+all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
+df = pd.concat([indicators_df, all_signals_df], axis = 1)
 
-def str_to_datetime(s):
-  split = s.split('/')
-  year, month, day = int(split[2]), int(split[0]), int(split[1])
-  return datetime.datetime(year=year, month=month, day=day)
+# Assuming 'Close' is the target variable in df_ohlc
+target_variable = 'Close'
+print(indicators_df)
+print(all_signals_df)
+print(df)
+print('indicators shape:',indicators_df.shape)
+print('signals shape:',all_signals_df.shape)
+print('df shape:',df.shape)
 
-df['Date'] = df['Date'].apply(str_to_datetime)
+#%%
+# Drop NaN values
+df = df.dropna()
 
-df.index = df.pop('Date')
-plt.plot(df.index, df['Close'])
+# Extract features and target variable
+features = df[df.columns.difference([target_variable])].values  # Exclude 'Date' and target variable from features
+target = df[target_variable]
 
-def df_to_windowed_df(dataframe, first_date_str, last_date_str, n=3):
-  first_date = str_to_datetime(first_date_str)
-  last_date  = str_to_datetime(last_date_str)
+# Normalize features
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_features = scaler.fit_transform(features)
 
-  target_date = first_date
+# Create sequences for LSTM
+def create_sequences(data, sequence_length=10):
+    sequences = []
+    for i in range(len(data) - sequence_length):
+        seq = data[i:i + sequence_length]
+        sequences.append(seq)
+    return np.array(sequences)
 
-  dates = []
-  X, Y = [], []
+# Define sequence length (you may adjust this based on your data)
+sequence_length = 10
 
-  last_time = False
-  while True:
-    df_subset = dataframe.loc[:target_date].tail(n+1)
+# Create sequences for features and target
+X = create_sequences(scaled_features, sequence_length)
+y = target.values[sequence_length:]
 
-    if len(df_subset) != n+1:
-      print(f'Error: Window of size {n} is too large for date {target_date}')
-      return
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print(X_train.shape)
+print(X_train)
 
-    values = df_subset['Close'].to_numpy()
-    x, y = values[:-1], values[-1]
+# Build LSTM model
+model = Sequential()
+model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
+model.add(Dropout(0.2))
+model.add(Dense(1))
+model.compile(optimizer='adam', loss='mean_squared_error')
 
-    dates.append(target_date)
-    X.append(x)
-    Y.append(y)
+# Train the model
+model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
 
-    next_week = dataframe.loc[target_date:target_date+datetime.timedelta(days=7)]
-    next_datetime_str = str(next_week.head(2).tail(1).index.values[0])
-    next_date_str = next_datetime_str.split('T')[0]
-    year_month_day = next_date_str.split('-')
-    year, month, day = year_month_day
-    next_date = datetime.datetime(day=int(day), month=int(month), year=int(year))
+# Evaluate the model
+loss = model.evaluate(X_test, y_test)
+print(f'Mean Squared Error on Test Data: {loss}')
 
-    if last_time:
-      break
+# Make predictions
+predictions = model.predict(X_test)
 
-    target_date = next_date
+# Inverse transform the predictions and original target values to get back to the original scale
+predictions = scaler.inverse_transform(predictions)
+y_test_original_scale = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-    if target_date == last_date:
-      last_time = True
-
-  ret_df = pd.DataFrame({})
-  ret_df['Target Date'] = dates
-
-  X = np.array(X)
-  for i in range(0, n):
-    X[:, i]
-    ret_df[f'Target-{n-i}'] = X[:, i]
-
-  ret_df['Target'] = Y
-
-  return ret_df
-
-# Start day second time around: '2021-03-25'
-windowed_df = df_to_windowed_df(df, '1/1/2010', '6/1/2023', n=7)
-
-def windowed_df_to_date_X_y(windowed_dataframe):
-  df_as_np = windowed_dataframe.to_numpy()
-
-  dates = df_as_np[:, 0]
-
-  middle_matrix = df_as_np[:, 1:-1]
-  X = middle_matrix.reshape((len(dates), middle_matrix.shape[1], 1))
-
-  Y = df_as_np[:, -1]
-
-  return dates, X.astype(np.float32), Y.astype(np.float32)
-
-dates, X, y = windowed_df_to_date_X_y(windowed_df)
-
-q_80 = int(len(dates) * .8)
-q_90 = int(len(dates) * .9)
-
-dates_train, X_train, y_train = dates[:q_80], X[:q_80], y[:q_80]
-
-dates_val, X_val, y_val = dates[q_80:q_90], X[q_80:q_90], y[q_80:q_90]
-dates_test, X_test, y_test = dates[q_90:], X[q_90:], y[q_90:]
-
-plt.plot(dates_train, y_train)
-plt.plot(dates_val, y_val)
-plt.plot(dates_test, y_test)
-
-plt.legend(['Train', 'Validation', 'Test'])
-plt.show()
-
-model = Sequential([layers.Input((7, 1)),
-                    layers.LSTM(64),
-                    layers.Dense(32, activation='relu'),
-                    layers.Dense(32, activation='relu'),
-                    layers.Dense(1)])
-
-model.compile(loss='mse',
-              optimizer=Adam(learning_rate=0.001),
-              metrics=['mean_absolute_error'])
-
-model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=100)
-
-train_predictions = model.predict(X_train).flatten()
-
-plt.plot(dates_train, train_predictions)
-plt.plot(dates_train, y_train)
-plt.legend(['Training Predictions', 'Training Observations'])
-plt.show()
-
-val_predictions = model.predict(X_val).flatten()
-
-plt.plot(dates_val, val_predictions)
-plt.plot(dates_val, y_val)
-plt.legend(['Validation Predictions', 'Validation Observations'])
-plt.show()
-
-test_predictions = model.predict(X_test).flatten()
-
-plt.plot(dates_test, test_predictions)
-plt.plot(dates_test, y_test)
-plt.legend(['Testing Predictions', 'Testing Observations'])
-plt.show()
-
-plt.plot(dates_train, train_predictions)
-plt.plot(dates_train, y_train)
-plt.plot(dates_val, val_predictions)
-plt.plot(dates_val, y_val)
-plt.plot(dates_test, test_predictions)
-plt.plot(dates_test, y_test)
-plt.legend(['Training Predictions',
-            'Training Observations',
-            'Validation Predictions',
-            'Validation Observations',
-            'Testing Predictions',
-            'Testing Observations'])
-plt.show()
-
-recursive_predictions = []
-recursive_dates = np.concatenate([dates_val, dates_test])
-
-for target_date in recursive_dates:
-  last_window = deepcopy(X_train[-1])
-  next_prediction = model.predict(np.array([last_window])).flatten()
-  recursive_predictions.append(next_prediction)
-  last_window[-1] = next_prediction
-
-plt.plot(dates_train, train_predictions)
-plt.plot(dates_train, y_train)
-plt.plot(dates_val, val_predictions)
-plt.plot(dates_val, y_val)
-plt.plot(dates_test, test_predictions)
-plt.plot(dates_test, y_test)
-plt.plot(recursive_dates, recursive_predictions)
-plt.legend(['Training Predictions',
-            'Training Observations',
-            'Validation Predictions',
-            'Validation Observations',
-            'Testing Predictions',
-            'Testing Observations',
-            'Recursive Predictions'])
-plt.show()
-
+# Now you can analyze and visualize the predictions and actual values
