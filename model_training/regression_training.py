@@ -76,7 +76,6 @@ Y = data_encoded['Close'].values
 X_train, X_test, Y_train, Y_test = train_test_split(X1, Y, test_size=0.2, random_state=seed)
 min_components = min(X_train.shape[0], X_train.shape[1], 1)
 
-
 models = [
     (linear_model.LinearRegression(), {}),
     (linear_model.Ridge(max_iter=10000), {'alpha': [i / 10.0 for i in range(1, 101)], 'solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'saga'], 'tol': [.000001, .00001, .0001, .001, .01, .1]}),
