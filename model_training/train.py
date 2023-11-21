@@ -79,10 +79,7 @@ print(f"\nLinear Regression Stats:\n"
 #%%
 # Ridge Regression model
 ridge_reg = linear_model.Ridge(max_iter=10000) 
-param_grid = {
-    'alpha': [0.1, 1.0, 10.0],
-    'solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'saga']  
-}
+param_grid = {'alpha': [i / 10.0 for i in range(1, 101)], 'solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'saga'], 'tol': [.000001, .00001, .0001, .001, .01, .1]}
 grid_search = GridSearchCV(ridge_reg, param_grid, cv=5, scoring='neg_mean_squared_error')
 grid_search.fit(X_train, Y_train)
 best_ridge_params = grid_search.best_params_
@@ -101,10 +98,7 @@ print(f"Ridge Regression Stats:\n"
 #%%
 # Lasso
 lasso = linear_model.Lasso(max_iter=100000)
-param_grid = {
-    'alpha': [0.01, .05, 0.1, 0.5, 1.0, 5.0, 10.0],
-    'tol': [.000001, .00001, .0001, .001, .01, .1]
-}
+param_grid = {'alpha': [i / 10.0 for i in range(1, 101)], 'tol': [.000001, .00001, .0001, .001, .01, .1], 'selection': ['random']}
 grid_search = GridSearchCV(estimator=lasso, param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
 grid_search.fit(X_train, Y_train)
 best_params = grid_search.best_params_
@@ -121,11 +115,7 @@ print(f"Lasso Stats:\n"
 
 #%%
 # Decision Tree model
-param_grid = {
-    'max_depth': [None, 10, 20, 30, 40],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4]
-}
+param_grid = {'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'], 'min_samples_split': [i for i in range(1, 11)], 'min_samples_leaf': [i for i in range(1, 11)]}
 decision_tree = DecisionTreeRegressor()
 grid_search = GridSearchCV(decision_tree, param_grid, cv=5, scoring='neg_mean_squared_error')
 grid_search.fit(X_train, Y_train)
@@ -144,10 +134,7 @@ print(f"Decision Tree Stats:\n"
 
 #%%
 # Random Forest model
-param_grid = {
-    'n_estimators': [10, 50, 100],  # You can adjust the number of estimators
-    'max_depth': [None, 10, 20, 30, 40]
-}
+param_grid = {'n_estimators': list(range(101)), 'min_samples_split': [i for i in range(1, 11)], 'min_samples_leaf': [i for i in range(1, 11)]}
 random_forest = RandomForestRegressor()  # You can adjust the number of estimators
 grid_search = GridSearchCV(random_forest, param_grid, cv=5, scoring='neg_mean_squared_error')
 grid_search.fit(X_train, Y_train)
@@ -266,6 +253,13 @@ print(f"LSTM Stats:\n"
       f"R^2 Score: {r2_lstm}\n"
       f"Best Parameters: {best_params}\n"
       f"Best Model: {best_lstm_model}\n")
+
+
+# LightGBM
+# XGBoost
+# ADABoost
+# MLP
+# GRU
 
 #%%
 # Prophet
