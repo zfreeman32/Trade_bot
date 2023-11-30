@@ -25,8 +25,6 @@ def preprocess_data(df, target_col='Close', sequence_length=10, test_size=0.2):
     Parameters:
     - df: Concatenated dataframe with OHLCV, indicators, and signals.
     - target_col: Name of the target variable (e.g., 'Close').
-    - indicators_cols: List of column names for indicator features.
-    - signals_cols: List of column names for signal features.
     - sequence_length: Length of sequences for time series data.
     - test_size: Fraction of the data to be used for testing.
 
@@ -60,8 +58,9 @@ print(X_train)
 print(X_train.shape)
 
 def build_lstm_model(neurons=50, dropout_rate=0.2):
+    X_train_reshaped = X_train.values.reshape(32, X_train.shape[0], X_train.shape[1])
     model = Sequential()
-    model.add(LSTM(neurons, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(LSTM(neurons, input_shape=(X_train_reshaped.shape[1], X_train_reshaped.shape[2])))
     model.add(Dropout(dropout_rate))
     model.add(Dense(1))
     model.compile(optimizer='adam', loss='mean_squared_error')
