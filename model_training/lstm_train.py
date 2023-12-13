@@ -10,6 +10,11 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 import ta 
 from Strategies import call_Strategies
+from model_training import preprocess_data
+from matplotlib import pyplot
+from numpy import concatenate
+from math import sqrt
+from sklearn.metrics import mean_squared_error
 
 # Load your OHLCV and indicator/strategies datasets
 # Assuming df_ohlc is the OHLCV dataset and df_indicators is the indicators/strategies dataset
@@ -24,66 +29,37 @@ indicators_df = ta.add_all_ta_features(
 all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 df = pd.concat([indicators_df, all_signals_df], axis = 1)
 
-# Assuming 'Close' is the target variable in df_ohlc
-target_variable = 'Close'
-print(indicators_df)
-print(all_signals_df)
-print(df)
-print('indicators shape:',indicators_df.shape)
-print('signals shape:',all_signals_df.shape)
-print('df shape:',df.shape)
+[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df)
+
+# normalize features
+scaler = MinMaxScaler(feature_range=(0, 1))
 
 #%%
-# Drop NaN values
-df = df.dropna()
-
-# Extract features and target variable
-features = df[df.columns.difference([target_variable])].values  # Exclude 'Date' and target variable from features
-target = df[target_variable]
-
-# Normalize features
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_features = scaler.fit_transform(features)
-
-# Create sequences for LSTM
-def create_sequences(data, sequence_length=10):
-    sequences = []
-    for i in range(len(data) - sequence_length):
-        seq = data[i:i + sequence_length]
-        sequences.append(seq)
-    return np.array(sequences)
-
-# Define sequence length (you may adjust this based on your data)
-sequence_length = 10
-
-# Create sequences for features and target
-X = create_sequences(scaled_features, sequence_length)
-y = target.values[sequence_length:]
-
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(X_train.shape)
-print(X_train)
-
-# Build LSTM model
+# design network
 model = Sequential()
-model.add(LSTM(50, input_shape=(X_train.shape[1], X_train.shape[2])))
-model.add(Dropout(0.2))
+model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
 model.add(Dense(1))
-model.compile(optimizer='adam', loss='mean_squared_error')
-
-# Train the model
-model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
-
-# Evaluate the model
-loss = model.evaluate(X_test, y_test)
-print(f'Mean Squared Error on Test Data: {loss}')
-
-# Make predictions
-predictions = model.predict(X_test)
-
-# Inverse transform the predictions and original target values to get back to the original scale
-predictions = scaler.inverse_transform(predictions)
-y_test_original_scale = scaler.inverse_transform(y_test.reshape(-1, 1))
-
-# Now you can analyze and visualize the predictions and actual values
+model.compile(loss='mae', optimizer='adam')
+# fit network
+history = model.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# plot history
+pyplot.plot(history.history['loss'], label='train')
+pyplot.plot(history.history['val_loss'], label='test')
+pyplot.legend()
+pyplot.show()
+ 
+# make a prediction
+yhat = model.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:,0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:,0]
+# calculate RMSE
+rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
+print('Test RMSE: %.3f' % rmse)
