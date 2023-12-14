@@ -8,6 +8,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import ParameterGrid
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.callbacks import EarlyStopping
 import ta 
 from Strategies import call_Strategies
 from model_training import preprocess_data
@@ -33,87 +35,157 @@ df = pd.concat([indicators_df, all_signals_df], axis = 1)
 
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
+# Fit the scaler on the training data
+scaler.fit(train_X.reshape(-1, 1))
+
+# design network
+model = Sequential()
+model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model.add(Dense(1))
+model.compile(loss='mae', optimizer='adam')
+# fit network
+history = model.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# plot history
+pyplot.plot(history.history['loss'], label='train')
+pyplot.plot(history.history['val_loss'], label='test')
+pyplot.legend()
+pyplot.show()
+ 
+# make a prediction
+yhat = model.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
+# calculate RMSE
+rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
+print('Test RMSE: %.3f' % rmse)
+
+
+
+
+
+
+
+
 
 #%%
-# Design network
-def build_lstm_model(units=50, activation='tanh', recurrent_activation='sigmoid',
-                     use_bias=True, kernel_initializer='glorot_uniform',
-                     recurrent_initializer='orthogonal', bias_initializer='zeros',
-                     unit_forget_bias=True, kernel_regularizer=None,
-                     recurrent_regularizer=None, bias_regularizer=None,
-                     activity_regularizer=None, kernel_constraint=None,
-                     recurrent_constraint=None, bias_constraint=None,
-                     dropout=0, recurrent_dropout=0, seed=None,
-                     return_sequences=False, return_state=False,
-                     go_backwards=False, stateful=False, unroll=False):
-    model = Sequential()
-    model.add(LSTM(units=units,
-                   activation=activation,
-                   recurrent_activation=recurrent_activation,
-                   use_bias=use_bias,
-                   kernel_initializer=kernel_initializer,
-                   recurrent_initializer=recurrent_initializer,
-                   bias_initializer=bias_initializer,
-                   unit_forget_bias=unit_forget_bias,
-                   kernel_regularizer=kernel_regularizer,
-                   recurrent_regularizer=recurrent_regularizer,
-                   bias_regularizer=bias_regularizer,
-                   activity_regularizer=activity_regularizer,
-                   kernel_constraint=kernel_constraint,
-                   recurrent_constraint=recurrent_constraint,
-                   bias_constraint=bias_constraint,
-                   dropout=dropout,
-                   recurrent_dropout=recurrent_dropout,
-                   seed=seed,
-                   return_sequences=return_sequences,
-                   return_state=return_state,
-                   go_backwards=go_backwards,
-                   stateful=stateful,
-                   unroll=unroll))
-    
-    # Add a Dense layer for output
-    model.add(Dense(1))  # Assuming you're predicting a single value (regression)
-    
-    model.compile(optimizer='adam', loss='mean_squared_error')  # You can change the loss function based on your problem type
-    
-    return model
-
 # Define a matrix of hyperparameters to search
-param_grid = {
-    'units': [8, 16, 32, 64, 128],
-    'activation': ['tanh', 'relu'],
-    'recurrent_activation': ['sigmoid', 'relu'],
-    'dropout': [0.2, 0.5],
-    'return_sequences': [True, False]
-}
+# param_grid = {
+#     'nodes_hidden_layers': [(32,), (64,), (32, 64)],
+#     'units_dense_layer': [8, 16, 32, 64, 128],
+#     'dropout_layers': [0.2, 0.5],
+#     'weight_initializer': ['glorot_uniform', 'orthogonal'],
+#     'activation_ function': ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ],
+#     'momentum': [0.9, 0.95],
+#     'epochs': [50, 100],
+#     'batch_size': [32, 64],
+#     'return_sequences': [True, False]
+# }
 
-# Generate all possible combinations of hyperparameters
-param_combinations = list(ParameterGrid(param_grid))
+# # Generate all possible combinations of hyperparameters
+# param_combinations = list(ParameterGrid(param_grid))
 
-best_model = None
-best_rmse = float('inf')
+# best_model = None
+# best_rmse = float('inf')
 
-for params in param_combinations:
-    # Build and train the model
-    model = build_lstm_model(**params)
-    model.fit(train_X, y_train, epochs=10, batch_size=32, verbose=0)
-    
-    # Make predictions on the test set
-    y_pred = model.predict(test_X)
-    
-    # Calculate RMSE
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
-    
-    # Print the RMSE for the current set of hyperparameters
-    print(f"Hyperparameters: {params}, RMSE: {rmse}")
-    
-    # Update the best model if the current model is better
-    if rmse < best_rmse:
-        best_rmse = rmse
-        best_model = model
+# for params in param_combinations:
+#     model = Sequential()
 
-# Print the hyperparameters of the best model
-print(f"Best Hyperparameters: {best_model.get_config()}")
+#     # Add LSTM layers
+#     for nodes in params['nodes_hidden_layers']:
+#         model.add(LSTM(nodes, activation=params['activation_function'], input_shape=(train_X.shape[1], train_X.shape[2])))
+
+#     # Add Dense layer
+#     model.add(Dense(params['units_dense_layer'], activation=params['activation_function']))
+
+#     # Add Dropout layers
+#     for dropout in params['dropout_layers']:
+#         model.add(Dropout(dropout))
+
+#     # Compile the model
+#     sgd = SGD(learning_rate=0.01, momentum=params['momentum'])
+#     model.compile(optimizer=sgd, loss='mean_squared_error')
+
+#     # Early stopping to prevent overfitting
+#     early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+
+#     # Train the model
+#     history = model.fit(train_X, y_train, epochs=params['epochs'], batch_size=params['batch_size'],
+#                         validation_data=(test_X, y_test), callbacks=[early_stopping], verbose=0)
+
+#     # Make predictions on the test set
+#     y_pred = model.predict(test_X)
+
+#     # Calculate RMSE
+#     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+#     # Print the RMSE for the current set of hyperparameters
+#     print(f"Hyperparameters: {params}, RMSE: {rmse}")
+
+#     # Update the best model if the current model is better
+#     if rmse < best_rmse:
+#         best_rmse = rmse
+#         best_model = model
+
+# # Print the hyperparameters of the best model
+# print(f"Best Hyperparameters: {best_model.get_config()}")
+
+
+
+
+
+
+
+# Design network
+# def build_lstm_model(units=50, activation='tanh', recurrent_activation='sigmoid',
+#                      use_bias=True, kernel_initializer='glorot_uniform',
+#                      recurrent_initializer='orthogonal', bias_initializer='zeros',
+#                      unit_forget_bias=True, kernel_regularizer=None,
+#                      recurrent_regularizer=None, bias_regularizer=None,
+#                      activity_regularizer=None, kernel_constraint=None,
+#                      recurrent_constraint=None, bias_constraint=None,
+#                      dropout=0, recurrent_dropout=0, seed=None,
+#                      return_sequences=False, return_state=False,
+#                      go_backwards=False, stateful=False, unroll=False):
+#     model = Sequential()
+#     model.add(LSTM(units=units,
+#                    activation=activation,
+#                    recurrent_activation=recurrent_activation,
+#                    use_bias=use_bias,
+#                    kernel_initializer=kernel_initializer,
+#                    recurrent_initializer=recurrent_initializer,
+#                    bias_initializer=bias_initializer,
+#                    unit_forget_bias=unit_forget_bias,
+#                    kernel_regularizer=kernel_regularizer,
+#                    recurrent_regularizer=recurrent_regularizer,
+#                    bias_regularizer=bias_regularizer,
+#                    activity_regularizer=activity_regularizer,
+#                    kernel_constraint=kernel_constraint,
+#                    recurrent_constraint=recurrent_constraint,
+#                    bias_constraint=bias_constraint,
+#                    dropout=dropout,
+#                    recurrent_dropout=recurrent_dropout,
+#                    seed=seed,
+#                    return_sequences=return_sequences,
+#                    return_state=return_state,
+#                    go_backwards=go_backwards,
+#                    stateful=stateful,
+#                    unroll=unroll))
+    
+#     # Add a Dense layer for output
+#     model.add(Dense(1))  # Assuming you're predicting a single value (regression)
+    
+#     model.compile(optimizer='adam', loss='mean_squared_error')  # You can change the loss function based on your problem type
+    
+#     return model
+
 # fit network
 # history = model.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
 # # plot history
