@@ -21,7 +21,7 @@ from sklearn.metrics import mean_squared_error
 # Load your OHLCV and indicator/strategies datasets
 # Assuming df_ohlc is the OHLCV dataset and df_indicators is the indicators/strategies dataset
 # Make sure your datasets are appropriately preprocessed before loading
-#%%
+
 spy_data = pd.read_csv(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv')
 spy_data = pd.DataFrame(spy_data).reset_index(drop=True)
 indicators_df = pd.DataFrame(index=spy_data.index)
@@ -38,21 +38,29 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 # Fit the scaler on the training data
 scaler.fit(train_X.reshape(-1, 1))
 
+param_grid = {
+    'nodes_hidden_layers': [(32,), (64,), (32, 64)],
+    'units': [8, 16, 32, 64, 128],
+    'dropout_layers': [0.2, 0.5],
+    'weight_initializer': ['glorot_uniform', 'orthogonal'],
+    'activation_ function': ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ],
+    'momentum': [0.9, 0.95],
+    'epochs': [50, 100],
+    'batch_size': [32, 64]
+}
+
+# Generate all possible combinations of hyperparameters
+param_combinations = list(ParameterGrid(param_grid))
+
 # design network
-model = Sequential()
-model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model.add(Dense(1))
-model.compile(loss='mae', optimizer='adam')
+model1 = Sequential()
+model1.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model1.add(Dense(1))
+model1.compile(loss='mae', optimizer='adam')
 # fit network
-history = model.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# plot history
-pyplot.plot(history.history['loss'], label='train')
-pyplot.plot(history.history['val_loss'], label='test')
-pyplot.legend()
-pyplot.show()
- 
+history = model1.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
 # make a prediction
-yhat = model.predict(test_X)
+yhat = model1.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
 # invert scaling for forecast
 inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
@@ -66,31 +74,82 @@ inv_y = inv_y[:, 0]
 # calculate RMSE
 rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
 print('Test RMSE: %.3f' % rmse)
+# plot history
+pyplot.plot(history.history['loss'], label='train')
+pyplot.plot(history.history['val_loss'], label='test')
+pyplot.legend()
+pyplot.show()
 
 
+#%% Model 2 with varying dense layrs
+# design network
+model2 = Sequential()
+model2.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model2.add(Dense(1))
+model2.add(Dense(1))
+model2.compile(loss='mae', optimizer='adam')
+# fit network
+history = model2.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# make a prediction
+yhat = model2.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
 
+#%% Model 3 with dropout
+# design network
+model3 = Sequential()
+model3.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model3.add(Dense(1))
+model3.add(Dropout(0.5))
+model3.compile(loss='mae', optimizer='adam')
+# fit network
+history = model3.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# make a prediction
+yhat = model3.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
 
-
-
-
-
+#%% Model 4 multiple LSTM
+# design network
+model4 = Sequential()
+model4.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2]), return_sequences=True))
+model4.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model4.add(Dense(1))
+model4.compile(loss='mae', optimizer='adam')
+# fit network
+history = model4.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# make a prediction
+yhat = model4.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
 
 #%%
 # Define a matrix of hyperparameters to search
-# param_grid = {
-#     'nodes_hidden_layers': [(32,), (64,), (32, 64)],
-#     'units_dense_layer': [8, 16, 32, 64, 128],
-#     'dropout_layers': [0.2, 0.5],
-#     'weight_initializer': ['glorot_uniform', 'orthogonal'],
-#     'activation_ function': ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ],
-#     'momentum': [0.9, 0.95],
-#     'epochs': [50, 100],
-#     'batch_size': [32, 64],
-#     'return_sequences': [True, False]
-# }
 
-# # Generate all possible combinations of hyperparameters
-# param_combinations = list(ParameterGrid(param_grid))
 
 # best_model = None
 # best_rmse = float('inf')
