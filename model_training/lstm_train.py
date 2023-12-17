@@ -3,13 +3,11 @@ import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
-from tensorflow import keras
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import ParameterGrid, GridSearchCV
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.callbacks import EarlyStopping
+from keras.layers import LSTM, Dense, Dropout, Conv1D, Attention
+from sklearn.metrics import make_scorer
 import ta 
 from Strategies import call_Strategies
 from model_training import preprocess_data
@@ -17,6 +15,8 @@ from matplotlib import pyplot
 from numpy import concatenate
 from math import sqrt
 from sklearn.metrics import mean_squared_error
+
+seed = 42
 
 # Load your OHLCV and indicator/strategies datasets
 # Assuming df_ohlc is the OHLCV dataset and df_indicators is the indicators/strategies dataset
@@ -31,7 +31,8 @@ indicators_df = ta.add_all_ta_features(
 all_signals_df = call_Strategies.generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 df = pd.concat([indicators_df, all_signals_df], axis = 1)
 
-[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df)
+input_timesteps = 1
+[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
 
 # normalize features
 scaler = MinMaxScaler(feature_range=(0, 1))
@@ -39,11 +40,9 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 scaler.fit(train_X.reshape(-1, 1))
 
 param_grid = {
-    'nodes_hidden_layers': [(32,), (64,), (32, 64)],
     'units': [8, 16, 32, 64, 128],
-    'dropout_layers': [0.2, 0.5],
-    'weight_initializer': ['glorot_uniform', 'orthogonal'],
-    'activation_ function': ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ],
+    'activation': ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ],
+    'seed': seed,
     'momentum': [0.9, 0.95],
     'epochs': [50, 100],
     'batch_size': [32, 64]
@@ -52,11 +51,28 @@ param_grid = {
 # Generate all possible combinations of hyperparameters
 param_combinations = list(ParameterGrid(param_grid))
 
+# Define a custom scoring function (you can use any metric you prefer)
+def custom_scorer(y_true, y_pred):
+    rmse = sqrt(mean_squared_error(y_true, y_pred))
+    return -rmse
+
 # design network
 model1 = Sequential()
 model1.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
 model1.add(Dense(1))
 model1.compile(loss='mae', optimizer='adam')
+
+# Create GridSearchCV
+grid = GridSearchCV(estimator=model1, param_grid=param_grid, scoring=make_scorer(custom_scorer, greater_is_better=False),
+                    cv=3, verbose=2, n_jobs=-1)
+# Fit the grid search to the data
+grid_result = grid.fit(train_X, y_train)
+# Print the best parameters and the corresponding score
+print("Best parameters found: ", grid_result.best_params_)
+print("Best negative RMSE score: ", grid_result.best_score_)
+# Get the best model
+best_model = grid_result.best_estimator_.model
+
 # fit network
 history = model1.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
 # make a prediction
@@ -147,6 +163,54 @@ inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
 inv_y = scaler.inverse_transform(inv_y)
 inv_y = inv_y[:, 0]
 
+#%% Model 5 CNN - LSTM
+# design network
+model5 = Sequential()
+model5.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(train_X.shape[1], train_X.shape[2])))
+model5.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
+model5.add(Dense(1))
+model5.compile(optimizer='adam', loss='mse')
+# fit network
+history = model5.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# make a prediction
+yhat = model5.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
+
+#%% Model 6 LSTM - Attention
+# design network
+n_features = train_X.shape[2]
+model6 = Sequential()
+model6.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2]), return_sequences=True))
+model6.add(Attention())
+model6.add(Dense(1))
+model6.compile(optimizer='adam', loss='mse')
+# fit network
+history = model6.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
+# make a prediction
+yhat = model6.predict(test_X)
+test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+# invert scaling for forecast
+inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
+inv_yhat = scaler.inverse_transform(inv_yhat)
+inv_yhat = inv_yhat[:, 0]
+# invert scaling for actual
+test_y = y_test.reshape((len(y_test), 1))
+inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
+inv_y = scaler.inverse_transform(inv_y)
+inv_y = inv_y[:, 0]
+
+#%%
+
+
 #%%
 # Define a matrix of hyperparameters to search
 
@@ -195,12 +259,6 @@ inv_y = inv_y[:, 0]
 
 # # Print the hyperparameters of the best model
 # print(f"Best Hyperparameters: {best_model.get_config()}")
-
-
-
-
-
-
 
 # Design network
 # def build_lstm_model(units=50, activation='tanh', recurrent_activation='sigmoid',

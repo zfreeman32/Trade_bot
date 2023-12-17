@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True):
 
     # convert series to supervised learning
-    def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
+    def series_to_supervised(data, n_in=n_in, n_out=n_out, dropnan=dropnan):
         n_vars = 1 if type(data) is list else data.shape[1]
         df = DataFrame(data)
         cols, names = list(), list()
