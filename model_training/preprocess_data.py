@@ -63,7 +63,16 @@ def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True
     y = reframed_target.values
     x = reframed.drop(columns=reframed_target).values
     # Train-test split
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+    # Create an index array based on the length of your data
+    data_length = len(x)
+    index_array = np.arange(data_length)
+    # Sort the index array
+    sorted_index_array = np.argsort(index_array)
+    # Use the sorted index array to create the train-test split
+    train_indices, test_indices = train_test_split(sorted_index_array, test_size=0.2, random_state=42)
+    # Use the indices to create the actual train-test split
+    X_train, X_test = x[train_indices], x[test_indices]
+    y_train, y_test = y[train_indices], y[test_indices]
     # reshape input to be 3D [samples, timesteps, features]
     train_X = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
     test_X = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
