@@ -319,5 +319,12 @@ R^2 Score: 0.9999859089166326
 Best Parameters: {'max_depth': 20, 'n_estimators': 200}
 Best Model: ExtraTreesRegressor(max_depth=20, n_estimators=200)
 
+lstm_train.py
+Model 1 - RMSE: 0.003, MAE: 0.002
+Model 2 - RMSE: 0.004, MAE: 0.003
+Model 3 - RMSE: 0.176, MAE: 0.127
+Model 4 - RMSE: 0.002, MAE: 0.001
+
+
 classification_training.py
 
