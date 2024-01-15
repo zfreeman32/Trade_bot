@@ -1,21 +1,109 @@
-#%%
 import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout, GRU
-from keras import Input
+from keras.layers import LSTM, Dense, Dropout
 import ta 
 from Strategies import call_Strategies
 from model_training import preprocess_data
-from matplotlib import pyplot
-from numpy import concatenate
-from math import sqrt
-from sklearn.metrics import mean_squared_error
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras_tuner.tuners import GridSearch 
+from keras_tuner.engine.hyperparameters import HyperParameters
+from keras.optimizers import Adam
+import tensorflow as tf
 
 seed = 42
+
+#%%
+import sys
+sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
+import numpy as np
+import pandas as pd
+from pandas import read_csv
+from pandas import DataFrame
+from pandas import concat
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+
+
+#%%
+# filepath is Date, Open, High, Llow, Close, Volume dataset
+def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True):
+
+    # convert series to supervised learning
+    def series_to_supervised(data, n_in=n_in, n_out=n_out, dropnan=dropnan):
+        n_vars = 1 if type(data) is list else data.shape[1]
+        df = DataFrame(data)
+        cols, names = list(), list()
+        # input sequence (t-n, ... t-1)
+        for i in range(n_in, 0, -1):
+            cols.append(df.shift(i))
+            names += [('var%d(t-%d)' % (j+1, i)) for j in range(n_vars)]
+        # forecast sequence (t, t+1, ... t+n)
+        for i in range(0, n_out):
+            cols.append(df.shift(-i))
+            if i == 0:
+                names += [('var%d(t)' % (j+1)) for j in range(n_vars)]
+            else:
+                names += [('var%d(t+%d)' % (j+1, i)) for j in range(n_vars)]
+        # put it all together
+        agg = concat(cols, axis=1)
+        agg.columns = names
+        # drop rows with NaN values
+        if dropnan:
+            agg.dropna(inplace=True)
+        return agg
+
+    # load dataset
+    dataset = read_csv(filepath)
+    values = dataset.values
+    # Extract year, month, and day from the date column
+    date_column = values[:, 0]
+    date_df = pd.to_datetime(date_column, format='%m/%d/%Y')
+    datevalues = np.column_stack((values[:, :0], date_df.month, date_df.day, date_df.year))
+    # Concatenate datevalues to the front of values
+    values = np.concatenate((datevalues, values), axis=1)
+    # Drop the 4th column
+    values = np.delete(values, datecolumn, axis=1)
+    # ensure all data is float
+    values = values.astype('float32')
+    # normalize features
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled = scaler.fit_transform(values)
+    # frame as supervised learning
+    reframed = series_to_supervised(scaled, n_in, n_out, dropnan)
+    reframed_close = datecolumn + 4
+    # Keep only the 'Close' column (column index 7) for prediction
+    reframed_target = reframed.iloc[:, [reframed_close]]
+    # split into train and test sets
+    y = reframed_target.values
+    x = reframed.drop(columns=reframed_target).values
+    # Train-test split
+    # Create an index array based on the length of your data
+    data_length = len(x)
+    index_array = np.arange(data_length)
+    # Sort the index array
+    sorted_index_array = np.argsort(index_array)
+    # Use the sorted index array to create the train-test split
+    train_indices, test_indices = train_test_split(sorted_index_array, test_size=0.2, random_state=42)
+    # Use the indices to create the actual train-test split
+    X_train, X_test = x[train_indices], x[test_indices]
+    y_train, y_test = y[train_indices], y[test_indices]
+    # reshape input to be 3D [samples, timesteps, features]
+    train_X = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
+    test_X = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
+    print(train_X.shape, y_train.shape, test_X.shape, y_test.shape)
+
+    return train_X, y_train, test_X, y_test
+
+#%%
+filepath = r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv'
+[train_X, y_train, test_X, y_test] = preprocess_stock_data(dataset=filepath)
+
 
 # Load your OHLCV and indicator/strategies datasets
 # Assuming df_ohlc is the OHLCV dataset and df_indicators is the indicators/strategies dataset
@@ -38,245 +126,133 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 # Fit the scaler on the training data
 scaler.fit(train_X.reshape(-1, 1))
 
-# design network
-model1 = Sequential()
-model1.add(Input(shape=(train_X.shape[1], train_X.shape[2])))
-model1.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model1.add(Dense(1))
-model1.compile(loss='mae', optimizer='adam')
+def build_model(hp):
+    model = Sequential()
+    model.add(LSTM(
+        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
+        return_sequences=True, 
+        input_shape=(train_X.shape[1], train_X.shape[2])),
+        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        use_bias=True,
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+        unit_forget_bias = hp.Boolean("forget_bias"),
+        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        return_state=hp.Boolean("return_state"),
+        go_backwards=hp.Boolean("go_backwards"),
+        stateful=hp.Boolean("stateful"),
+        unroll=hp.Boolean("unroll")
+    )
+    
+    for i in range(hp.Int("num_layers", 1, 3)):
+        model.add(LSTM(
+            units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
+            return_sequences=True, 
+            input_shape=(train_X.shape[1], train_X.shape[2])),
+            activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+            recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+            use_bias=True,
+            kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
+            recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+            bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+            unit_forget_bias = hp.Boolean("forget_bias"),
+            kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+            recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+            bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+            activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+            kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+            recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+            bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+            dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
+            recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+            return_state=hp.Boolean("return_state"),
+            go_backwards=hp.Boolean("go_backwards"),
+            stateful=hp.Boolean("stateful"),
+            unroll=hp.Boolean("unroll")
+        )
 
-# fit network
-history = model1.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# make a prediction
-yhat = model1.predict(test_X)
-test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
-# invert scaling for actual
-test_y = y_test.reshape((len(y_test), 1))
-inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
-# calculate RMSE
-rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-print('Test RMSE: %.3f' % rmse)
-# plot history
-pyplot.plot(history.history['loss'], label='train')
-pyplot.plot(history.history['val_loss'], label='test')
-pyplot.legend()
-pyplot.show()
-
-
-# %% Model 2 with varying dense layrs
-
-[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
-
-# normalize features
-scaler = MinMaxScaler(feature_range=(0, 1))
-# Fit the scaler on the training data
-scaler.fit(train_X.reshape(-1, 1))
-
-# design network
-model2 = Sequential()
-model2.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model2.add(Dense(25))
-model2.add(Dense(1))
-model2.compile(loss='mae', optimizer='adam')
-# fit network
-history = model2.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# make a prediction
-yhat = model2.predict(test_X)
-
-# Reshape yhat to be 2D (if it's not already)
-yhat = yhat.reshape((yhat.shape[0], yhat.shape[1]))
-
-# invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, 0, 1:]), axis=1)
-inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
-# invert scaling for actual
-test_y = y_test.reshape((len(y_test), 1))
-inv_y = concatenate((test_y, test_X[:, 0, 1:]), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
-
-
-print(train_X.shape)
-
-#%% Model 3 with dropout
-
-[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
-
-# normalize features
-scaler = MinMaxScaler(feature_range=(0, 1))
-# Fit the scaler on the training data
-scaler.fit(train_X.reshape(-1, 1))
-
-# design network
-model3 = Sequential()
-model3.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model3.add(Dense(1))
-model3.add(Dropout(0.5))
-model3.compile(loss='mae', optimizer='adam')
-# fit network
-history = model3.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# make a prediction
-yhat = model3.predict(test_X)
-test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
-# invert scaling for actual
-test_y = y_test.reshape((len(y_test), 1))
-inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
-
-#%% Model 4 multiple LSTM
-
-[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
-
-# normalize features
-scaler = MinMaxScaler(feature_range=(0, 1))
-# Fit the scaler on the training data
-scaler.fit(train_X.reshape(-1, 1))
-
-# design network
-model4 = Sequential()
-model4.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2]), return_sequences=True))
-model4.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model4.add(Dense(1))
-model4.compile(loss='mae', optimizer='adam')
-# fit network
-history = model4.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# make a prediction
-yhat = model4.predict(test_X)
-test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# invert scaling for forecast
-inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-inv_yhat = scaler.inverse_transform(inv_yhat)
-inv_yhat = inv_yhat[:, 0]
-# invert scaling for actual
-test_y = y_test.reshape((len(y_test), 1))
-inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:, 0]
+    model.add(LSTM(
+        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
+        return_sequences=True, 
+        input_shape=(train_X.shape[1], train_X.shape[2])),
+        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        use_bias=True,
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+        unit_forget_bias = hp.Boolean("forget_bias"),
+        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        return_state=hp.Boolean("return_state"),
+        go_backwards=hp.Boolean("go_backwards"),
+        stateful=hp.Boolean("stateful"),
+        unroll=hp.Boolean("unroll")
+    )
+    
+    if hp.Boolean("dropout"):
+        model.add(Dropout(
+            rate=hp.Float('dropout_rate', min_value=0, max_value=0.5, step=0.1)))
+    
+    model.add(Dense(
+        units=hp.Int("units", min_value=32, max_value=512, step=32),
+        activation=hp.Choice("activation", [None, 'relu', 'tanh', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+        use_bias=hp.Boolean("use_bias"),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm'])
+    ))
+    
+    model.add(Dense(
+        units=1, 
+        activation=hp.Choice("output_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        use_bias=hp.Boolean("use_bias"),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm'])
+        ))
+    
+    learning_rate = hp.Float("lr", min_value=1e-4, max_value=1e-2, sampling="log")
+    model.compile(
+        optimizer=Adam(learning_rate=learning_rate),
+        loss="mean_squared_error",
+        metrics=["accuracy"],
+    )
+    
+    return model
 
 
+tuner = GridSearch(
+    build_model,
+    objective='val_loss',
+    max_trials=5)
 
-#%% Model 5 CNN - LSTM
+tuner.search(train_X, y_train, epochs=5, validation_data=(test_X, y_test))
+best_model = tuner.get_best_models()[0]
 
-[train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
-
-# normalize features
-scaler = MinMaxScaler(feature_range=(0, 1))
-# Fit the scaler on the training data
-scaler.fit(train_X.reshape(-1, 1))
-
-# design network
-# model5 = Sequential()
-# model5.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(train_X.shape[1], train_X.shape[2])))
-# model5.add(Flatten())  # Flatten layer added
-# model5.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-# model5.add(Dense(1))
-# model5.compile(optimizer='adam', loss='mse')
-# # fit network
-# history = model5.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# # make a prediction
-# yhat = model5.predict(test_X)
-# test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# # invert scaling for forecast
-# inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-# inv_yhat = scaler.inverse_transform(inv_yhat)
-# inv_yhat = inv_yhat[:, 0]
-# # invert scaling for actual
-# test_y = y_test.reshape((len(y_test), 1))
-# inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-# inv_y = scaler.inverse_transform(inv_y)
-# inv_y = inv_y[:, 0]
-
-#%% Model 6 LSTM - Attention
-
-# [train_X, y_train, test_X, y_test] = preprocess_data.preprocess_stock_data(dataset=df, n_in = input_timesteps)
-
-# # normalize features
-# scaler = MinMaxScaler(feature_range=(0, 1))
-# # Fit the scaler on the training data
-# scaler.fit(train_X.reshape(-1, 1))
-
-# # design network
-# n_features = train_X.shape[2]
-# model6 = Sequential()
-# model6.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2]), return_sequences=True))
-# model6.add(Attention())
-# model6.add(Dense(1))
-# model6.compile(optimizer='adam', loss='mse')
-# # fit network
-# history = model6.fit(train_X, y_train, epochs=50, batch_size=72, validation_data=(test_X, y_test), verbose=2, shuffle=False)
-# # make a prediction
-# yhat = model6.predict(test_X)
-# test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# # invert scaling for forecast
-# inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-# inv_yhat = scaler.inverse_transform(inv_yhat)
-# inv_yhat = inv_yhat[:, 0]
-# # invert scaling for actual
-# test_y = y_test.reshape((len(y_test), 1))
-# inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-# inv_y = scaler.inverse_transform(inv_y)
-# inv_y = inv_y[:, 0]
-
-#%%
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-import matplotlib.pyplot as plt
-
-def evaluate_model(model, test_X, y_test, scaler):
-    # make a prediction
-    yhat = model.predict(test_X)
-    test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-
-    # invert scaling for forecast
-    inv_yhat = np.concatenate((yhat, test_X[:, 1:]), axis=1)
-    inv_yhat = scaler.inverse_transform(inv_yhat)
-    inv_yhat = inv_yhat[:, 0]
-
-    # invert scaling for actual
-    test_y = y_test.reshape((len(y_test), 1))
-    inv_y = np.concatenate((test_y, test_X[:, 1:]), axis=1)
-    inv_y = scaler.inverse_transform(inv_y)
-    inv_y = inv_y[:, 0]
-
-    # calculate RMSE
-    rmse = np.sqrt(mean_squared_error(inv_y, inv_yhat))
-    mae = mean_absolute_error(inv_y, inv_yhat)
-
-    return rmse, mae, inv_y, inv_yhat
-
-# List to store the evaluation results of each model
-evaluation_results = []
-
-rmse1, mae1, inv_y1, inv_yhat1 = evaluate_model(model1, test_X, y_test, scaler)
-evaluation_results.append({'model': 'Model 1', 'RMSE': rmse1, 'MAE': mae1})
-
-rmse2, mae2, inv_y2, inv_yhat2 = evaluate_model(model2, test_X, y_test, scaler)
-evaluation_results.append({'model': 'Model 2', 'RMSE': rmse2, 'MAE': mae2})
-
-rmse3, mae3, inv_y3, inv_yhat3 = evaluate_model(model3, test_X, y_test, scaler)
-evaluation_results.append({'model': 'Model 3', 'RMSE': rmse3, 'MAE': mae3})
-
-rmse4, mae4, inv_y4, inv_yhat4 = evaluate_model(model4, test_X, y_test, scaler)
-evaluation_results.append({'model': 'Model 4', 'RMSE': rmse4, 'MAE': mae4})
-
-# Display results
-for result in evaluation_results:
-    print(f"{result['model']} - RMSE: {result['RMSE']:.3f}, MAE: {result['MAE']:.3f}")
-
-# Plot predictions vs actual for one of the models (e.g., Model 1)
-plt.plot(inv_y1, label='Actual')
-plt.plot(inv_yhat1, label='Predicted')
-plt.legend()
-plt.title('Actual vs Predicted for Model 1')
-plt.show()
+print(best_model)

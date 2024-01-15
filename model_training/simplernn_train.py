@@ -1,14 +1,17 @@
+
 import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import GRU, Dense, Dropout
+from keras.layers import SimpleRNN, Dense, Dropout
 import ta 
 from Strategies import call_Strategies
 from model_training import preprocess_data
+from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import SimpleRNN
 from keras_tuner.tuners import GridSearch 
 from keras_tuner.engine.hyperparameters import HyperParameters
 from keras.optimizers import Adam
@@ -124,21 +127,15 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 # Fit the scaler on the training data
 scaler.fit(train_X.reshape(-1, 1))
 
-hp = HyperParameters()
-
 def build_model(hp):
     model = Sequential()
-    model.add(GRU(
-        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        return_sequences=True, 
-        input_shape=(train_X.shape[1], train_X.shape[2])),
-        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        use_bias=True,
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        unit_forget_bias = hp.Boolean("forget_bias"),
+    model.add(SimpleRNN(
+        units=hp.Int("units", min_value=32, max_value=512, step=32),
+        activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+        use_bias=hp.Boolean("use_bias"),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
         kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
         recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
         bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
@@ -148,24 +145,21 @@ def build_model(hp):
         bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        return_sequences=hp.Boolean("return_sequences"),
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
         unroll=hp.Boolean("unroll")
-    )
+    ))
     
     for i in range(hp.Int("num_layers", 1, 3)):
-        model.add(GRU(
-            units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-            return_sequences=True, 
-            input_shape=(train_X.shape[1], train_X.shape[2])),
-            activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-            recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-            use_bias=True,
-            kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
-            recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-            bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-            unit_forget_bias = hp.Boolean("forget_bias"),
+        model.add(SimpleRNN(
+            units=hp.Int("units", min_value=32, max_value=512, step=32),
+            activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+            use_bias=hp.Boolean("use_bias"),
+            kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+            recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
+            bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
             kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
             recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
             bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
@@ -175,23 +169,20 @@ def build_model(hp):
             bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
             dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
             recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+            return_sequences=hp.Boolean("return_sequences"),
             return_state=hp.Boolean("return_state"),
             go_backwards=hp.Boolean("go_backwards"),
             stateful=hp.Boolean("stateful"),
             unroll=hp.Boolean("unroll")
-        )
+        ))
 
-    model.add(GRU(
-        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        return_sequences=True, 
-        input_shape=(train_X.shape[1], train_X.shape[2])),
-        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        use_bias=True,
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        unit_forget_bias = hp.Boolean("forget_bias"),
+    model.add(SimpleRNN(
+        units=hp.Int("units", min_value=32, max_value=512, step=32),
+        activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+        use_bias=hp.Boolean("use_bias"),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
         kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
         recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
         bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
@@ -201,11 +192,12 @@ def build_model(hp):
         bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        return_sequences=hp.Boolean("return_sequences"),
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
         unroll=hp.Boolean("unroll")
-    )
+    ))
     
     if hp.Boolean("dropout"):
         model.add(Dropout(
