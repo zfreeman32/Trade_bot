@@ -4,31 +4,22 @@ sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+from pandas import read_csv
+from pandas import DataFrame
+from pandas import concat
 from keras.models import Sequential
 from keras.layers import SimpleRNN, Dense, Dropout
 import ta 
 from Strategies import call_Strategies
 from model_training import preprocess_data
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import SimpleRNN
 from keras_tuner.tuners import GridSearch 
-from keras_tuner.engine.hyperparameters import HyperParameters
+from sklearn.model_selection import train_test_split
+from keras_tuner.engine.hyperparameters import HyperParameters as hp
 from keras.optimizers import Adam
 import tensorflow as tf
 
 seed = 42
 
-#%%
-import sys
-sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
-import numpy as np
-import pandas as pd
-from pandas import read_csv
-from pandas import DataFrame
-from pandas import concat
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 
 
 #%%

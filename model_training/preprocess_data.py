@@ -3,12 +3,10 @@ import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 import numpy as np
 import pandas as pd
-from pandas import read_csv
 from pandas import DataFrame
 from pandas import concat
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-
 
 #%%
 # filepath is Date, Open, High, Llow, Close, Volume dataset
@@ -39,7 +37,6 @@ def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True
         return agg
 
     # load dataset
-    dataset = read_csv(filepath)
     values = dataset.values
     # Extract year, month, and day from the date column
     date_column = values[:, 0]
@@ -80,6 +77,3 @@ def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True
 
     return train_X, y_train, test_X, y_test
 
-#%%
-filepath = r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv'
-[train_X, y_train, test_X, y_test] = preprocess_stock_data(dataset=filepath)
