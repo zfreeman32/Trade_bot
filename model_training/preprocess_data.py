@@ -1,19 +1,26 @@
 #%%
 import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pandas import concat
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 
+'''
+Input a data frame containing OHLCV stock data and all features, 
+encode any categorcial columns. 
+n_in is the number of days back to use as input. 
+n_out is the number of predictions to make. 
+format is the drmat f your 'Date' column. Default: format='%m/%d/%Y'
+Returns an aggregated dataframe with the Close (target) variable as the 
+last column, all columns scaled.
+'''
 #%%
 # filepath is Date, Open, High, Llow, Close, Volume dataset
-def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True):
+def preprocess_stock_data(df, n_in=1, n_out=1, format='%m/%d/%Y'):
 
     # convert series to supervised learning
-    def series_to_supervised(data, n_in=n_in, n_out=n_out, dropnan=dropnan):
+    def series_to_supervised(data, n_in=n_in, n_out=n_out):
         n_vars = 1 if type(data) is list else data.shape[1]
         df = DataFrame(data)
         cols, names = list(), list()
@@ -31,49 +38,36 @@ def preprocess_stock_data(dataset, n_in=1, n_out=1, datecolumn = 3, dropnan=True
         # put it all together
         agg = concat(cols, axis=1)
         agg.columns = names
-        # drop rows with NaN values
-        if dropnan:
-            agg.dropna(inplace=True)
         return agg
 
-    # load dataset
-    values = dataset.values
-    # Extract year, month, and day from the date column
-    date_column = values[:, 0]
-    date_df = pd.to_datetime(date_column, format='%m/%d/%Y')
-    datevalues = np.column_stack((values[:, :0], date_df.month, date_df.day, date_df.year))
-    # Concatenate datevalues to the front of values
-    values = np.concatenate((datevalues, values), axis=1)
-    # Drop the 4th column
-    values = np.delete(values, datecolumn, axis=1)
+    #%%
+    # Extract year, month, and day from the 'Date' column
+    date_column = df['Date']
+    date_df = pd.to_datetime(date_column, format=format)
+    # Create new columns for year, month, and day
+    df['Year'] = date_df.year
+    df['Month'] = date_df.month
+    df['Day'] = date_df.day
+    # Drop the original 'Date' column
+    df.drop(columns=['Date'], inplace=True)
+
+    #%%
     # ensure all data is float
-    values = values.astype('float32')
+    values = df.astype('float32')
     # normalize features
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled = scaler.fit_transform(values)
     # frame as supervised learning
-    reframed = series_to_supervised(scaled, n_in, n_out, dropnan)
-    reframed_close = datecolumn + 4
-    # Keep only the 'Close' column (column index 7) for prediction
-    reframed_target = reframed.iloc[:, [reframed_close]]
-    # split into train and test sets
-    y = reframed_target.values
-    x = reframed.drop(columns=reframed_target).values
-    # Train-test split
-    # Create an index array based on the length of your data
-    data_length = len(x)
-    index_array = np.arange(data_length)
-    # Sort the index array
-    sorted_index_array = np.argsort(index_array)
-    # Use the sorted index array to create the train-test split
-    train_indices, test_indices = train_test_split(sorted_index_array, test_size=0.2, random_state=42)
-    # Use the indices to create the actual train-test split
-    X_train, X_test = x[train_indices], x[test_indices]
-    y_train, y_test = y[train_indices], y[test_indices]
-    # reshape input to be 3D [samples, timesteps, features]
-    train_X = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
-    test_X = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
-    print(train_X.shape, y_train.shape, test_X.shape, y_test.shape)
+    reframed = series_to_supervised(scaled, 1, 1)
 
-    return train_X, y_train, test_X, y_test
+    #%%
+    half_reframed = len(reframed.columns) * n_in
+    reframed_data = reframed.iloc[:, :half_reframed].copy()
+    # Save the 'var4(t)' (CLose) (Target) column
+    var4_column = reframed['var4(t)'].copy()
+    # Attach the 'var4(t)' column to the end of the reframed data
+    reframed_data['var4(t)'] = var4_column
+    # Print the modified reframed data
+    print(reframed_data.head())
 
+    return reframed_data

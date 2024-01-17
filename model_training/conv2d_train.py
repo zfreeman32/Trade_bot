@@ -28,7 +28,7 @@ def build_model(hp):
     model.add(keras.layers.InputLayer(input_shape=[60, 1]))
     
     for rate in range(1, 9):
-        model.add(build_conv1d_layer(hp, input_shape=(60, 1)))
+        model.add(build_conv2d_layer(hp, input_shape=(60, 1)))
     
     model.add(Flatten())
     model.add(Dense(1, activation='sigmoid'))

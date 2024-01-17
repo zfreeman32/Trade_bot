@@ -7,7 +7,7 @@ from ta import momentum, trend, volatility, volume
 # PPO
 def ppo_signals(stock_data, fast_window=12, slow_window=26, signal_window=9):
     signals = pd.DataFrame(index=stock_data.index)
-    signals['PPO_signal'] = 0
+    signals['PPO_signal'] = ''
 
     ppo = momentum.PercentagePriceOscillator(stock_data['Close'], fast_window, slow_window, signal_window)
 
@@ -29,7 +29,7 @@ def Awesome_Oscillator_signals(stock_df):
     # Define long and short signals
     signals = pd.DataFrame(index=stock_df.index)
     ao_indicator = momentum.AwesomeOscillatorIndicator(high=stock_df['High'], low=stock_df['Low'])
-    signals['Ao_signal'] = 0
+    signals['Ao_signal'] = ''
     stock_df['momentum_ao'] = ao_indicator.awesome_oscillator()
 
     for i in range(1, len(stock_df)):
@@ -50,8 +50,8 @@ def Awesome_Oscillator_signals(stock_df):
 # KAMA Cross
 def kama_cross_signals(stock_df, fast_period=10, slow_period=20):
     signals = pd.DataFrame(index=stock_df.index)
-    signals['kama_cross_signal'] = 0
-    signals['kama_signal'] = 0
+    signals['kama_cross_signal'] = ''
+    signals['kama_signal'] = ''
 
     # Calculate Fast KAMA
     fast_kama = momentum.kama(stock_df['Close'], window=fast_period)
