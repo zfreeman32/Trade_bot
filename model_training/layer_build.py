@@ -47,6 +47,14 @@ def build_Dropout_layer(hp):
         rate=hp.Float('dropout_rate', min_value=0, max_value=0.5, step=0.1))
 
 def build_MaxPooling1D_Layer(hp, data_format = 'channel_last'):
+    '''
+    Inputs:
+    If data_format="channels_last": 3D tensor with shape (batch_size, steps, features).
+    If data_format="channels_first": 3D tensor with shape (batch_size, features, steps).
+    Outputs:
+    If data_format="channels_last": 3D tensor with shape (batch_size, downsampled_steps, features).
+    If data_format="channels_first": 3D tensor with shape (batch_size, features, downsampled_steps).
+    '''
     # MaxPooling layer
     return MaxPooling1D(
         pool_size=hp.Int("pool_size", min_value=1, max_value=3, step=1),
@@ -121,7 +129,7 @@ def build_LSTM_layer(hp, return_sequences=False, seed = 42):
         unroll=hp.Boolean("unroll")
     )
 
-def build_GRU_layer(hp, return_sequences=False, seed = 42, reset_after = True):
+def build_GRU_layer(hp, return_sequences=False, seed = 42):
     '''
     Builds Optimal GRU Layer using Keras Hyperparamter Tuner
     Inupts hp for keras hyperparameter tuning, return_sequences, seed, and reset after
@@ -154,7 +162,7 @@ def build_GRU_layer(hp, return_sequences=False, seed = 42, reset_after = True):
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
         unroll=hp.Boolean("unroll"),
-        reset_after = reset_after
+        reset_after = hp.Boolean("reset_after")
     )
 
 def build_Conv1D_layer(hp, data_format = 'channels_last'):
