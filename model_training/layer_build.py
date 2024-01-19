@@ -13,7 +13,8 @@ from tensorflow.keras.layers import (
     DepthwiseConv2D,
     MultiHeadAttention,
     Attention,
-    AdditiveAttention
+    AdditiveAttention,
+    MaxPooling1D
 )
 
 
@@ -44,6 +45,15 @@ def build_Dropout_layer(hp):
     '''
     return Dropout(
         rate=hp.Float('dropout_rate', min_value=0, max_value=0.5, step=0.1))
+
+def build_MaxPooling1D_Layer(hp, data_format = 'channel_last'):
+    # MaxPooling layer
+    return MaxPooling1D(
+        pool_size=hp.Int("pool_size", min_value=1, max_value=3, step=1),
+        strides=hp.Int("strides", min_value=1, max_value=3, step=1),
+        padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format
+        )
 
 def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
     '''
