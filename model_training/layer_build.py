@@ -17,13 +17,17 @@ from tensorflow.keras.layers import (
 )
 
 
-def build_Dense_layer(hp, input_shape, return_sequences=False):
+def build_Dense_layer(hp):
+    '''
+    Builds optimal Dense Layer
+    Last Dense Layer in MLP units = 1
+    Input shape: (batch_size, ..., input_dim)
+    Output shape: (batch_size, ..., units)
+    '''
     return Dense(
         units=hp.Int("units", min_value=32, max_value=512, step=32),
         activation=hp.Choice("activation", [None, 'relu', 'tanh', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
         use_bias=hp.Boolean("use_bias"),
-        return_sequences=return_sequences,
-        input_shape=(input_shape),
         kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
         kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
@@ -34,16 +38,25 @@ def build_Dense_layer(hp, input_shape, return_sequences=False):
     )
 
 def build_Dropout_layer(hp):
+    '''
+    Builds Optimal Dropout layer
+    No inputs needed besides hp to test different dropout rates
+    '''
     return Dropout(
         rate=hp.Float('dropout_rate', min_value=0, max_value=0.5, step=0.1))
 
-def build_SimpleRNN_layer(hp, input_shape, return_sequences=False):
+def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
+    '''
+    Builds Optimal SimpleRNN using Keras HyperParameter Tuner
+    Inupts hp for keras hyperparameter tuning, return_sequences, and seed
+    Set return_sequences = True if layer is NOT last in MLP
+    Includes Dropout testing so no need in adding Dropout Layer
+    Input Shape: (num_training_examples, num_timesteps, num_features)
+    '''
     return SimpleRNN(
         units=hp.Int("units", min_value=32, max_value=512, step=32),
         activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
         use_bias=hp.Boolean("use_bias"),
-        return_sequences=return_sequences,
-        input_shape=(input_shape),
         kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
         recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
@@ -56,19 +69,24 @@ def build_SimpleRNN_layer(hp, input_shape, return_sequences=False):
         bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
-        return_sequences=hp.Boolean("return_sequences"),
+        return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll")
+        unroll=hp.Boolean("unroll"),
+        seed = seed
     )
 
-def build_LSTM_layer(hp, input_shape, return_sequences=False):
+def build_LSTM_layer(hp, return_sequences=False, seed = 42):
+    '''
+    Builds Optimal LSTM Layer using Keras Hyperparamter Tuner
+    Inupts hp for keras hyperparameter tuning, return_sequences, and seed
+    Set return_sequences = True if layer is NOT last in MLP
+    Includes Dropout testing so no need in adding Dropout Layer
+    Input shape: (batch, timesteps, feature)
+    '''
     return LSTM(
         units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        return_sequences=True, 
-        input_shape=(input_shape),
-        return_sequences=return_sequences,
         activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
         recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
         use_bias=True,
@@ -85,18 +103,25 @@ def build_LSTM_layer(hp, input_shape, return_sequences=False):
         bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        seed = seed,
+        return_sequences=return_sequences, 
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
         unroll=hp.Boolean("unroll")
     )
 
-def build_GRU_layer(hp, input_shape, return_sequences=False):
+def build_GRU_layer(hp, return_sequences=False, seed = 42, reset_after = True):
+    '''
+    Builds Optimal GRU Layer using Keras Hyperparamter Tuner
+    Inupts hp for keras hyperparameter tuning, return_sequences, seed, and reset after
+    Set return_sequences = True if layer is NOT last in MLP
+    Includes Dropout testing so no need in adding Dropout Layer
+    reset_after: whether to apply reset gate after or before matrix multiplication False is "before", True is "after"
+    Input shape: (batch, timesteps, feature)
+    '''
     return GRU(
         units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        return_sequences=True, 
-        input_shape=(input_shape),
-        return_sequences=return_sequences,
         activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
         recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
         use_bias=True,
@@ -113,18 +138,28 @@ def build_GRU_layer(hp, input_shape, return_sequences=False):
         bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        seed = seed,
+        return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll")
+        unroll=hp.Boolean("unroll"),
+        reset_after = reset_after
     )
 
-def build_Conv1D_layer(hp, input_shape):
+def build_Conv1D_layer(hp, data_format = 'channels_last'):
+    '''
+    data_format = "channels_last" corresponds to inputs with shape (batch, steps, features)
+    data_format = "channels_first" corresponds to inputs with shape (batch, features, steps).
+    Input shape: (batch, steps, channels)
+    Output Shape: (batch, new_steps, filters)
+    '''
     return Conv1D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
         use_bias=hp.Boolean("use_bias", default=True),
@@ -134,15 +169,26 @@ def build_Conv1D_layer(hp, input_shape):
         bias_regularizer=hp.Choice("bias_regularizer", values=[None, "l1", "l2", "l1_l2"]),
         activity_regularizer=hp.Choice("activity_regularizer", values=[None, "l1", "l2", "l1_l2"]),
         kernel_constraint=hp.Choice("kernel_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
-        bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
+        bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
     )
     
-def build_Conv2D_layer(hp, input_shape):
+def build_Conv2D_layer(hp, data_format = 'channels_last'):
+    '''
+    Builds Optimal Conv2D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    data_format = "channels_last" corresponds to inputs with shape (batch, steps, features)
+    data_format = "channels_first" corresponds to inputs with shape (batch, features, steps).
+    Outputs:
+    data_format="channels_last": tensor with shape: (batch_size, new_height, new_width, filters)
+    data_format="channels_first": tensor with shape: (batch_size, filters, new_height, new_width)
+    '''
     return Conv2D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
         use_bias=hp.Boolean("use_bias", default=True),
@@ -155,12 +201,25 @@ def build_Conv2D_layer(hp, input_shape):
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
     )
 
-def build_ConvLSTM1D_layer(hp, return_sequences=False):
+def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last', seed = 42):
+    '''
+    Builds Optimal ConvLSTM1D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    Set return_sequences = True if NOT last layer in MLP
+    data_format = "channels_last" corresponds to inputs with shape (samples, time, rows, channels)
+    data_format = "channels_first" corresponds to inputs with shape (samples, time, channels, rows)
+    Outputs:
+    If return_state: a list of tensors. The first tensor is the output. The remaining tensors are the last states, each 3D tensor with shape: (samples, filters, new_rows) if data_format='channels_first' or shape: (samples, new_rows, filters) if data_format='channels_last'. rows values might have changed due to padding.
+    If return_sequences: 4D tensor with shape: (samples, timesteps, filters, new_rows) if data_format='channels_first' or shape: (samples, timesteps, new_rows, filters) if data_format='channels_last'.
+    Else, 3D tensor with shape: (samples, filters, new_rows) if data_format='channels_first' or shape: (samples, new_rows, filters) if data_format='channels_last'.
+    '''
     return ConvLSTM1D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         activation=hp.Choice("activation", values=["tanh", "sigmoid", "relu"]),
         recurrent_activation=hp.Choice("recurrent_activation", values=["sigmoid", "tanh", "relu"]),
@@ -178,19 +237,32 @@ def build_ConvLSTM1D_layer(hp, return_sequences=False):
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.1),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.1),
-        seed=hp.Int("seed", min_value=0, max_value=999),
+        seed=seed,
         return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful")
     )
 
-def build_ConvLSTM2D_layer(hp, return_sequences=False):
+def build_ConvLSTM2D_layer(hp, return_sequences=False, data_format = 'channels_last', seed = 42):
+    '''
+    Builds Optimal ConvLSTM2D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    Set return_sequences = True if NOT last layer in MLP
+    data_format = "channels_last" corresponds to inputs with shape (samples, time, rows, cols, channels)
+    data_format = "channels_first" corresponds to inputs with shape (samples, time, channels, rows, cols)
+    Outputs:
+    If return_state: a list of tensors. The first tensor is the output. The remaining tensors are the last states, each 4D tensor with shape: (samples, filters, new_rows, new_cols) if data_format='channels_first' or shape: (samples, new_rows, new_cols, filters) if data_format='channels_last'. rows and cols values might have changed due to padding.
+    If return_sequences: 5D tensor with shape: (samples, timesteps, filters, new_rows, new_cols) if data_format='channels_first' or shape: (samples, timesteps, new_rows, new_cols, filters) if data_format='channels_last'.
+    Else, 4D tensor with shape: (samples, filters, new_rows, new_cols) if data_format='channels_first' or shape: (samples, new_rows, new_cols, filters) if data_format='channels_last'.
+    '''
     return ConvLSTM2D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         activation=hp.Choice("activation", values=["tanh", "sigmoid", "relu"]),
         recurrent_activation=hp.Choice("recurrent_activation", values=["sigmoid", "tanh", "relu"]),
@@ -208,19 +280,30 @@ def build_ConvLSTM2D_layer(hp, return_sequences=False):
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.1),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.1),
-        seed=hp.Int("seed", min_value=0, max_value=999),
+        seed=seed,
         return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
         stateful=hp.Boolean("stateful")
     )
 
-def build_SeparableConv1D_layer(hp):
+def build_SeparableConv1D_layer(hp, data_format = 'channels_last',):
+    '''
+    Builds Optimal SeparableConv1D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    If data_format="channels_last": A 3D tensor with shape: (batch_shape, steps, channels)
+    If data_format="channels_first": A 3D tensor with shape: (batch_shape, channels, steps)
+    Outputs:
+    If data_format="channels_last": A 3D tensor with shape: (batch_shape, new_steps, filters)
+    If data_format="channels_first": A 3D tensor with shape: (batch_shape, filters, new_steps)
+    '''
     return SeparableConv1D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         depth_multiplier=hp.Int("depth_multiplier", min_value=1, max_value=3),
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
@@ -237,12 +320,23 @@ def build_SeparableConv1D_layer(hp):
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
     )
 
-def build_SeparableConv2D_layer(hp):
+def build_SeparableConv2D_layer(hp, data_format = 'channels_last'):
+    '''
+    Builds Optimal SeparableConv2D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    If data_format="channels_last": A 4D tensor with shape: (batch_size, height, width, channels)
+    If data_format="channels_first": A 4D tensor with shape: (batch_size, channels, height, width)
+    Outputs:
+    If data_format="channels_last": A 4D tensor with shape: (batch_size, new_height, new_width, filters)
+    If data_format="channels_first": A 4D tensor with shape: (batch_size, filters, new_height, new_width)
+    '''
     return SeparableConv2D(
         filters=hp.Int("filters", min_value=16, max_value=64, step=16),
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
+        data_format = data_format,
         dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
         depth_multiplier=hp.Int("depth_multiplier", min_value=1, max_value=3),
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
@@ -259,13 +353,26 @@ def build_SeparableConv2D_layer(hp):
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
     )
 
-def build_DepthwiseConv2D_layer(hp):
+def build_DepthwiseConv2D_layer(hp, data_format = 'channels_last'):
+    '''
+    Builds Optimal SeparableConv2D layer using Keras Hyperparameter tuner
+    Inputs:
+    hp (Keras Hyperparamter tuner)
+    If data_format="channels_last": A 4D tensor with shape: (batch_size, height, width, channels)
+    If data_format="channels_first": A 4D tensor with shape: (batch_size, channels, height, width)
+    Outputs:
+    If data_format="channels_last": A 4D tensor with shape: (batch_size, new_height, new_width, channels * depth_multiplier)
+    If data_format="channels_first": A 4D tensor with shape: (batch_size, channels * depth_multiplier, new_height, new_width)
+    Returns:
+    A 4D tensor representing activation(depthwise_conv2d(inputs, kernel) + bias).
+    ValueError: when both strides > 1 and dilation_rate > 1.
+    '''
     return DepthwiseConv2D(
         kernel_size=hp.Int("kernel_size", min_value=2, max_value=5),
         strides=(1, 1),
         padding=hp.Choice("padding", values=["valid", "same"]),
         depth_multiplier=hp.Int("depth_multiplier", min_value=1, max_value=3),
-        data_format=hp.Choice("data_format", values=[None, "channels_last", "channels_first"]),
+        data_format=data_format,
         dilation_rate=(1, 1),
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
         use_bias=hp.Boolean("use_bias", default=True),
