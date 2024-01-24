@@ -27,15 +27,15 @@ def build_Dense_layer(hp):
     '''
     return Dense(
         units=hp.Int("units", min_value=32, max_value=512, step=32),
-        activation=hp.Choice("activation", [None, 'relu', 'tanh', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+        activation=hp.Choice("activation", [  'relu', 'tanh', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
         use_bias=hp.Boolean("use_bias"),
         kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm'])
+        kernel_regularizer=hp.Choice("kernel_regularizer", [  'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [  'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [  'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [  'max_norm', 'non_neg', 'unit_norm'])
     )
 
 def build_Dropout_layer(hp):
@@ -78,13 +78,13 @@ def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
         kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
         recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        kernel_regularizer=hp.Choice("kernel_regularizer", [  'l1', 'l2', 'l1_l2']),
+        recurrent_regularizer=hp.Choice("recurrent_regularizer", [  'l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", [  'l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", [  'l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
+        recurrent_constraint=hp.Choice("recurrent_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
         return_sequences=return_sequences,
@@ -112,13 +112,13 @@ def build_LSTM_layer(hp, return_sequences=False, seed = 42):
         recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
         unit_forget_bias = hp.Boolean("forget_bias"),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        kernel_regularizer=hp.Choice("kernel_regularizer", ['l1', 'l2', 'l1_l2']),
+        recurrent_regularizer=hp.Choice("recurrent_regularizer", ['l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", ['l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", ['l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", ['max_norm', 'non_neg', 'unit_norm']),
+        recurrent_constraint=hp.Choice("recurrent_constraint", ['max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", ['max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
         seed = seed,
@@ -147,13 +147,13 @@ def build_GRU_layer(hp, return_sequences=False, seed = 42):
         recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
         bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
         unit_forget_bias = hp.Boolean("forget_bias"),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [None, 'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [None, 'max_norm', 'non_neg', 'unit_norm']),
+        kernel_regularizer=hp.Choice("kernel_regularizer", ['l1', 'l2', 'l1_l2']),
+        recurrent_regularizer=hp.Choice("recurrent_regularizer", ['l1', 'l2', 'l1_l2']),
+        bias_regularizer=hp.Choice("bias_regularizer", ['l1', 'l2', 'l1_l2']),
+        activity_regularizer=hp.Choice("activity_regularizer", ['l1', 'l2', 'l1_l2']),
+        kernel_constraint=hp.Choice("kernel_constraint", ['max_norm', 'non_neg', 'unit_norm']),
+        recurrent_constraint=hp.Choice("recurrent_constraint", ['max_norm', 'non_neg', 'unit_norm']),
+        bias_constraint=hp.Choice("bias_constraint", ['max_norm', 'non_neg', 'unit_norm']),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
         seed = seed,
@@ -183,11 +183,11 @@ def build_Conv1D_layer(hp, data_format = 'channels_last'):
         use_bias=hp.Boolean("use_bias", default=True),
         kernel_initializer=hp.Choice("kernel_initializer", values=["glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
         bias_initializer=hp.Choice("bias_initializer", values=["zeros", "ones", "glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
-        kernel_regularizer=hp.Choice("kernel_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        bias_regularizer=hp.Choice("bias_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        activity_regularizer=hp.Choice("activity_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        kernel_constraint=hp.Choice("kernel_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
-        bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
+        kernel_regularizer=hp.Choice("kernel_regularizer", values=["l1", "l2", "l1_l2"]),
+        bias_regularizer=hp.Choice("bias_regularizer", values=["l1", "l2", "l1_l2"]),
+        activity_regularizer=hp.Choice("activity_regularizer", values=["l1", "l2", "l1_l2"]),
+        kernel_constraint=hp.Choice("kernel_constraint", values=["max_norm", "non_neg", "unit_norm"]),
+        bias_constraint=hp.Choice("bias_constraint", values=["max_norm", "non_neg", "unit_norm"])
     )
     
 def build_Conv2D_layer(hp, data_format = 'channels_last'):
@@ -212,11 +212,11 @@ def build_Conv2D_layer(hp, data_format = 'channels_last'):
         use_bias=hp.Boolean("use_bias", default=True),
         kernel_initializer=hp.Choice("kernel_initializer", values=["glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
         bias_initializer=hp.Choice("bias_initializer", values=["zeros", "ones", "glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
-        kernel_regularizer=hp.Choice("kernel_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        bias_regularizer=hp.Choice("bias_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        activity_regularizer=hp.Choice("activity_regularizer", values=[None, "l1", "l2", "l1_l2"]),
-        kernel_constraint=hp.Choice("kernel_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
-        bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"])
+        kernel_regularizer=hp.Choice("kernel_regularizer", values=["l1", "l2", "l1_l2"]),
+        bias_regularizer=hp.Choice("bias_regularizer", values=["l1", "l2", "l1_l2"]),
+        activity_regularizer=hp.Choice("activity_regularizer", values=["l1", "l2", "l1_l2"]),
+        kernel_constraint=hp.Choice("kernel_constraint", values=["max_norm", "non_neg", "unit_norm"]),
+        bias_constraint=hp.Choice("bias_constraint", values=["max_norm", "non_neg", "unit_norm"])
     )
 
 def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last', seed = 42):

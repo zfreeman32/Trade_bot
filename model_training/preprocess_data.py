@@ -45,9 +45,9 @@ def preprocess_stock_data(df, n_in=1, n_out=1, format='%m/%d/%Y'):
     date_column = df['Date']
     date_df = pd.to_datetime(date_column, format=format)
     # Create new columns for year, month, and day
-    df['Year'] = date_df.year
-    df['Month'] = date_df.month
-    df['Day'] = date_df.day
+    df['Year'] = date_df.dt.year
+    df['Month'] = date_df.dt.month
+    df['Day'] = date_df.dt.day
     # Drop the original 'Date' column
     df.drop(columns=['Date'], inplace=True)
 

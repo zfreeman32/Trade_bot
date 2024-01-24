@@ -2,30 +2,30 @@
 import sys
 sys.path.append(r'C:\Users\zeb.freeman\Documents\Trade_bot')
 from sklearn.metrics import mean_squared_error
-from keras.models import Sequential, Dense
-from keras.layers import Flatten, Input
+from keras.models import Sequential
+from keras.layers import Flatten, Input, Dense
 from keras.optimizers import Adam
 from layer_build import build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
 
 seed = 42
 
 # Build the LSTM model
-def build_LSTM_model(hp, input_shape, seed = 42):
-	model = Sequential()
-	# Add Input layer
-	model.add(Input(shape=input_shape))
-	# Add LSTM layers based on the hyperparameters
-	for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
-		model.add(build_LSTM_layer(hp, return_sequences=True, seed = seed))
-	# Add last LSTM
-	model.add(build_LSTM_layer(hp, return_sequences = False, seed = seed))
-	# Add Dense layers based on the hyperparameters
-	for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
-		model.add(build_Dense_layer(hp))
-	model.add(Dense(units=1))
-	model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG")),
-					loss=mean_squared_error)
-	return model
+def build_LSTM_model(hp, input_shape, seed=42):
+    model = Sequential()
+    # Add LSTM layers based on the hyperparameters
+    for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
+        model.add(build_LSTM_layer(hp, return_sequences=True, seed=seed, input_shape=input_shape))
+    # Add last LSTM
+    model.add(build_LSTM_layer(hp, return_sequences=False, seed=seed, input_shape=input_shape))
+    # Add Dense layers based on the hyperparameters
+    for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
+        model.add(build_Dense_layer(hp))
+    # Add output layer
+    model.add(Dense(units=1))
+    # Compile the model
+    model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG")),
+        loss='mean_squared_error')
+    return model
 
 # Build the GRU model
 def build_GRU_model(hp, input_shape, seed = 42):

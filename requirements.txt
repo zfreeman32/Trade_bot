@@ -1,8 +1,8 @@
 pandas
 numpy
 ta
-backtesting
 scikit-learn
 tensorflow
 keras
+keras-tuner
 matplotlib
