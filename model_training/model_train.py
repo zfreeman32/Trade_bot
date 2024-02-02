@@ -40,41 +40,69 @@ for column in all_signals_df.columns:
 
 df = pd.concat([indicators_df, all_signals_df], axis = 1)
 df = df.iloc[1000:7600,:]
+columns_to_drop = ['trend_psar_up', 'trend_psar_down']
+df = df.drop(columns=columns_to_drop)
 df.head
 
-#%%
 reframed_data = preprocess_data.preprocess_stock_data(df)
 reframed_data
 
 #%%
+from sklearn.model_selection import train_test_split
+
+# Assuming values is your dataset
 # split into train and test sets
 values = reframed_data.values
-n_total_days = 1000
-n_train_days = int(n_total_days * 0.8)
-# Use the last 1000 days
-data_subset = values[-n_total_days:, :]
-# split into training and testing
-train = data_subset[:n_train_days, :]
-test = data_subset[n_train_days:, :]
+# split into train and test sets without shuffling
+train, test = train_test_split(values, test_size=0.2, shuffle=False)
+
 # split into input and outputs
 train_X, train_y = train[:, :-1], train[:, -1]
 test_X, test_y = test[:, :-1], test[:, -1]
+
 # reshape input to be 3D [samples, timesteps, features]
 train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
 test_X = test_X.reshape((test_X.shape[0], 1, test_X.shape[1]))
+
 print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
+
+
+#%%
+# from keras import Sequential
+# from keras.layers import LSTM, Dense
+
+# # Define your LSTM model
+# train_X = train_X[-5200:]
+# train_y = train_y[-5200:]
+
+# model = Sequential()
+# model.add(LSTM(units=50, input_shape=(train_X.shape[1], train_X.shape[2])))
+# model.add(Dense(units=1))  # Assuming regression task, adjust for classification
+# model.compile(loss='mean_squared_error', optimizer='adam')
+
+# # Train the model
+# model.fit(train_X, train_y, epochs=5, batch_size=32, validation_data=(test_X, test_y))
+
+# # Evaluate the model on the test set
+# loss = model.evaluate(test_X, test_y)
+# print(f'Test Loss: {loss}')
+
+# # Make predictions on the test set
+# predictions = model.predict(test_X)
 
 #%%
 # Hyperparameter tuning using RandomSearch from Kerastuner
-tuner = kt.Hyperband(
-    hypermodel = model_build.build_LSTM_model(HyperParameters(), input_shape = (train_X.shape[1], train_X.shape[2]), seed = 42),
-    objective='val_accuracy',
-    max_epochs=100,
-    factor=3,
-    hyperband_iterations=1
+tuner = kt.BayesianOptimization(
+    hypermodel=model_build.build_LSTM_model,
+    objective="val_loss",
+    overwrite=True,
+    max_retries_per_trial=3,
+    max_consecutive_failed_trials=8,
 )
+train_X = train_X[-5200:]
+train_y = train_y[-5200:]
+print(train_X.shape)
 
-#%%
 # Train the model with hyperparameter tuning
 tuner.search(train_X, train_y, epochs=5, validation_data=(test_X, test_y))
 
@@ -85,19 +113,39 @@ best_model = tuner.get_best_models(1)[0]
 evaluation = best_model.evaluate(test_X, test_y)
 print(f"Test Loss: {evaluation}")
 
+#%%
+# Get the best trial
+best_trial = tuner.oracle.get_best_trials(1)[0]
+
+# Get the best hyperparameters
+best_hyperparameters = best_trial.hyperparameters.values
+print("Best Hyperparameters:", best_hyperparameters)
+
+# Print the summary of the best model
+best_model.summary()
+
 # fit network
 history = best_model.fit(train_X, train_y, epochs=50, batch_size=72, validation_data=(test_X, test_y), verbose=2, shuffle=False)
+
 # plot history
 pyplot.plot(history.history['loss'], label='train')
 pyplot.plot(history.history['val_loss'], label='test')
 pyplot.legend()
 pyplot.show()
  
+#%%
+
 # make a prediction
 yhat = best_model.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
+
+df
+values = df.astype('float32')
+values
 # invert scaling for forecast
 scaler = MinMaxScaler(feature_range=(0, 1))
+scaled = scaler.fit_transform(values)
+
 inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:,0]

@@ -10,20 +10,21 @@ from layer_build import build_Dense_layer, build_LSTM_layer, build_GRU_layer, bu
 seed = 42
 
 # Build the LSTM model
-def build_LSTM_model(hp, input_shape, seed=42):
+def build_LSTM_model(hp):
+    # input_shape = Input(shape=(train_X.shape[1], train_X.shape[2]))
     model = Sequential()
     # Add LSTM layers based on the hyperparameters
     for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
-        model.add(build_LSTM_layer(hp, return_sequences=True, seed=seed, input_shape=input_shape))
+        model.add(build_LSTM_layer(hp, return_sequences=True))
     # Add last LSTM
-    model.add(build_LSTM_layer(hp, return_sequences=False, seed=seed, input_shape=input_shape))
+    model.add(build_LSTM_layer(hp, return_sequences=False))
     # Add Dense layers based on the hyperparameters
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
     # Add output layer
     model.add(Dense(units=1))
     # Compile the model
-    model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG")),
+    model.compile(optimizer=Adam(learning_rate=.001),
         loss='mean_squared_error')
     return model
 
