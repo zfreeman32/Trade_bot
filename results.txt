@@ -34,7 +34,40 @@ Total params: 46561 (181.88 KB)
 Trainable params: 46561 (181.88 KB)
 Non-trainable params: 0 (0.00 Byte)
 
-
+Bayesian Optimization
+Best Hyperparameters: 
+{'num_LSTM_layers': 2, 
+'units_first': 32, 
+'activation': 'relu', 
+'recurrent_activation': 'elu', 
+'kernel_initializer': 'glorot_uniform', 
+'recurrent_initializer': 'glorot_normal', 
+'bias_initializer': 'glorot_uniform', 
+'forget_bias': True, 
+'dropout': 0.30000000000000004, 
+'recurrent_dropout': 0.30000000000000004, 
+'num_dense_layers': 2, 
+'units': 64}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ lstm (LSTM)                 (None, 1, 32)             36096     
+                                                                 
+ lstm_1 (LSTM)               (None, 1, 32)             8320      
+                                                                 
+ lstm_2 (LSTM)               (None, 32)                8320      
+                                                                 
+ dense (Dense)               (None, 64)                2112      
+                                                                 
+ dense_1 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_2 (Dense)             (None, 1)                 65        
+                                                                 
+=================================================================
+Total params: 59073 (230.75 KB)
+Trainable params: 59073 (230.75 KB)
+Non-trainable params: 0 (0.00 Byte)
 
 ML_TEST.py
 vix_close w5_8_13_signal mfi_signal  ... kama_signal PPO_signal Ao_signal
