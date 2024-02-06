@@ -92,12 +92,13 @@ print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 
 #%%
 # Hyperparameter tuning using RandomSearch from Kerastuner
-tuner = kt.BayesianOptimization(
-    hypermodel=model_build.build_LSTM_model,
+tuner = kt.Hyperband(
+    hypermodel=model_build.build_GRU_model,
     objective="val_loss",
     overwrite=True,
     max_retries_per_trial=3,
     max_consecutive_failed_trials=8,
+	directory = 'GRU_trials'
 )
 train_X = train_X[-5200:]
 train_y = train_y[-5200:]
@@ -114,12 +115,6 @@ evaluation = best_model.evaluate(test_X, test_y)
 print(f"Test Loss: {evaluation}")
 
 #%%
-# Get the best trial
-best_trial = tuner.oracle.get_best_trials(1)[0]
-
-# Get the best hyperparameters
-best_hyperparameters = best_trial.hyperparameters.values
-print("Best Hyperparameters:", best_hyperparameters)
 
 # Print the summary of the best model
 best_model.summary()
