@@ -1,0 +1,200 @@
+model_train.py 
+LSTM HyperBand Search
+Best Hyperparameters: 
+{'num_LSTM_layers': 1, 
+'units_first': 32, 
+'activation': 'relu', 
+'recurrent_activation': 'silu', 
+'kernel_initializer': 'glorot_uniform', 
+'recurrent_initializer': 'he_normal', 
+'bias_initializer': 'glorot_normal', 
+'forget_bias': True, 
+'dropout': 0.35000000000000003, 
+'recurrent_dropout': 0.2, 
+'num_dense_layers': 2, 
+'units': 32, 
+'learning_rate': 0.0035708917935944437, 
+'tuner/epochs': 2, 'tuner/initial_epoch': 0, 'tuner/bracket': 4, 'tuner/round': 0}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ lstm (LSTM)                 (None, 1, 32)             36096     
+                                                                 
+ lstm_1 (LSTM)               (None, 32)                8320      
+                                                                 
+ dense (Dense)               (None, 32)                1056      
+                                                                 
+ dense_1 (Dense)             (None, 32)                1056      
+                                                                 
+ dense_2 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 46561 (181.88 KB)
+Trainable params: 46561 (181.88 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+LSTM Bayesian Optimization
+Best Hyperparameters: 
+{'num_LSTM_layers': 2, 
+'units_first': 32, 
+'activation': 'relu', 
+'recurrent_activation': 'elu', 
+'kernel_initializer': 'glorot_uniform', 
+'recurrent_initializer': 'glorot_normal', 
+'bias_initializer': 'glorot_uniform', 
+'forget_bias': True, 
+'dropout': 0.30000000000000004, 
+'recurrent_dropout': 0.30000000000000004, 
+'num_dense_layers': 2, 
+'units': 64}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ lstm (LSTM)                 (None, 1, 32)             36096     
+                                                                 
+ lstm_1 (LSTM)               (None, 1, 32)             8320      
+                                                                 
+ lstm_2 (LSTM)               (None, 32)                8320      
+                                                                 
+ dense (Dense)               (None, 64)                2112      
+                                                                 
+ dense_1 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_2 (Dense)             (None, 1)                 65        
+                                                                 
+=================================================================
+Total params: 59073 (230.75 KB)
+Trainable params: 59073 (230.75 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+GRU HyperBand
+Best Hyperparameters:
+{'num_GRU_layers': 1, 
+'units_first': 32, 
+'activation': 'sigmoid', 
+'recurrent_activation': 'sigmoid',
+'kernel_initializer': 'glorot_normal',
+'recurrent_initializer': 'he_normal',
+'bias_initializer': 'zeros',
+'dropout': 0.2,
+'recurrent_dropout': 0.2,
+'num_dense_layers': 1, 
+'units': 32 }
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ gru (GRU)                   (None, 1, 32)             27168     
+                                                                 
+ gru_1 (GRU)                 (None, 32)                6336      
+                                                                 
+ dense (Dense)               (None, 32)                1056      
+                                                                 
+ dense_1 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 34593 (135.13 KB)
+Trainable params: 34593 (135.13 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+GRU Bayesian Optimization
+Best Hyperparameters:
+{'num_GRU_layers': 2, 
+'units_first': 32,
+'activation': 'softplus', 
+'recurrent_activation': 'sigmoid', 
+'kernel_initializer': 'he_normal', 
+'recurrent_initializer': 'glorot_normal', 
+'bias_initializer': 'glorot_normal', 
+'dropout': 0.25, 
+'recurrent_dropout': 0.30000000000000004, 
+'num_dense_layers': 2, 
+'units': 32}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ gru (GRU)                   (None, 1, 32)             27168     
+                                                                 
+ gru_1 (GRU)                 (None, 1, 32)             6336      
+                                                                 
+ gru_2 (GRU)                 (None, 32)                6336      
+                                                                 
+ dense (Dense)               (None, 32)                1056      
+                                                                 
+ dense_1 (Dense)             (None, 32)                1056      
+                                                                 
+ dense_2 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 41985 (164.00 KB)
+Trainable params: 41985 (164.00 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+SimpleRNN Bayesian Optimization
+Best Hyperparameters:
+{'num_SimpleRNN_layers': 2, 
+'units_first': 32,
+'activation': 'sigmoid',
+'kernel_initializer': 'glorot_normal', 
+'recurrent_initializer': 'random_normal', 
+'bias_initializer': 'zeros', 
+'dropout': 0.35000000000000003, 
+'recurrent_dropout': 0.35000000000000003, 
+'num_dense_layers': 1,
+'units': 32}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ simple_rnn (SimpleRNN)      (None, 1, 32)             9024      
+                                                                 
+ simple_rnn_1 (SimpleRNN)    (None, 1, 32)             2080      
+                                                                 
+ simple_rnn_2 (SimpleRNN)    (None, 32)                2080      
+                                                                 
+ dense (Dense)               (None, 32)                1056      
+                                                                 
+ dense_1 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 14273 (55.75 KB)
+Trainable params: 14273 (55.75 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+SimpleRNN HyperBand
+Best Hyperparameters:
+{'num_SimpleRNN_layers': 3, 
+'units_first': 32, 
+'activation': 'silu', 
+'kernel_initializer': 'zeros', 
+'recurrent_initializer': 'glorot_normal',
+'bias_initializer': 'zeros', 
+'dropout': 0.2, 
+'recurrent_dropout': 0.25,
+'num_dense_layers': 2, 
+'units': 64}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ simple_rnn (SimpleRNN)      (None, 1, 32)             9024      
+                                                                 
+ simple_rnn_1 (SimpleRNN)    (None, 1, 32)             2080      
+                                                                 
+ simple_rnn_2 (SimpleRNN)    (None, 1, 32)             2080      
+                                                                 
+ simple_rnn_3 (SimpleRNN)    (None, 32)                2080      
+                                                                 
+ dense (Dense)               (None, 64)                2112      
+                                                                 
+ dense_1 (Dense)             (None, 64)                4160      
+                                                                 
+ dense_2 (Dense)             (None, 1)                 65        
+                                                                 
+=================================================================
+Total params: 21601 (84.38 KB)
+Trainable params: 21601 (84.38 KB)
+Non-trainable params: 0 (0.00 Byte)

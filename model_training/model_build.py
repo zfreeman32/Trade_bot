@@ -41,25 +41,23 @@ def build_GRU_model(hp):
 		model.add(build_Dense_layer(hp))
 	model.add(Dense(units = 1))
 	model.compile(optimizer=Adam(learning_rate=.001),
-					loss=mean_squared_error)
+		loss='mean_squared_error')
 	return model
 
 # Build the SimpleRNN model
-def build_SimpleRNN_model(hp, input_shape, seed = 42):
+def build_SimpleRNN_model(hp):
 	model = Sequential()
-	# Add Input layer
-	model.add(Input(shape=input_shape))  
 	# Add LSTM layers based on the hyperparameters
 	for i in range(hp.Int("num_SimpleRNN_layers", min_value=1, max_value=3, step=1)):
-		model.add(build_SimpleRNN_layer(hp, return_sequences=True, seed = seed))
+		model.add(build_SimpleRNN_layer(hp, return_sequences=True))
 	# Add last LSTM
-	model.add(build_SimpleRNN_layer(hp, return_sequences= False, seed = seed))	
+	model.add(build_SimpleRNN_layer(hp, return_sequences= False ))	
 	# Add Dense layers based on the hyperparameters
 	for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
 		model.add(build_Dense_layer(hp))
 	model.add(Dense(units = 1))
-	model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG")),
-					loss=mean_squared_error)
+	model.compile(optimizer=Adam(learning_rate=.001),
+		loss='mean_squared_error')
 	return model
 
 # Build Conv1D model

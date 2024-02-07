@@ -93,12 +93,12 @@ print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 #%%
 # Hyperparameter tuning using RandomSearch from Kerastuner
 tuner = kt.Hyperband(
-    hypermodel=model_build.build_GRU_model,
+    hypermodel=model_build.build_SimpleRNN_model,
     objective="val_loss",
     overwrite=True,
     max_retries_per_trial=3,
     max_consecutive_failed_trials=8,
-	directory = 'GRU_trials'
+	directory = 'SimpleRNN_trials'
 )
 train_X = train_X[-5200:]
 train_y = train_y[-5200:]
@@ -114,7 +114,14 @@ best_model = tuner.get_best_models(1)[0]
 evaluation = best_model.evaluate(test_X, test_y)
 print(f"Test Loss: {evaluation}")
 
+
 #%%
+# Get the best hyperparameters
+best_hyperparameters = tuner.get_best_hyperparameters(1)[0]
+
+# Print the hyperparameters
+print("Best Hyperparameters:")
+print(best_hyperparameters.values)
 
 # Print the summary of the best model
 best_model.summary()
@@ -129,7 +136,6 @@ pyplot.legend()
 pyplot.show()
  
 #%%
-
 # make a prediction
 yhat = best_model.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))

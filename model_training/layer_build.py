@@ -62,7 +62,7 @@ def build_MaxPooling1D_Layer(hp, data_format = 'channel_last'):
         data_format = data_format
         )
 
-def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
+def build_SimpleRNN_layer(hp, return_sequences=False):
     '''
     Builds Optimal SimpleRNN using Keras HyperParameter Tuner
     Inupts hp for keras hyperparameter tuning, return_sequences, and seed
@@ -71,27 +71,24 @@ def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
     Input Shape: (num_training_examples, num_timesteps, num_features)
     '''
     return SimpleRNN(
-        units=hp.Int("units", min_value=32, max_value=512, step=32),
-        activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
-        use_bias=hp.Boolean("use_bias"),
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'truncated_normal', 'glorot_normal', 'he_normal', 'lecun_normal', ]),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal',  'he_normal', ]),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'lecun_normal', 'glorot_normal', 'he_normal']),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [  'l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", [  'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [  'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [  'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
-        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        units=hp.Int("units_first", min_value=32, max_value=128, step=32),
+        activation=hp.Choice("activation", [ 'relu', 'sigmoid', 'silu', 'softplus', 'elu', 'exponential', 'gelu', 'linear' ]),
+        use_bias=True,
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','random_normal', 'lecun_normal','glorot_normal']),
+        kernel_regularizer='l1',
+        recurrent_regularizer='l1',
+        bias_regularizer='l1',
+        activity_regularizer='l1',
+        kernel_constraint= 'unit_norm',
+        recurrent_constraint= 'unit_norm',
+        bias_constraint= 'unit_norm',
+        dropout=hp.Float("dropout", min_value=0.2, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.2, max_value=0.5, step=0.05),
         return_sequences=return_sequences,
-        return_state=hp.Boolean("return_state"),
-        go_backwards=hp.Boolean("go_backwards"),
-        stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll"),
-        seed = seed
+        go_backwards= False,
+        unroll=False
     )
 
 def build_LSTM_layer(hp, return_sequences=False):
