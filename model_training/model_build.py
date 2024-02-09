@@ -61,10 +61,8 @@ def build_SimpleRNN_model(hp):
 	return model
 
 # Build Conv1D model
-def build_Conv1D_model(hp, input_shape, data_format = 'channels_last'):
+def build_Conv1D_model(hp, data_format = 'channels_last'):
     model = Sequential()
-    # Add Input layer
-    model.add(Input(shape=input_shape))
     # Add Conv1D layers based on the hyperparameters
     for i in range(hp.Int("num_conv1d_layers", min_value=1, max_value=3, step=1)):
         model.add(build_Conv1D_layer(hp, data_format = data_format))  #"channels_last": (batch, steps, features), "channels_first": (batch, features, steps).    
@@ -74,14 +72,13 @@ def build_Conv1D_model(hp, input_shape, data_format = 'channels_last'):
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
     model.add(Dense(units = 1))
-    model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="LOG")),loss=mean_squared_error)
+    model.compile(optimizer=Adam(learning_rate = .001))
     return model
 
 # Conv1D model
-def build_Conv1DPooling_model(hp, input_shape, data_format = 'channel_last'):
+def build_Conv1DPooling_model(hp, data_format = 'channels_last'):
     model = Sequential()
     # Add Input layer
-    model.add(Input(shape=input_shape))
     # Add Conv1D layers based on the hyperparameters
     for i in range(hp.Int("num_layers", min_value=1, max_value=3, step=1)):
         for i in range(hp.Int("num_conv1d_layers", min_value=1, max_value=3, step=1)):
@@ -93,13 +90,13 @@ def build_Conv1DPooling_model(hp, input_shape, data_format = 'channel_last'):
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
     model.add(Dense(units = 1))
+    model.compile(optimizer=Adam(learning_rate = .001))
     return model
 
 # Conv1D + LSTM model
-def build_Conv1D_LSTM_model(hp, input_shape, data_format = 'channel_last'):
+def build_Conv1D_LSTM_model(hp, data_format = 'channels_last'):
     model = Sequential()
     # Add Input layer
-    model.add(Input(shape=input_shape))
     # Add Conv1D layers based on the hyperparameters
     for i in range(hp.Int("num_layers_layers", min_value=1, max_value=3, step=1)):
         for i in range(hp.Int("num_conv1D_layers", min_value=1, max_value=3, step=1)):
@@ -113,4 +110,5 @@ def build_Conv1D_LSTM_model(hp, input_shape, data_format = 'channel_last'):
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
     model.add(Dense(units = 1))
+    model.compile(optimizer=Adam(learning_rate = .001))
     return model

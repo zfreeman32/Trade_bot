@@ -93,12 +93,12 @@ print(train_X.shape, train_y.shape, test_X.shape, test_y.shape)
 #%%
 # Hyperparameter tuning using RandomSearch from Kerastuner
 tuner = kt.Hyperband(
-    hypermodel=model_build.build_SimpleRNN_model,
+    hypermodel=model_build.build_Conv1D_LSTM_model,
     objective="val_loss",
     overwrite=True,
     max_retries_per_trial=3,
     max_consecutive_failed_trials=8,
-	directory = 'SimpleRNN_trials'
+	directory = 'Conv1DLSTM_trials'
 )
 train_X = train_X[-5200:]
 train_y = train_y[-5200:]

@@ -198,3 +198,175 @@ _________________________________________________________________
 Total params: 21601 (84.38 KB)
 Trainable params: 21601 (84.38 KB)
 Non-trainable params: 0 (0.00 Byte)
+
+Conv1D HyperBand
+Best Hyperparameters:
+{'num_conv1d_layers': 1, 
+'filters': 48, 
+'kernel_size': 4, 
+'strides': 1, 
+'padding': 'same', 
+'activation': 'relu', 
+'use_bias': False, 
+'kernel_initializer': 'he_normal', 
+'bias_initializer': 'zeros', 
+'kernel_regularizer': 'l2', 
+'bias_regularizer': 'l2', 
+'activity_regularizer': 'l1_l2', 
+'kernel_constraint': 'max_norm',
+'bias_constraint': 'unit_norm', 
+'num_dense_layers': 1, 
+'units': 32}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv1d (Conv1D)             (None, 1, 48)             47808     
+                                                                 
+ flatten (Flatten)           (None, 48)                0         
+                                                                 
+ dense (Dense)               (None, 32)                1568      
+                                                                 
+ dense_1 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 49409 (193.00 KB)
+Trainable params: 49409 (193.00 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+Conv1D Bayesian Optimization
+Best Hyperparameters:
+{'num_conv1d_layers': 3, 'filters': 64, 'kernel_size': 2, 'strides': 1, 'padding': 'same', 'activation': 'tanh', 'use_bias': False, 'kernel_initializer': 'glorot_uniform', 'bias_initializer': 'glorot_normal', 'kernel_regularizer': 'l1', 'bias_regularizer': 'l1_l2', 'activity_regularizer': 'l1_l2', 'kernel_constraint': 'max_norm', 'bias_constraint': 'max_norm', 'num_dense_layers': 1, 'units': 32}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv1d (Conv1D)             (None, 1, 64)             31872     
+                                                                 
+ conv1d_1 (Conv1D)           (None, 1, 64)             8192      
+                                                                 
+ conv1d_2 (Conv1D)           (None, 1, 64)             8192      
+                                                                 
+ flatten (Flatten)           (None, 64)                0         
+                                                                 
+ dense (Dense)               (None, 32)                2080      
+                                                                 
+ dense_1 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 50369 (196.75 KB)
+Trainable params: 50369 (196.75 KB)
+Non-trainable params: 0 (0.00 Byte)
+
+Conv1D Pooling Bayesian Optimization
+Best Hyperparameters:
+{'num_layers': 2,
+'num_conv1d_layers': 3, 
+'filters': 16, 
+'kernel_size': 2, 
+'strides': 1,
+'padding': 'same', 
+'activation': 'tanh',
+'use_bias': True,
+'kernel_initializer': 'glorot_uniform',
+'bias_initializer': 'he_uniform', 
+'kernel_regularizer': 'l1_l2',
+'bias_regularizer': 'l2', 
+'activity_regularizer': 'l2', 
+'kernel_constraint': 'non_neg',
+'bias_constraint': 'unit_norm',
+'pool_size': 1,
+'dropout_rate': 0.0, 
+'num_dense_layers': 1,
+'units': 64}
+
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv1d (Conv1D)             (None, 1, 16)             7984      
+                                                                 
+ conv1d_1 (Conv1D)           (None, 1, 16)             528       
+                                                                 
+ conv1d_2 (Conv1D)           (None, 1, 16)             528       
+                                                                 
+ max_pooling1d MaxPooling1  (None, 1, 16)             0                                                   
+                                                                 
+ conv1d_3 (Conv1D)           (None, 1, 16)             528       
+                                                                 
+ conv1d_4 (Conv1D)           (None, 1, 16)             528       
+                                                                 
+ conv1d_5 (Conv1D)           (None, 1, 16)             528       
+                                                                 
+ max_pooling1d_1 MaxPoolin  (None, 1, 16)             0                                                                  
+                                                                 
+ flatten (Flatten)           (None, 16)                0        
+
+Conv1D Pooling HyperBand
+Best Hyperparameters:
+{'num_layers': 1, 
+'num_conv1d_layers': 3, 
+'filters': 16,
+'kernel_size': 5, 
+'strides': 2, 
+'padding': 'same', 
+'activation': 'relu', 
+'use_bias': True, 
+'kernel_initializer': 'glorot_uniform', 
+'bias_initializer': 'he_uniform',
+'kernel_regularizer': 'l2', 
+'bias_regularizer': 'l1_l2', 
+'activity_regularizer': 'l2', 
+'kernel_constraint': 'max_norm',
+'bias_constraint': 'non_neg',
+'pool_size': 3,
+'dropout_rate': 0.0, 
+'num_dense_layers': 1,
+'units': 32,}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv1d (Conv1D)             (None, 1, 16)             19936     
+                                                                 
+ conv1d_1 (Conv1D)           (None, 1, 16)             1296      
+                                                                 
+ conv1d_2 (Conv1D)           (None, 1, 16)             1296      
+                                                                 
+ max_pooling1d MaxPooling1  (None, 1, 16)             0                                                                       
+                                                                 
+ flatten (Flatten)           (None, 16)                0         
+                                                                 
+ dropout (Dropout)           (None, 16)                0         
+                                                                 
+ dense (Dense)               (None, 32)                544       
+                                                                 
+ dense_1 (Dense)             (None, 1)                 33        
+                                                                 
+=================================================================
+Total params: 23105 (90.25 KB)
+
+Conv1D LSTM Bayesian Optimization
+Best Hyperparameters:
+{'num_layers_layers': 3, 'num_conv1D_layers': 3, 'filters': 32, 'kernel_size': 3, 'strides': 1, 'padding': 'same', 'activation': 'tanh', 'use_bias': False, 'kernel_initializer': 'he_uniform', 'bias_initializer': 'glorot_uniform', 'kernel_regularizer': 'l2', 'bias_regularizer': 'l1_l2', 'activity_regularizer': 'l1_l2', 'kernel_constraint': 'non_neg', 'bias_constraint': 'non_neg', 'pool_size': 3, 'Flatten': False, 'num_lstm_layers': 1, 'units_first': 128, 'recurrent_activation': 'sigmoid', 'recurrent_initializer': 'random_normal', 'forget_bias': False, 'dropout': 0.30000000000000004, 'recurrent_dropout': 0.35000000000000003, 'num_dense_layers': 1, 'units': 128}
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv1d (Conv1D)             (None, 1, 32)             23904     
+                                                                 
+ conv1d_1 (Conv1D)           (None, 1, 32)             3072      
+                                                                 
+ conv1d_2 (Conv1D)           (None, 1, 32)             3072      
+                                                                 
+ max_pooling1d MaxPooling1  (None, 1, 32)             0                                                                       
+                                                                 
+ conv1d_3 (Conv1D)           (None, 1, 32)             3072      
+                                                                 
+ conv1d_4 (Conv1D)           (None, 1, 32)             3072      
+                                                                 
+ conv1d_5 (Conv1D)           (None, 1, 32)             3072      
+                                                                 
+ max_pooling1d_1 MaxPoolin  (None, 1, 32)             0                                                                   
+                                                                 
+ conv1d_6 (Conv1D)           (None, 1, 32)             3072  

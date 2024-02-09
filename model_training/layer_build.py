@@ -166,7 +166,7 @@ def build_Conv1D_layer(hp, data_format = 'channels_last'):
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
         data_format = data_format,
-        dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
+        dilation_rate=1,
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
         use_bias=hp.Boolean("use_bias", default=True),
         kernel_initializer=hp.Choice("kernel_initializer", values=["glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
@@ -207,7 +207,7 @@ def build_Conv2D_layer(hp, data_format = 'channels_last'):
         bias_constraint=hp.Choice("bias_constraint", values=["max_norm", "non_neg", "unit_norm"])
     )
 
-def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last', seed = 42):
+def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last'):
     '''
     Builds Optimal ConvLSTM1D layer using Keras Hyperparameter tuner
     Inputs:
@@ -243,7 +243,6 @@ def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_l
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.1),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.1),
-        seed=seed,
         return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
