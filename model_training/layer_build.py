@@ -26,16 +26,15 @@ def build_Dense_layer(hp):
     Output shape: (batch_size, ..., units)
     '''
     return Dense(
-        units=hp.Int("units", min_value=32, max_value=512, step=32),
-        activation=hp.Choice("activation", [  'relu', 'tanh', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
-        use_bias=hp.Boolean("use_bias"),
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [  'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [  'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [  'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [  'max_norm', 'non_neg', 'unit_norm'])
+        units=hp.Int("units", min_value=32, max_value=128, step=32),
+        activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','random_normal','lecun_normal','glorot_normal','he_normal']),
+        kernel_regularizer= 'l1',
+        bias_regularizer='l1',
+        activity_regularizer='l1',
+        kernel_constraint= 'unit_norm',
+        bias_constraint= 'unit_norm'
     )
 
 def build_Dropout_layer(hp):
@@ -63,7 +62,7 @@ def build_MaxPooling1D_Layer(hp, data_format = 'channel_last'):
         data_format = data_format
         )
 
-def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
+def build_SimpleRNN_layer(hp, return_sequences=False):
     '''
     Builds Optimal SimpleRNN using Keras HyperParameter Tuner
     Inupts hp for keras hyperparameter tuning, return_sequences, and seed
@@ -72,30 +71,27 @@ def build_SimpleRNN_layer(hp, return_sequences=False, seed = 42):
     Input Shape: (num_training_examples, num_timesteps, num_features)
     '''
     return SimpleRNN(
-        units=hp.Int("units", min_value=32, max_value=512, step=32),
-        activation=hp.Choice("activation", ['tanh', 'relu', 'sigmoid', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu']),
-        use_bias=hp.Boolean("use_bias"),
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'truncated_normal', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform', 'lecun_normal', 'lecun_uniform']),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros', 'ones', 'constant', 'random_normal', 'random_uniform', 'orthogonal', 'identity', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']),
-        kernel_regularizer=hp.Choice("kernel_regularizer", [  'l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", [  'l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", [  'l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", [  'l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", [  'max_norm', 'non_neg', 'unit_norm']),
-        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
-        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
+        units=hp.Int("units_first", min_value=32, max_value=128, step=32),
+        activation=hp.Choice("activation", [ 'relu', 'sigmoid', 'silu', 'softplus', 'elu', 'exponential', 'gelu', 'linear' ]),
+        use_bias=True,
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','random_normal', 'lecun_normal','glorot_normal']),
+        kernel_regularizer='l1',
+        recurrent_regularizer='l1',
+        bias_regularizer='l1',
+        activity_regularizer='l1',
+        kernel_constraint= 'unit_norm',
+        recurrent_constraint= 'unit_norm',
+        bias_constraint= 'unit_norm',
+        dropout=hp.Float("dropout", min_value=0.2, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.2, max_value=0.5, step=0.05),
         return_sequences=return_sequences,
-        return_state=hp.Boolean("return_state"),
-        go_backwards=hp.Boolean("go_backwards"),
-        stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll"),
-        seed = seed
+        go_backwards= False,
+        unroll=False
     )
 
-def build_LSTM_layer(hp, return_sequences=False, seed = 42):
+def build_LSTM_layer(hp, return_sequences=False):
     '''
     Builds Optimal LSTM Layer using Keras Hyperparamter Tuner
     Inupts hp for keras hyperparameter tuning, return_sequences, and seed
@@ -104,32 +100,29 @@ def build_LSTM_layer(hp, return_sequences=False, seed = 42):
     Input shape: (batch, timesteps, feature)
     '''
     return LSTM(
-        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        units=hp.Int("units_first", min_value=32, max_value=128, step=32),
+        activation=hp.Choice("activation", [ 'relu', 'sigmoid', 'silu', 'softplus', 'elu', 'exponential', 'gelu', 'linear' ]),
+        recurrent_activation=hp.Choice("recurrent_activation", ['sigmoid', 'relu', 'silu', 'softplus', 'elu', 'exponential', 'gelu' ]),
         use_bias=True,
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','random_normal', 'lecun_normal','glorot_normal']),
         unit_forget_bias = hp.Boolean("forget_bias"),
-        kernel_regularizer=hp.Choice("kernel_regularizer", ['l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", ['l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", ['l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", ['l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
-        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
-        seed = seed,
-        return_sequences=return_sequences, 
-        return_state=hp.Boolean("return_state"),
-        go_backwards=hp.Boolean("go_backwards"),
-        stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll")
+        kernel_regularizer='l1',
+        recurrent_regularizer='l1',
+        bias_regularizer='l1',
+        activity_regularizer='l1',
+        kernel_constraint= 'unit_norm',
+        recurrent_constraint= 'unit_norm',
+        bias_constraint= 'unit_norm',
+        dropout=hp.Float("dropout", min_value=0.2, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.2, max_value=0.5, step=0.05),
+        return_sequences=return_sequences,
+        go_backwards= False,
+        unroll=False
     )
 
-def build_GRU_layer(hp, return_sequences=False, seed = 42):
+def build_GRU_layer(hp, return_sequences=False):
     '''
     Builds Optimal GRU Layer using Keras Hyperparamter Tuner
     Inupts hp for keras hyperparameter tuning, return_sequences, seed, and reset after
@@ -139,30 +132,25 @@ def build_GRU_layer(hp, return_sequences=False, seed = 42):
     Input shape: (batch, timesteps, feature)
     '''
     return GRU(
-        units=hp.Int("units_first", min_value=32, max_value=512, step=32), 
-        activation=hp.Choice("activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
-        recurrent_activation=hp.Choice("recurrent_activation", ['tanh', 'relu', 'log_softmax', 'softmax', 'softplus', 'softsign', 'elu', 'exponential', 'linear', 'relu6', 'gelu' ]),
+        units=hp.Int("units_first", min_value=32, max_value=128, step=32),
+        activation=hp.Choice("activation", [ 'relu', 'sigmoid', 'silu', 'softplus', 'elu', 'exponential', 'gelu', 'linear' ]),
+        recurrent_activation=hp.Choice("recurrent_activation", ['sigmoid', 'relu', 'silu', 'softplus', 'elu', 'exponential', 'gelu' ]),
         use_bias=True,
-        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','constant','random_normal','random_uniform','truncated_normal','glorot_normal','glorot_uniform','he_normal','he_uniform','lecun_normal','lecun_uniform']),
-        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','constant','random_normal','random_uniform','orthogonal','identity','lecun_normal','lecun_uniform','glorot_normal','glorot_uniform','he_normal','he_uniform']),
-        unit_forget_bias = hp.Boolean("forget_bias"),
-        kernel_regularizer=hp.Choice("kernel_regularizer", ['l1', 'l2', 'l1_l2']),
-        recurrent_regularizer=hp.Choice("recurrent_regularizer", ['l1', 'l2', 'l1_l2']),
-        bias_regularizer=hp.Choice("bias_regularizer", ['l1', 'l2', 'l1_l2']),
-        activity_regularizer=hp.Choice("activity_regularizer", ['l1', 'l2', 'l1_l2']),
-        kernel_constraint=hp.Choice("kernel_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        recurrent_constraint=hp.Choice("recurrent_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        bias_constraint=hp.Choice("bias_constraint", ['max_norm', 'non_neg', 'unit_norm']),
-        dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.05),
-        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.05),
-        seed = seed,
+        kernel_initializer=hp.Choice("kernel_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        recurrent_initializer=hp.Choice("recurrent_initializer", ['zeros','ones','random_normal','glorot_normal','he_normal']),
+        bias_initializer=hp.Choice("bias_initializer", ['zeros','ones','random_normal', 'lecun_normal','glorot_normal']),
+        kernel_regularizer='l1',
+        recurrent_regularizer='l1',
+        bias_regularizer='l1',
+        activity_regularizer='l1',
+        kernel_constraint= 'unit_norm',
+        recurrent_constraint= 'unit_norm',
+        bias_constraint= 'unit_norm',
+        dropout=hp.Float("dropout", min_value=0.2, max_value=0.5, step=0.05),
+        recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.2, max_value=0.5, step=0.05),
         return_sequences=return_sequences,
-        return_state=hp.Boolean("return_state"),
-        go_backwards=hp.Boolean("go_backwards"),
-        stateful=hp.Boolean("stateful"),
-        unroll=hp.Boolean("unroll"),
-        reset_after = hp.Boolean("reset_after")
+        go_backwards= False,
+        unroll=False
     )
 
 def build_Conv1D_layer(hp, data_format = 'channels_last'):
@@ -178,7 +166,7 @@ def build_Conv1D_layer(hp, data_format = 'channels_last'):
         strides=hp.Int("strides", min_value=1, max_value=3),
         padding=hp.Choice("padding", values=["valid", "same"]),
         data_format = data_format,
-        dilation_rate=hp.Int("dilation_rate", min_value=1, max_value=4),
+        dilation_rate=1,
         activation=hp.Choice("activation", values=["relu", "sigmoid", "tanh"]),
         use_bias=hp.Boolean("use_bias", default=True),
         kernel_initializer=hp.Choice("kernel_initializer", values=["glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
@@ -219,7 +207,7 @@ def build_Conv2D_layer(hp, data_format = 'channels_last'):
         bias_constraint=hp.Choice("bias_constraint", values=["max_norm", "non_neg", "unit_norm"])
     )
 
-def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last', seed = 42):
+def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_last'):
     '''
     Builds Optimal ConvLSTM1D layer using Keras Hyperparameter tuner
     Inputs:
@@ -255,7 +243,6 @@ def build_ConvLSTM1D_layer(hp, return_sequences=False, data_format = 'channels_l
         bias_constraint=hp.Choice("bias_constraint", values=[None, "max_norm", "non_neg", "unit_norm"]),
         dropout=hp.Float("dropout", min_value=0.0, max_value=0.5, step=0.1),
         recurrent_dropout=hp.Float("recurrent_dropout", min_value=0.0, max_value=0.5, step=0.1),
-        seed=seed,
         return_sequences=return_sequences,
         return_state=hp.Boolean("return_state"),
         go_backwards=hp.Boolean("go_backwards"),
