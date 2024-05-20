@@ -4,9 +4,6 @@ sys.path.append('./Strategies/all_Strategies.py')
 import pandas as pd
 from . import all_Strategies
 
-
-
-
 def generate_all_signals(stock_csv_path, vix_csv_path):
     # Read the stock data from the CSV file
     stock_df = pd.read_csv(stock_csv_path)
@@ -21,7 +18,7 @@ def generate_all_signals(stock_csv_path, vix_csv_path):
     roc_signals_df = all_Strategies.roc_signals(stock_df)
     rsi_signals_df = all_Strategies.rsi_signals(stock_df)
     stochrsi_signals_df = all_Strategies.stochrsi_signals(stock_df)
-    aroon_signals_df = all_Strategies.aroon_strategy(stock_df)
+    # aroon_signals_df = all_Strategies.aroon_strategy(stock_df)
     cci_signals_df = all_Strategies.cci_signals(stock_df)
     dpo_signals_df = all_Strategies.dpo_signals(stock_df)
     ema_signals_df = all_Strategies.ema_signals(stock_df)
@@ -44,10 +41,9 @@ def generate_all_signals(stock_csv_path, vix_csv_path):
     vix_close = vix_close.rename(columns={0: 'vix_close'})
 
     # Concatenate the results into one large DataFrame
-    all_signals_df = pd.concat([vix_close, strategy_w5_8_13_df, mfi_signals_df, eom_signals_df, cmf_signals_df, keltner_channel_strategy_df, atr_signals_df, cmf_signals_df, strategy_5_8_13_df, short_ma_signals_df, golden_ma_signals_df, macd_signals_df, kst_signals_df, ichimoku_signals_df, ema_signals_df, dpo_signals_df, cci_signals_df, aroon_signals_df, roc_signals_df, rsi_signals_df, stochrsi_signals_df, stoch_signals_df, tsi_signals_df, williams_signals_df, kama_cross_signals_df, ppo_signals_df, awesome_oscillator_signals_df], axis=1)
+    all_signals_df = pd.concat([vix_close, strategy_w5_8_13_df, mfi_signals_df, eom_signals_df, cmf_signals_df, keltner_channel_strategy_df, atr_signals_df, cmf_signals_df, strategy_5_8_13_df, short_ma_signals_df, golden_ma_signals_df, macd_signals_df, kst_signals_df, ichimoku_signals_df, ema_signals_df, dpo_signals_df, cci_signals_df, roc_signals_df, rsi_signals_df, stochrsi_signals_df, stoch_signals_df, tsi_signals_df, williams_signals_df, kama_cross_signals_df, ppo_signals_df, awesome_oscillator_signals_df], axis=1)
     
     return all_signals_df
 
-signals_df = generate_all_signals('./data/SPY.csv', './data/VIX.csv')
-print(signals_df)
+signals_df = generate_all_signals(r'C:\Users\zeb.freeman\Documents\Trade_bot\data\SPY.csv', r'C:\Users\zeb.freeman\Documents\Trade_bot\data\VIX.csv')
 # %%

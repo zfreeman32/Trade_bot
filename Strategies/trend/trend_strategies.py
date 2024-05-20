@@ -61,11 +61,6 @@ def aroon_strategy(stock_df, window=25):
 
     return signals
 
-#%%
-csv_file = r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot\SPY.csv'
-stock_df = pd.read_csv(csv_file)
-ao_signals = pd.DataFrame(aroon_strategy(stock_df))
-print(ao_signals)
 
 # %%
 # CCI
@@ -101,10 +96,6 @@ def cci_signals(stock_df, window=20, constant=0.015, overbought=100, oversold=-1
 
     return signals
 
-csv_file = r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot\SPY.csv'
-stock_df = pd.read_csv(csv_file)
-ao_signals = pd.DataFrame(cci_signals(stock_df))
-print(ao_signals)
 # %%
 # dpo
 def dpo_signals(stock_df, window=20):
@@ -446,10 +437,7 @@ def vortex_signals(stock_df, window=14, threshold=1.0):
             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bearish'
 
     return signals
-csv_file = r'C:\Users\zebfr\Desktop\All Files\TRADING\Trading_Bot\SPY.csv'
-stock_df = pd.read_csv(csv_file)
-ao_signals = pd.DataFrame(vortex_signals(stock_df))
-print(ao_signals)
+
 # %%
 # Weighted Moving Average
 # Golden Cross WMA

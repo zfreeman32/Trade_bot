@@ -74,9 +74,9 @@ def keltner_channel_strategy(stock_df, window=20, window_atr=10, multiplier=2):
     # Generate trading signals
     for i in range(window, len(signals)):
         if stock_df['Close'][i] > keltner_channel_upper[i]:
-            signals.loc[signals.index[i], 'Signal'] = -1  # Bearish trend (Short signal)
+            signals.loc[signals.index[i], 'Signal'] = 'bearish'  # Bearish trend (Short signal)
         elif stock_df['Close'][i] < keltner_channel_lower[i]:
-            signals.loc[signals.index[i], 'Signal'] = 1  # Bullish trend (Long signal)
+            signals.loc[signals.index[i], 'Signal'] = 'bullish'  # Bullish trend (Long signal)
 
     return signals
 
