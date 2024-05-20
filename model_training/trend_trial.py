@@ -11,6 +11,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import BaseEnsemble
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import VotingClassifier
@@ -76,7 +77,7 @@ def _produce_prediction(data, window):
     
     return data
 
-data = _produce_prediction(data, window=15)
+data = _produce_prediction(data_encoded, window=15)
 del (data['Close'])
 data = data.dropna() # Some indicators produce NaN values for the first few rows, we just remove them here
 data.tail()
@@ -218,21 +219,22 @@ def cross_Validation(data):
     while True:
         
         # Partition the data into chunks of size len_train every num_train days
-        df = data.iloc[i * num_train : (i * num_train) + len_train]
+        df = data_encoded.iloc[i * num_train : (i * num_train) + len_train]
         i += 1
         print(i * num_train, (i * num_train) + len_train)
         
         if len(df) < 40:
             break
-        y = df['pred']
-        features = [x for x in df.columns if x not in ['pred']]
+        y = df['signals_long']
+        features = [x for x in df.columns if x not in ['signals_long']]
         X = df[features]
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, train_size= 7 * len(X) // 10,shuffle=False)
+        y_test = pd.DataFrame(y_test)
 
         rf_model = _train_random_forest(X_train, y_train, X_test, y_test)
         knn_model = _train_KNN(X_train, y_train, X_test, y_test)
-        ensemble_model = _ensemble_model(rf_model, knn_model, X_train, y_train, X_test, y_test)
+        ensemble_model = _ensemble_model(rf_model, knn_model, gbt_model, X_train, y_train, X_test, y_test)
         
         rf_prediction = rf_model.predict(X_test)
         knn_prediction = knn_model.predict(X_test)
