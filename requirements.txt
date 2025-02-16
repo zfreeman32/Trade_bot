@@ -6,3 +6,9 @@ tensorflow
 keras
 keras-tuner
 matplotlib
+xgboost
+Flask
+pandas
+requests
+dash
+dask

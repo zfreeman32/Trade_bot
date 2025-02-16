@@ -4,3 +4,4 @@ __pycache__
 .vscode
 untitled_project/
 GRU_trials/
+.env

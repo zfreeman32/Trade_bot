@@ -45,7 +45,7 @@ def build_Dropout_layer(hp):
     return Dropout(
         rate=hp.Float('dropout_rate', min_value=0, max_value=0.5, step=0.1))
 
-def build_MaxPooling1D_Layer(hp, data_format = 'channel_last'):
+def build_MaxPooling1D_Layer(hp, data_format = 'channels_last'):
     '''
     Inputs:
     If data_format="channels_last": 3D tensor with shape (batch_size, steps, features).
@@ -171,9 +171,9 @@ def build_Conv1D_layer(hp, data_format = 'channels_last'):
         use_bias=hp.Boolean("use_bias", default=True),
         kernel_initializer=hp.Choice("kernel_initializer", values=["glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
         bias_initializer=hp.Choice("bias_initializer", values=["zeros", "ones", "glorot_uniform", "glorot_normal", "he_uniform", "he_normal"]),
-        kernel_regularizer=hp.Choice("kernel_regularizer", values=["l1", "l2", "l1_l2"]),
-        bias_regularizer=hp.Choice("bias_regularizer", values=["l1", "l2", "l1_l2"]),
-        activity_regularizer=hp.Choice("activity_regularizer", values=["l1", "l2", "l1_l2"]),
+        kernel_regularizer=hp.Choice("kernel_regularizer", values=["l1", "l2"]),
+        bias_regularizer=hp.Choice("bias_regularizer", values=["l1", "l2"]),
+        activity_regularizer=hp.Choice("activity_regularizer", values=["l1", "l2"]),
         kernel_constraint=hp.Choice("kernel_constraint", values=["max_norm", "non_neg", "unit_norm"]),
         bias_constraint=hp.Choice("bias_constraint", values=["max_norm", "non_neg", "unit_norm"])
     )

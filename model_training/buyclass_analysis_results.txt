@@ -1,0 +1,416 @@
+=== TRADING DATASET ANALYSIS ===
+
+Dataset Structure:
+--------------------------------------------------
+total_samples: 2000000
+feature_count: 130
+memory_usage_MB: 1861.5723915100098
+missing_values: 0
+datatypes: {dtype('float64'): 79, dtype('int64'): 35, dtype('int32'): 16}
+buy_signal_distribution: {'buy_signals': 57428, 'no_buy_signals': 1942572, 'buy_signal_ratio': np.float64(0.028714), 'imbalance_warning': np.True_}
+
+Feature Statistics:
+--------------------------------------------------
+Date: {'mean': np.float64(20219198.5039555), 'median': np.float64(20220515.0), 'std': np.float64(15719.300376288937), 'skew': np.float64(-0.051644973814941084), 'kurtosis': np.float64(-1.124927839853943), 'unique_values': 1683, 'iqr': np.float64(20810.0), 'outlier_percentage': np.float64(0.0)}
+Open: {'mean': np.float64(1.1072398313300003), 'median': np.float64(1.09589), 'std': np.float64(0.05657031673168376), 'skew': np.float64(0.21877085848656297), 'kurtosis': np.float64(-0.3548085517614785), 'unique_values': 27741, 'iqr': np.float64(0.06892000000000009), 'outlier_percentage': np.float64(0.33344999999999997)}
+High: {'mean': np.float64(1.1073187629999997), 'median': np.float64(1.09597), 'std': np.float64(0.056561604923941154), 'skew': np.float64(0.21944506103067205), 'kurtosis': np.float64(-0.35531789996287255), 'unique_values': 27737, 'iqr': np.float64(0.06894), 'outlier_percentage': np.float64(0.32635)}
+Low: {'mean': np.float64(1.1071608111400006), 'median': np.float64(1.09581), 'std': np.float64(0.056579068286095324), 'skew': np.float64(0.21810973389624488), 'kurtosis': np.float64(-0.3543190194329826), 'unique_values': 27741, 'iqr': np.float64(0.06890000000000018), 'outlier_percentage': np.float64(0.33925)}
+Close: {'mean': np.float64(1.10723970534), 'median': np.float64(1.09589), 'std': np.float64(0.056570263205190374), 'skew': np.float64(0.21877123674072846), 'kurtosis': np.float64(-0.35480911961870554), 'unique_values': 27733, 'iqr': np.float64(0.06892000000000009), 'outlier_percentage': np.float64(0.33355)}
+Volume: {'mean': np.float64(177.343173), 'median': np.float64(125.0), 'std': np.float64(197.89427107009269), 'skew': np.float64(4.693967279883732), 'kurtosis': np.float64(48.520739581618486), 'unique_values': 3082, 'iqr': np.float64(162.0), 'outlier_percentage': np.float64(5.93655)}
+datetime: {'mean': np.float64(999999.5), 'median': np.float64(999999.5), 'std': np.float64(577350.413527175), 'skew': np.float64(-6.67448688542274e-17), 'kurtosis': np.float64(-1.2000000000006001), 'unique_values': 2000000, 'iqr': np.float64(999999.5), 'outlier_percentage': np.float64(0.0)}
+buy_signal: {'mean': np.float64(0.028714), 'median': np.float64(0.0), 'std': np.float64(0.16700155732435576), 'skew': np.float64(5.644092490780754), 'kurtosis': np.float64(29.855780044487716), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(2.8714)}
+sell_signal: {'mean': np.float64(0.0284325), 'median': np.float64(0.0), 'std': np.float64(0.1662050142318317), 'skew': np.float64(5.674529376522317), 'kurtosis': np.float64(30.200283645014707), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(2.84325)}
+Close_Position: {'mean': np.float64(0.056533), 'median': np.float64(0.0), 'std': np.float64(0.2309481469497499), 'skew': np.float64(3.840404148930298), 'kurtosis': np.float64(12.748704027121041), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(5.6533)}
+momentum_ao: {'mean': np.float64(-0.16498389020930873), 'median': np.float64(2.676470588269808e-06), 'std': np.float64(40.61580507380346), 'skew': np.float64(-246.17688885318148), 'kurtosis': np.float64(60601.06061114135), 'unique_values': 267425, 'iqr': np.float64(0.0003214117647059034), 'outlier_percentage': np.float64(7.6803)}
+w5_8_13_signal: {'mean': np.float64(1.1886555), 'median': np.float64(1.0), 'std': np.float64(0.7499865889198898), 'skew': np.float64(-0.3233444747572346), 'kurtosis': np.float64(-1.1679754792080144), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+mfi_signal: {'mean': np.float64(0.1050845), 'median': np.float64(0.0), 'std': np.float64(0.4026137465470653), 'skew': np.float64(3.937776686997105), 'kurtosis': np.float64(14.605321108177016), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(7.10565)}
+eom_signal: {'mean': np.float64(1.441425), 'median': np.float64(1.0), 'std': np.float64(0.5722133632562828), 'skew': np.float64(-0.4173493618411355), 'kurtosis': np.float64(-0.7653535226141797), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+cmf_signal: {'mean': np.float64(0.819566), 'median': np.float64(1.0), 'std': np.float64(0.8333534177544116), 'skew': np.float64(0.34792930512657705), 'kurtosis': np.float64(-1.4747093467884413), 'unique_values': 3, 'iqr': np.float64(2.0), 'outlier_percentage': np.float64(0.0)}
+Signal: {'mean': np.float64(0.852011), 'median': np.float64(1.0), 'std': np.float64(0.830348481433127), 'skew': np.float64(0.28184395930209066), 'kurtosis': np.float64(-1.4942255186964288), 'unique_values': 3, 'iqr': np.float64(2.0), 'outlier_percentage': np.float64(0.0)}
+5_8_13_signal: {'mean': np.float64(1.05635), 'median': np.float64(1.0), 'std': np.float64(0.7994335476116816), 'skew': np.float64(-0.10151970315465123), 'kurtosis': np.float64(-1.4287220048079023), 'unique_values': 3, 'iqr': np.float64(2.0), 'outlier_percentage': np.float64(0.0)}
+ma_direction: {'mean': np.float64(1.504025), 'median': np.float64(2.0), 'std': np.float64(0.5000089242998192), 'skew': np.float64(-0.01640050578692688), 'kurtosis': np.float64(-1.998931180196352), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+ma_signal: {'mean': np.float64(0.065554), 'median': np.float64(0.0), 'std': np.float64(0.3239748841559524), 'skew': np.float64(5.168163098326711), 'kurtosis': np.float64(26.289477259474527), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(4.3702499999999995)}
+macd_signal: {'mean': np.float64(0.122025), 'median': np.float64(0.0), 'std': np.float64(0.4341485847235907), 'skew': np.float64(3.6081738696144594), 'kurtosis': np.float64(11.926813429545955), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(8.135)}
+macd_direction: {'mean': np.float64(1.500743), 'median': np.float64(2.0), 'std': np.float64(0.5000325719063573), 'skew': np.float64(-0.0033679261781440887), 'kurtosis': np.float64(-1.9989331054699524), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+kst_signal: {'mean': np.float64(0.084899), 'median': np.float64(0.0), 'std': np.float64(0.3664563097343438), 'skew': np.float64(4.4680800461284145), 'kurtosis': np.float64(19.21166497203782), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(5.659949999999999)}
+kst_direction: {'mean': np.float64(1.500147), 'median': np.float64(2.0), 'std': np.float64(0.500015103170446), 'skew': np.float64(-0.0007679838491669173), 'kurtosis': np.float64(-1.9995195037127558), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+ichi_signal: {'mean': np.float64(0.0720025), 'median': np.float64(0.0), 'std': np.float64(0.3387391287788418), 'skew': np.float64(4.9042926692735875), 'kurtosis': np.float64(23.50627913635941), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(4.8039499999999995)}
+ichi_direction: {'mean': np.float64(1.5031305), 'median': np.float64(2.0), 'std': np.float64(0.49999132489015474), 'skew': np.float64(-0.01253424607272795), 'kurtosis': np.float64(-1.9998108905830778), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+EMA_Signal: {'mean': np.float64(0.0553405), 'median': np.float64(0.0), 'std': np.float64(0.29861676718787383), 'skew': np.float64(5.672497875286331), 'kurtosis': np.float64(32.02603048990118), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(3.68935)}
+EMA_Direction_Signal: {'mean': np.float64(1.505578), 'median': np.float64(2.0), 'std': np.float64(0.4999700100016057), 'skew': np.float64(-0.022325390732904668), 'kurtosis': np.float64(-1.9994695693791553), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+dpo_Signal: {'mean': np.float64(0.3505105), 'median': np.float64(0.0), 'std': np.float64(0.679206242646746), 'skew': np.float64(1.670299410374672), 'kurtosis': np.float64(1.2161191731179466), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(23.36765)}
+dpo_direction_Signal: {'mean': np.float64(1.498395), 'median': np.float64(1.0), 'std': np.float64(0.5029319540904864), 'skew': np.float64(-0.028282266344985717), 'kurtosis': np.float64(-1.9085380001310368), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+cci_Signal: {'mean': np.float64(0.1445395), 'median': np.float64(0.0), 'std': np.float64(0.4683160712592739), 'skew': np.float64(3.246339409747836), 'kurtosis': np.float64(9.339349045529545), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(9.67035)}
+cci_direction: {'mean': np.float64(1.7954775), 'median': np.float64(2.0), 'std': np.float64(0.4033833516059062), 'skew': np.float64(-1.4656802334775547), 'kurtosis': np.float64(0.15010647539500344), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(20.451)}
+roc_signal: {'mean': np.float64(0.0), 'median': np.float64(0.0), 'std': np.float64(0.0), 'skew': np.float64(nan), 'kurtosis': np.float64(nan), 'unique_values': 1, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.0)}
+rsi_signal: {'mean': np.float64(0.1331075), 'median': np.float64(0.0), 'std': np.float64(0.45148089146856224), 'skew': np.float64(3.4195014532270127), 'kurtosis': np.float64(10.542921670038714), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(8.8885)}
+stochrsi_signal: {'mean': np.float64(0.84184), 'median': np.float64(1.0), 'std': np.float64(0.8310624283002931), 'skew': np.float64(0.30227745918156435), 'kurtosis': np.float64(-1.4881934043138596), 'unique_values': 3, 'iqr': np.float64(2.0), 'outlier_percentage': np.float64(0.0)}
+stoch_signal: {'mean': np.float64(0.6069145), 'median': np.float64(0.0), 'std': np.float64(0.801983548009905), 'skew': np.float64(0.8261131141804703), 'kurtosis': np.float64(-0.9511979456073987), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+tsi_signal: {'mean': np.float64(0.0542445), 'median': np.float64(0.0), 'std': np.float64(0.2957449542296351), 'skew': np.float64(5.734660725699355), 'kurtosis': np.float64(32.77010888476849), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(3.6163)}
+williams_signal: {'mean': np.float64(0.7044285), 'median': np.float64(0.0), 'std': np.float64(0.8273713378280728), 'skew': np.float64(0.5954480346916758), 'kurtosis': np.float64(-1.2838796693692416), 'unique_values': 3, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+kama_cross_signal: {'mean': np.float64(0.0444375), 'median': np.float64(0.0), 'std': np.float64(0.2682514577279541), 'skew': np.float64(6.38472873155497), 'kurtosis': np.float64(41.06009639204975), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(2.96895)}
+PPO_signal: {'mean': np.float64(0.122016), 'median': np.float64(0.0), 'std': np.float64(0.43413383878718215), 'skew': np.float64(3.6083359570941735), 'kurtosis': np.float64(11.928040161795705), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(8.1344)}
+Ao_signal: {'mean': np.float64(0.0674055), 'median': np.float64(0.0), 'std': np.float64(0.32832766022569015), 'skew': np.float64(5.088846722742254), 'kurtosis': np.float64(25.435918746144456), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(4.4937)}
+UPPERBAND: {'mean': np.float64(1.0125757167776175), 'median': np.float64(1.0962231422503552), 'std': np.float64(30.822314721097698), 'skew': np.float64(-324.4365820867784), 'kurtosis': np.float64(105257.44983830767), 'unique_values': 1940033, 'iqr': np.float64(0.06904828044599198), 'outlier_percentage': np.float64(0.2952)}
+MIDDLEBAND: {'mean': np.float64(1.0122390256552853), 'median': np.float64(1.0958857500000336), 'std': np.float64(30.82231376196583), 'skew': np.float64(-324.4365796038637), 'kurtosis': np.float64(105257.44876424264), 'unique_values': 1838680, 'iqr': np.float64(0.06892962499993804), 'outlier_percentage': np.float64(0.3312)}
+LOWERBAND: {'mean': np.float64(1.0119023345329532), 'median': np.float64(1.0955520571217892), 'std': np.float64(30.822312807353764), 'skew': np.float64(-324.43657697822056), 'kurtosis': np.float64(105257.44762843568), 'unique_values': 1940033, 'iqr': np.float64(0.06880769721364599), 'outlier_percentage': np.float64(0.37635)}
+DEMA: {'mean': np.float64(0.8172368447634373), 'median': np.float64(1.0958845503179826), 'std': np.float64(53.85148788977531), 'skew': np.float64(-185.68695294402477), 'kurtosis': np.float64(34477.68254788212), 'unique_values': 1999943, 'iqr': np.float64(0.06890985608086297), 'outlier_percentage': np.float64(0.33975)}
+EMA_10: {'mean': np.float64(1.0622393835757267), 'median': np.float64(1.0958896606920527), 'std': np.float64(21.213463925950318), 'skew': np.float64(-471.3963103907359), 'kurtosis': np.float64(222214.0617144989), 'unique_values': 1999992, 'iqr': np.float64(0.06892218430406372), 'outlier_percentage': np.float64(0.33315)}
+EMA_20: {'mean': np.float64(1.0122390250035007), 'median': np.float64(1.0958847624319201), 'std': np.float64(30.82231376146364), 'skew': np.float64(-324.4365796196588), 'kurtosis': np.float64(105257.44877107532), 'unique_values': 1999982, 'iqr': np.float64(0.06894063163146713), 'outlier_percentage': np.float64(0.32945)}
+EMA_50: {'mean': np.float64(0.8622379495082821), 'median': np.float64(1.095873939645815), 'std': np.float64(49.4974438409283), 'skew': np.float64(-202.0226884039207), 'kurtosis': np.float64(40811.219940966526), 'unique_values': 1999952, 'iqr': np.float64(0.06893159742486565), 'outlier_percentage': np.float64(0.3284)}
+EMA_200: {'mean': np.float64(0.11223259089065765), 'median': np.float64(1.0958716076260393), 'std': np.float64(99.7458347135091), 'skew': np.float64(-100.23592999550718), 'kurtosis': np.float64(10045.244893954035), 'unique_values': 1999802, 'iqr': np.float64(0.0689782399448311), 'outlier_percentage': np.float64(0.3144)}
+HT_TRENDLINE: {'mean': np.float64(0.7922369955161697), 'median': np.float64(1.0958761359851836), 'std': np.float64(56.12462124319109), 'skew': np.float64(-178.16547092193548), 'kurtosis': np.float64(31740.96728045318), 'unique_values': 1995812, 'iqr': np.float64(0.06894981655627452), 'outlier_percentage': np.float64(0.329)}
+KAMA: {'mean': np.float64(0.9572381834684562), 'median': np.float64(1.0958791778174244), 'std': np.float64(38.73000931461998), 'skew': np.float64(-258.1922540320029), 'kurtosis': np.float64(66661.38225950416), 'unique_values': 1999971, 'iqr': np.float64(0.0689478978795035), 'outlier_percentage': np.float64(0.32645)}
+MA_10: {'mean': np.float64(1.0622393833384716), 'median': np.float64(1.095891999999977), 'std': np.float64(21.21346392631764), 'skew': np.float64(-471.39631036621483), 'kurtosis': np.float64(222214.06169908654), 'unique_values': 1767704, 'iqr': np.float64(0.06891500000003403), 'outlier_percentage': np.float64(0.33449999999999996)}
+MA_20: {'mean': np.float64(1.0122390256552853), 'median': np.float64(1.0958857500000336), 'std': np.float64(30.82231376196583), 'skew': np.float64(-324.4365796038637), 'kurtosis': np.float64(105257.44876424264), 'unique_values': 1838680, 'iqr': np.float64(0.06892962499993804), 'outlier_percentage': np.float64(0.3312)}
+MA_50: {'mean': np.float64(0.8622379508765039), 'median': np.float64(1.0958691999999925), 'std': np.float64(49.49744384170165), 'skew': np.float64(-202.02268839453384), 'kurtosis': np.float64(40811.21993843812), 'unique_values': 1904157, 'iqr': np.float64(0.06892624999999808), 'outlier_percentage': np.float64(0.3306)}
+MA_200: {'mean': np.float64(0.11223257128778341), 'median': np.float64(1.0958865250000094), 'std': np.float64(99.74583471482846), 'skew': np.float64(-100.2359299909391), 'kurtosis': np.float64(10045.244893343586), 'unique_values': 1963446, 'iqr': np.float64(0.06901236249999254), 'outlier_percentage': np.float64(0.31285)}
+MAMA: {'mean': np.float64(0.947238438798766), 'median': np.float64(1.0958856799701777), 'std': np.float64(40.00015895722673), 'skew': np.float64(-249.99324993294462), 'kurtosis': np.float64(62494.75001731343), 'unique_values': 1999969, 'iqr': np.float64(0.06890674888678539), 'outlier_percentage': np.float64(0.33815)}
+FAMA: {'mean': np.float64(0.9472385413322127), 'median': np.float64(1.0958777857891415), 'std': np.float64(40.0001589572166), 'skew': np.float64(-249.99324994082446), 'kurtosis': np.float64(62494.75001993997), 'unique_values': 1999969, 'iqr': np.float64(0.06893150514528901), 'outlier_percentage': np.float64(0.332)}
+SAR: {'mean': np.float64(1.1022360692071769), 'median': np.float64(1.0958937786725458), 'std': np.float64(7.071369918005638), 'skew': np.float64(-1414.0767444609576), 'kurtosis': np.float64(1999739.0182985454), 'unique_values': 1720208, 'iqr': np.float64(0.06891434481625702), 'outlier_percentage': np.float64(0.3376)}
+SAREXT: {'mean': np.float64(0.007208757451847475), 'median': np.float64(0.9801897505248762), 'std': np.float64(7.156755236193907), 'skew': np.float64(-1363.6172650829117), 'kurtosis': np.float64(1905165.1258007255), 'unique_values': 1748796, 'iqr': np.float64(2.1919434199771293), 'outlier_percentage': np.float64(4.9999999999999996e-05)}
+SMA: {'mean': np.float64(0.9622386674051874), 'median': np.float64(1.0958766666666917), 'std': np.float64(38.07904935073083), 'skew': np.float64(-262.60628449888475), 'kurtosis': np.float64(68960.21286182814), 'unique_values': 1913040, 'iqr': np.float64(0.06893191666674703), 'outlier_percentage': np.float64(0.3311)}
+T3: {'mean': np.float64(0.9872385711160211), 'median': np.float64(1.0958898036744582), 'std': np.float64(34.64123464293341), 'skew': np.float64(-288.66878365630635), 'kurtosis': np.float64(83327.88889195974), 'unique_values': 1999977, 'iqr': np.float64(0.06891465960755272), 'outlier_percentage': np.float64(0.3348)}
+TEMA: {'mean': np.float64(0.6722354039420183), 'median': np.float64(1.0958883665446901), 'std': np.float64(65.95384329580546), 'skew': np.float64(-151.6095480331922), 'kurtosis': np.float64(22983.471968248938), 'unique_values': 1999914, 'iqr': np.float64(0.06891355248943021), 'outlier_percentage': np.float64(0.3404)}
+TRIMA: {'mean': np.float64(0.9622386676976373), 'median': np.float64(1.095885812549787), 'std': np.float64(38.07904935107353), 'skew': np.float64(-262.6062844918173), 'kurtosis': np.float64(68960.21285935357), 'unique_values': 1997289, 'iqr': np.float64(0.06893049994784217), 'outlier_percentage': np.float64(0.33175)}
+WMA: {'mean': np.float64(0.9622385375309662), 'median': np.float64(1.0958834301089704), 'std': np.float64(38.0790493505892), 'skew': np.float64(-262.60628449158247), 'kurtosis': np.float64(68960.21285927144), 'unique_values': 1999692, 'iqr': np.float64(0.06893258602807184), 'outlier_percentage': np.float64(0.33175)}
+ADX: {'mean': np.float64(24.54881218480256), 'median': np.float64(22.62073292406771), 'std': np.float64(38.14608597953736), 'skew': np.float64(-244.9146271838603), 'kurtosis': np.float64(64357.652496055605), 'unique_values': 1999974, 'iqr': np.float64(12.759326020952631), 'outlier_percentage': np.float64(2.46095)}
+ADXR: {'mean': np.float64(24.48368480899813), 'median': np.float64(22.98202018723129), 'std': np.float64(45.697323003759145), 'skew': np.float64(-211.05597402315982), 'kurtosis': np.float64(46292.86484335725), 'unique_values': 1999961, 'iqr': np.float64(11.294843835056948), 'outlier_percentage': np.float64(2.49565)}
+APO: {'mean': np.float64(-0.12498768891107448), 'median': np.float64(1.3461538459491607e-06), 'std': np.float64(35.35159141386487), 'skew': np.float64(-282.83740912994006), 'kurtosis': np.float64(79995.00000639129), 'unique_values': 1332262, 'iqr': np.float64(0.00017871794872142965), 'outlier_percentage': np.float64(7.685500000000001)}
+AROON_DOWN: {'mean': np.float64(49.82424985714286), 'median': np.float64(50.0), 'std': np.float64(45.31748498895882), 'skew': np.float64(-76.31269530879547), 'kurtosis': np.float64(16921.38222851112), 'unique_values': 16, 'iqr': np.float64(71.42857142857143), 'outlier_percentage': np.float64(0.0007)}
+AROON_UP: {'mean': np.float64(50.492799857142835), 'median': np.float64(50.0), 'std': np.float64(45.339328711683905), 'skew': np.float64(-76.23206353272042), 'kurtosis': np.float64(16893.286892239146), 'unique_values': 16, 'iqr': np.float64(71.42857142857143), 'outlier_percentage': np.float64(0.0007)}
+AROONOSC: {'mean': np.float64(0.5985569999999999), 'median': np.float64(7.142857142857143), 'std': np.float64(69.3724038670505), 'skew': np.float64(-20.96984074048963), 'kurtosis': np.float64(3020.0306515524835), 'unique_values': 30, 'iqr': np.float64(114.28571428571429), 'outlier_percentage': np.float64(0.0007)}
+BOP: {'mean': np.float64(0.0013198664662510788), 'median': np.float64(0.0), 'std': np.float64(0.593254177243084), 'skew': np.float64(-0.005599358476774813), 'kurtosis': np.float64(-1.210322800869144), 'unique_values': 29090, 'iqr': np.float64(1.0000000000083267), 'outlier_percentage': np.float64(0.0)}
+CCI: {'mean': np.float64(0.729825461943881), 'median': np.float64(2.0708666805107683), 'std': np.float64(112.09546141578562), 'skew': np.float64(-4.634067013051506), 'kurtosis': np.float64(410.8515882455099), 'unique_values': 1932846, 'iqr': np.float64(172.37051458222606), 'outlier_percentage': np.float64(0.1055)}
+CMO: {'mean': np.float64(0.1747706495181712), 'median': np.float64(0.3756758048100495), 'std': np.float64(35.40201029975191), 'skew': np.float64(-157.73121634718325), 'kurtosis': np.float64(44547.12061516741), 'unique_values': 1954086, 'iqr': np.float64(32.215257947483096), 'outlier_percentage': np.float64(0.49810000000000004)}
+DX: {'mean': np.float64(24.613910945259505), 'median': np.float64(21.555593428007626), 'std': np.float64(31.847298421094962), 'skew': np.float64(-218.12184890088304), 'kurtosis': np.float64(68689.16051500078), 'unique_values': 1882359, 'iqr': np.float64(25.75228665462557), 'outlier_percentage': np.float64(0.7089)}
+MACD: {'mean': np.float64(-0.16498368820852474), 'median': np.float64(1.181978170117226e-06), 'std': np.float64(40.61580507300834), 'skew': np.float64(-246.17688888256046), 'kurtosis': np.float64(60601.060620784454), 'unique_values': 1999966, 'iqr': np.float64(0.0001269967418569551), 'outlier_percentage': np.float64(7.697550000000001)}
+MACDSIGNAL: {'mean': np.float64(-0.1649836881119375), 'median': np.float64(1.1188504560549818e-06), 'std': np.float64(40.61580507297476), 'skew': np.float64(-246.1768888831782), 'kurtosis': np.float64(60601.0606209872), 'unique_values': 1999968, 'iqr': np.float64(0.00011986746124065926), 'outlier_percentage': np.float64(7.7136)}
+MACDHIST: {'mean': np.float64(-0.16498350009658672), 'median': np.float64(4.873885776883474e-08), 'std': np.float64(40.615805073502045), 'skew': np.float64(-246.17688888747665), 'kurtosis': np.float64(60601.06062239838), 'unique_values': 1999968, 'iqr': np.float64(3.909603288709305e-05), 'outlier_percentage': np.float64(7.6306)}
+MFI: {'mean': np.float64(50.17940704607853), 'median': np.float64(50.236419623662435), 'std': np.float64(31.393575645915657), 'skew': np.float64(-229.59561780487758), 'kurtosis': np.float64(73492.20568381564), 'unique_values': 1997703, 'iqr': np.float64(23.347195732189363), 'outlier_percentage': np.float64(0.16275)}
+MINUS_DI: {'mean': np.float64(23.352850902285674), 'median': np.float64(22.736497273426863), 'std': np.float64(27.746117511305762), 'skew': np.float64(-329.8988871631189), 'kurtosis': np.float64(119167.41286130865), 'unique_values': 1988907, 'iqr': np.float64(10.841498107355843), 'outlier_percentage': np.float64(1.23935)}
+MINUS_DM: {'mean': np.float64(-0.06448052060395813), 'median': np.float64(0.0004080534645642135), 'std': np.float64(25.492472891501787), 'skew': np.float64(-392.2284458517639), 'kurtosis': np.float64(153841.15377441185), 'unique_values': 1999988, 'iqr': np.float64(0.00039594780169650623), 'outlier_percentage': np.float64(4.972250000000001)}
+MOM: {'mean': np.float64(-0.049995268209999985), 'median': np.float64(0.0), 'std': np.float64(22.358393404175033), 'skew': np.float64(-447.21024113090937), 'kurtosis': np.float64(199994.9998499113), 'unique_values': 2827, 'iqr': np.float64(0.000360000000000138), 'outlier_percentage': np.float64(7.5058)}
+PLUS_DI: {'mean': np.float64(23.2851098028611), 'median': np.float64(22.706534640784277), 'std': np.float64(27.72645172005693), 'skew': np.float64(-330.595885280184), 'kurtosis': np.float64(119502.64037915024), 'unique_values': 1988855, 'iqr': np.float64(10.804405543784625), 'outlier_percentage': np.float64(1.1455)}
+PLUS_DM: {'mean': np.float64(-0.06448462071604745), 'median': np.float64(0.0004046997160300986), 'std': np.float64(25.49247288100002), 'skew': np.float64(-392.2284458540009), 'kurtosis': np.float64(153841.1537755815), 'unique_values': 1999988, 'iqr': np.float64(0.00038581583136401053), 'outlier_percentage': np.float64(5.0565)}
+PPO: {'mean': np.float64(-0.12500499028013998), 'median': np.float64(0.00012337957367326293), 'std': np.float64(35.351597064908596), 'skew': np.float64(-282.83727202147884), 'kurtosis': np.float64(79994.94830116723), 'unique_values': 1998779, 'iqr': np.float64(0.016114728585747314), 'outlier_percentage': np.float64(7.9024)}
+ROC: {'mean': np.float64(-0.05001183948503231), 'median': np.float64(0.0), 'std': np.float64(22.358430023179054), 'skew': np.float64(-447.20804154487104), 'kurtosis': np.float64(199993.6882872714), 'unique_values': 1215597, 'iqr': np.float64(0.03250634554139431), 'outlier_percentage': np.float64(7.81965)}
+ROCP: {'mean': np.float64(-0.04999516839485039), 'median': np.float64(0.0), 'std': np.float64(22.35839340372982), 'skew': np.float64(-447.2102411710187), 'kurtosis': np.float64(199994.99987382712), 'unique_values': 1229559, 'iqr': np.float64(0.00032506345541388423), 'outlier_percentage': np.float64(7.81965)}
+ROCR: {'mean': np.float64(0.9499998316051502), 'median': np.float64(1.0), 'std': np.float64(22.360629466675785), 'skew': np.float64(-447.21024117106265), 'kurtosis': np.float64(199994.9998738537), 'unique_values': 1215597, 'iqr': np.float64(0.0003250634554139431), 'outlier_percentage': np.float64(7.81965)}
+ROCR100: {'mean': np.float64(99.94948816051489), 'median': np.float64(100.0), 'std': np.float64(22.58203595480338), 'skew': np.float64(-447.20808489462), 'kurtosis': np.float64(199993.71413571437), 'unique_values': 1213961, 'iqr': np.float64(0.032506345541392534), 'outlier_percentage': np.float64(7.81965)}
+RSI: {'mean': np.float64(50.05203882475911), 'median': np.float64(50.18783790240502), 'std': np.float64(29.07305595702206), 'skew': np.float64(-289.06932273818927), 'kurtosis': np.float64(99913.3253604723), 'unique_values': 1890587, 'iqr': np.float64(16.107628973741555), 'outlier_percentage': np.float64(0.49810000000000004)}
+STOCH_K: {'mean': np.float64(50.244434103483684), 'median': np.float64(50.386680313158266), 'std': np.float64(33.383777502393606), 'skew': np.float64(-109.11116636085823), 'kurtosis': np.float64(32841.44207861773), 'unique_values': 1941350, 'iqr': np.float64(46.435185185141115), 'outlier_percentage': np.float64(0.00039999999999999996)}
+STOCH_D: {'mean': np.float64(50.24440758209868), 'median': np.float64(50.40488101893375), 'std': np.float64(31.843443284584914), 'skew': np.float64(-125.72225421542977), 'kurtosis': np.float64(39672.403795723985), 'unique_values': 1996852, 'iqr': np.float64(42.23165546718951), 'outlier_percentage': np.float64(0.00039999999999999996)}
+STOCHF_K: {'mean': np.float64(50.254460915712784), 'median': np.float64(50.0), 'std': np.float64(36.401599305905464), 'skew': np.float64(-63.12628780555911), 'kurtosis': np.float64(17423.08632374522), 'unique_values': 47083, 'iqr': np.float64(59.16666666658874), 'outlier_percentage': np.float64(0.00030000000000000003)}
+STOCHF_D: {'mean': np.float64(50.254436408228315), 'median': np.float64(50.386680313158266), 'std': np.float64(31.83537874111435), 'skew': np.float64(-94.36614429127044), 'kurtosis': np.float64(29784.218461116237), 'unique_values': 1941352, 'iqr': np.float64(46.435185185141115), 'outlier_percentage': np.float64(0.00030000000000000003)}
+STOCHRSI_K: {'mean': np.float64(50.112301293412195), 'median': np.float64(50.491444342492564), 'std': np.float64(52.62261615801385), 'skew': np.float64(-69.641847348994), 'kurtosis': np.float64(13296.602880981432), 'unique_values': 852676, 'iqr': np.float64(100.0), 'outlier_percentage': np.float64(0.001)}
+STOCHRSI_D: {'mean': np.float64(50.112294167103165), 'median': np.float64(50.33462431982865), 'std': np.float64(45.76861339681092), 'skew': np.float64(-105.84682407473008), 'kurtosis': np.float64(23237.67718601968), 'unique_values': 1425686, 'iqr': np.float64(58.83709102402173), 'outlier_percentage': np.float64(0.001)}
+TRIX: {'mean': np.float64(-0.43995852182295286), 'median': np.float64(1.100720360414087e-05), 'std': np.float64(66.32441995151696), 'skew': np.float64(-150.74572213226915), 'kurtosis': np.float64(22722.272751211705), 'unique_values': 1999892, 'iqr': np.float64(0.001125922346958963), 'outlier_percentage': np.float64(8.084)}
+ULTOSC: {'mean': np.float64(49.890838300782306), 'median': np.float64(50.02797926509635), 'std': np.float64(39.24872419075413), 'skew': np.float64(-234.96564978168487), 'kurtosis': np.float64(60155.76944097072), 'unique_values': 1999896, 'iqr': np.float64(15.635301446166018), 'outlier_percentage': np.float64(0.36795)}
+WILLR: {'mean': np.float64(-49.59096954666051), 'median': np.float64(-49.39759036144852), 'std': np.float64(40.08635920245182), 'skew': np.float64(-99.3899527407596), 'kurtosis': np.float64(24664.615689104638), 'unique_values': 89286, 'iqr': np.float64(56.501182032998344), 'outlier_percentage': np.float64(0.00065)}
+AD: {'mean': np.float64(-454226.09206810524), 'median': np.float64(-479356.63317571883), 'std': np.float64(189595.00568545226), 'skew': np.float64(0.6019508711248577), 'kurtosis': np.float64(-0.06330225748335216), 'unique_values': 1932160, 'iqr': np.float64(254679.62560191), 'outlier_percentage': np.float64(0.0)}
+ADOSC: {'mean': np.float64(-0.6185096930325611), 'median': np.float64(0.013963888661237434), 'std': np.float64(170.1149846528295), 'skew': np.float64(-1.0213503682098803), 'kurtosis': np.float64(83.56693163589505), 'unique_values': 1999991, 'iqr': np.float64(107.26090880137053), 'outlier_percentage': np.float64(11.07565)}
+OBV: {'mean': np.float64(415478.7428185), 'median': np.float64(390129.5), 'std': np.float64(209174.782640852), 'skew': np.float64(-0.05660368883369763), 'kurtosis': np.float64(-0.761845760796453), 'unique_values': 616150, 'iqr': np.float64(263192.5), 'outlier_percentage': np.float64(0.0)}
+ATR: {'mean': np.float64(-0.06983392308664149), 'median': np.float64(0.00013296144733025792), 'std': np.float64(26.454781801934264), 'skew': np.float64(-377.9605043611914), 'kurtosis': np.float64(142852.14285935817), 'unique_values': 1999987, 'iqr': np.float64(0.000118159893621055), 'outlier_percentage': np.float64(4.04585)}
+NATR: {'mean': np.float64(-0.05550237852388565), 'median': np.float64(0.011990629215297866), 'std': np.float64(26.45482166591857), 'skew': np.float64(-377.96042094631724), 'kurtosis': np.float64(142852.1008230172), 'unique_values': 1999987, 'iqr': np.float64(0.010738882441648733), 'outlier_percentage': np.float64(4.4624999999999995)}
+TRANGE: {'mean': np.float64(-0.004840422415000003), 'median': np.float64(0.00012000000000012001), 'std': np.float64(7.070360819134568), 'skew': np.float64(-1414.2125007733835), 'kurtosis': np.float64(1999994.9982292955), 'unique_values': 906, 'iqr': np.float64(0.00013000000000018552), 'outlier_percentage': np.float64(5.4487)}
+AVGPRICE: {'mean': np.float64(1.1072397777024998), 'median': np.float64(1.09589), 'std': np.float64(0.05657026502903628), 'skew': np.float64(0.21877606960727786), 'kurtosis': np.float64(-0.35481687412460383), 'unique_values': 198938, 'iqr': np.float64(0.06892249999999978), 'outlier_percentage': np.float64(0.33325)}
+MEDPRICE: {'mean': np.float64(1.1072397870700001), 'median': np.float64(1.09589), 'std': np.float64(0.05657028911996974), 'skew': np.float64(0.21877920010362717), 'kurtosis': np.float64(-0.35482121379417597), 'unique_values': 77460, 'iqr': np.float64(0.06892499999999968), 'outlier_percentage': np.float64(0.33295)}
+TYPPRICE: {'mean': np.float64(1.1072397598266672), 'median': np.float64(1.09589), 'std': np.float64(0.05657026947679643), 'skew': np.float64(0.21877696933966975), 'kurtosis': np.float64(-0.35481800703682786), 'unique_values': 148115, 'iqr': np.float64(0.06891999999999965), 'outlier_percentage': np.float64(0.3336)}
+WCLPRICE: {'mean': np.float64(1.107239746205), 'median': np.float64(1.09589), 'std': np.float64(0.05657026378205127), 'skew': np.float64(0.21877569504465266), 'kurtosis': np.float64(-0.35481609438883943), 'unique_values': 170729, 'iqr': np.float64(0.06891812499999994), 'outlier_percentage': np.float64(0.3338)}
+HT_DCPERIOD: {'mean': np.float64(21.855940975169162), 'median': np.float64(21.04286894702151), 'std': np.float64(40.45071076309522), 'skew': np.float64(-243.24958307128813), 'kurtosis': np.float64(60257.824963320934), 'unique_values': 1999969, 'iqr': np.float64(7.048146429405932), 'outlier_percentage': np.float64(2.2047)}
+HT_DCPHASE: {'mean': np.float64(121.59079349912652), 'median': np.float64(137.85074807362145), 'std': np.float64(115.9127115794909), 'skew': np.float64(-20.939714739057557), 'kurtosis': np.float64(1828.6632083444003), 'unique_values': 1999938, 'iqr': np.float64(179.92280695786815), 'outlier_percentage': np.float64(0.00315)}
+HT_PHASOR_INPHASE: {'mean': np.float64(-0.15998409548349177), 'median': np.float64(1.1242588478886154e-06), 'std': np.float64(39.9956900300048), 'skew': np.float64(-249.99399994606955), 'kurtosis': np.float64(62495.00001135674), 'unique_values': 1999969, 'iqr': np.float64(0.00018488359731602257), 'outlier_percentage': np.float64(8.57395)}
+HT_PHASOR_QUADRATURE: {'mean': np.float64(-0.15998390588788777), 'median': np.float64(-5.586354852830499e-07), 'std': np.float64(39.99569003176385), 'skew': np.float64(-249.99399992730525), 'kurtosis': np.float64(62495.00000510218), 'unique_values': 1999969, 'iqr': np.float64(0.00025077139771587076), 'outlier_percentage': np.float64(10.03075)}
+HT_SINE: {'mean': np.float64(-0.3192986429117938), 'median': np.float64(-0.008077198856285616), 'std': np.float64(56.12159348029037), 'skew': np.float64(-178.13489121785287), 'kurtosis': np.float64(31733.703383603668), 'unique_values': 1999938, 'iqr': np.float64(0.9968465625125951), 'outlier_percentage': np.float64(0.00315)}
+HT_LEADSINE: {'mean': np.float64(-0.32463427033298803), 'median': np.float64(-0.025328762634878054), 'std': np.float64(56.123226527055614), 'skew': np.float64(-178.11905563841412), 'kurtosis': np.float64(31729.941972184155), 'unique_values': 1999938, 'iqr': np.float64(1.5340891919827324), 'outlier_percentage': np.float64(0.00315)}
+HT_TRENDMODE: {'mean': np.float64(0.412682), 'median': np.float64(0.0), 'std': np.float64(0.4923166542621162), 'skew': np.float64(0.35472300631543874), 'kurtosis': np.float64(-1.8741715887905361), 'unique_values': 2, 'iqr': np.float64(1.0), 'outlier_percentage': np.float64(0.0)}
+CDL2CROWS: {'mean': np.float64(-0.00025), 'median': np.float64(0.0), 'std': np.float64(0.1581137248943776), 'skew': np.float64(-632.4531603229682), 'kurtosis': np.float64(399995.0000025024), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.00025)}
+CDL3BLACKCROWS: {'mean': np.float64(-0.01975), 'median': np.float64(0.0), 'std': np.float64(1.4052084986952869), 'skew': np.float64(-71.13572475753324), 'kurtosis': np.float64(5058.291336779517), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.01975)}
+CDL3INSIDE: {'mean': np.float64(0.02905), 'median': np.float64(0.0), 'std': np.float64(7.97961076335143), 'skew': np.float64(0.5608220007710227), 'kurtosis': np.float64(154.04342346549936), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.63675)}
+CDL3LINESTRIKE: {'mean': np.float64(0.02435), 'median': np.float64(0.0), 'std': np.float64(3.76887439160648), 'skew': np.float64(4.52907644984754), 'kurtosis': np.float64(700.9189484317272), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.14205)}
+CDL3OUTSIDE: {'mean': np.float64(-0.29595), 'median': np.float64(0.0), 'std': np.float64(14.978902689491738), 'skew': np.float64(-0.8213188863081701), 'kurtosis': np.float64(41.519898625614815), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(2.24455)}
+CDL3STARSINSOUTH: {'mean': np.float64(0.0003), 'median': np.float64(0.0), 'std': np.float64(0.1732048642502938), 'skew': np.float64(577.347671110165), 'kurtosis': np.float64(333328.333336329), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.00030000000000000003)}
+CDLABANDONEDBABY: {'mean': np.float64(0.0002), 'median': np.float64(0.0), 'std': np.float64(0.4358899574434221), 'skew': np.float64(24.14765574931882), 'kurtosis': np.float64(52628.5567879546), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.0019000000000000002)}
+CDLDRAGONFLYDOJI: {'mean': np.float64(2.5685), 'median': np.float64(0.0), 'std': np.float64(15.819384718643976), 'skew': np.float64(5.996631689724178), 'kurtosis': np.float64(33.959591622204236), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(2.5685)}
+CDLENGULFING: {'mean': np.float64(-0.7221), 'median': np.float64(0.0), 'std': np.float64(22.30131880101287), 'skew': np.float64(-0.5538658172267316), 'kurtosis': np.float64(17.049675996732255), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(4.9787)}
+CDLEVENINGSTAR: {'mean': np.float64(-0.272), 'median': np.float64(0.0), 'std': np.float64(5.208265504274413), 'skew': np.float64(-19.09580546198845), 'kurtosis': np.float64(362.6497862421075), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.272)}
+CDLHAMMER: {'mean': np.float64(3.12995), 'median': np.float64(0.0), 'std': np.float64(17.412597870415045), 'skew': np.float64(5.383465702972632), 'kurtosis': np.float64(26.98170297508268), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(3.12995)}
+CDLHARAMI: {'mean': np.float64(0.17475), 'median': np.float64(0.0), 'std': np.float64(19.376394147514258), 'skew': np.float64(0.21315731603162982), 'kurtosis': np.float64(23.62908664312392), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(3.7547499999999996)}
+CDLMARUBOZU: {'mean': np.float64(0.0136), 'median': np.float64(0.0), 'std': np.float64(29.612501641876293), 'skew': np.float64(0.003859581350496099), 'kurtosis': np.float64(8.403805327016945), 'unique_values': 3, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(8.769)}
+CDLMORNINGSTAR: {'mean': np.float64(0.26995), 'median': np.float64(0.0), 'std': np.float64(5.188654975865156), 'skew': np.float64(19.168768269940763), 'kurtosis': np.float64(365.4416769866879), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.26995)}
+CDLSHOOTINGSTAR: {'mean': np.float64(-0.6014), 'median': np.float64(0.0), 'std': np.float64(7.731645874532408), 'skew': np.float64(-12.778291492208862), 'kurtosis': np.float64(161.2847334598574), 'unique_values': 2, 'iqr': np.float64(0.0), 'outlier_percentage': np.float64(0.6014)}
+Minutes: {'mean': np.float64(716.745246), 'median': np.float64(714.0), 'std': np.float64(415.9818837688286), 'skew': np.float64(0.014342897643823327), 'kurtosis': np.float64(-1.1984856905671388), 'unique_values': 1440, 'iqr': np.float64(723.0), 'outlier_percentage': np.float64(0.0)}
+
+Top Periodic Patterns:
+--------------------------------------------------
+lag_5: -0.0296
+lag_4: -0.0296
+lag_3: -0.0296
+lag_2: -0.0296
+lag_1: -0.0296
+
+Feature Importance:
+--------------------------------------------------
+
+Mutual Information Scores:
+cci_direction: 0.2482
+ichi_direction: 0.2405
+EMA_Direction_Signal: 0.2401
+eom_signal: 0.1774
+w5_8_13_signal: 0.1729
+macd_direction: 0.1561
+5_8_13_signal: 0.1548
+kst_direction: 0.1518
+dpo_direction_Signal: 0.1511
+ma_direction: 0.1511
+stochrsi_signal: 0.1393
+Signal: 0.1347
+cmf_signal: 0.1211
+HT_TRENDMODE: 0.1161
+williams_signal: 0.1070
+STOCHRSI_K: 0.0823
+stoch_signal: 0.0736
+AROON_DOWN: 0.0532
+AROON_UP: 0.0515
+STOCHF_K: 0.0368
+BOP: 0.0315
+STOCHRSI_D: 0.0257
+dpo_Signal: 0.0255
+WILLR: 0.0229
+Volume: 0.0220
+AROONOSC: 0.0200
+STOCHF_D: 0.0199
+STOCH_K: 0.0199
+CCI: 0.0198
+MINUS_DM: 0.0158
+ROCR100: 0.0140
+TRANGE: 0.0140
+ROC: 0.0138
+ROCR: 0.0138
+ROCP: 0.0138
+ADOSC: 0.0137
+MOM: 0.0137
+CMO: 0.0133
+RSI: 0.0133
+cci_Signal: 0.0128
+rsi_signal: 0.0113
+ATR: 0.0103
+ULTOSC: 0.0101
+NATR: 0.0101
+Close_Position: 0.0098
+STOCH_D: 0.0097
+MACDHIST: 0.0096
+PPO_signal: 0.0088
+macd_signal: 0.0086
+PLUS_DI: 0.0076
+Minutes: 0.0072
+SAREXT: 0.0070
+CDLMARUBOZU: 0.0069
+mfi_signal: 0.0059
+MINUS_DI: 0.0058
+MFI: 0.0050
+datetime: 0.0049
+CDLENGULFING: 0.0044
+MACD: 0.0042
+kst_signal: 0.0039
+momentum_ao: 0.0036
+sell_signal: 0.0030
+CDLHARAMI: 0.0029
+APO: 0.0028
+MACDSIGNAL: 0.0027
+PPO: 0.0026
+ichi_signal: 0.0026
+Ao_signal: 0.0026
+Date: 0.0025
+LOWERBAND: 0.0025
+TRIX: 0.0025
+CDLHAMMER: 0.0024
+UPPERBAND: 0.0023
+tsi_signal: 0.0023
+EMA_Signal: 0.0023
+HT_PHASOR_INPHASE: 0.0022
+CDLDRAGONFLYDOJI: 0.0022
+HT_PHASOR_QUADRATURE: 0.0021
+AD: 0.0019
+PLUS_DM: 0.0019
+OBV: 0.0019
+ma_signal: 0.0018
+kama_cross_signal: 0.0018
+CDL3OUTSIDE: 0.0016
+HT_DCPHASE: 0.0012
+Close: 0.0011
+High: 0.0009
+MA_20: 0.0008
+AVGPRICE: 0.0008
+DX: 0.0008
+MIDDLEBAND: 0.0007
+MEDPRICE: 0.0007
+SAR: 0.0007
+Low: 0.0007
+WCLPRICE: 0.0007
+EMA_10: 0.0007
+TYPPRICE: 0.0007
+Open: 0.0007
+DEMA: 0.0006
+EMA_50: 0.0006
+T3: 0.0006
+EMA_200: 0.0006
+MAMA: 0.0006
+HT_SINE: 0.0006
+HT_TRENDLINE: 0.0006
+SMA: 0.0005
+TRIMA: 0.0005
+WMA: 0.0005
+MA_50: 0.0005
+CDLSHOOTINGSTAR: 0.0005
+EMA_20: 0.0004
+CDLMORNINGSTAR: 0.0004
+MA_10: 0.0003
+TEMA: 0.0003
+MA_200: 0.0003
+ADXR: 0.0003
+FAMA: 0.0003
+KAMA: 0.0003
+CDL3INSIDE: 0.0002
+HT_LEADSINE: 0.0002
+CDLABANDONEDBABY: 0.0002
+CDL3STARSINSOUTH: 0.0001
+ADX: 0.0001
+CDL2CROWS: 0.0001
+HT_DCPERIOD: 0.0000
+CDL3BLACKCROWS: 0.0000
+roc_signal: 0.0000
+CDL3LINESTRIKE: 0.0000
+CDLEVENINGSTAR: 0.0000
+
+Random Forest Feature Importance:
+Volume: 0.0510
+STOCHF_K: 0.0293
+STOCHRSI_K: 0.0288
+BOP: 0.0280
+TRANGE: 0.0201
+STOCHRSI_D: 0.0195
+WILLR: 0.0191
+ADOSC: 0.0183
+MINUS_DM: 0.0181
+CCI: 0.0177
+ATR: 0.0172
+STOCHF_D: 0.0164
+NATR: 0.0164
+Close_Position: 0.0159
+Minutes: 0.0153
+ROC: 0.0150
+STOCH_K: 0.0150
+HT_PHASOR_INPHASE: 0.0145
+PLUS_DM: 0.0143
+ULTOSC: 0.0142
+HT_DCPERIOD: 0.0140
+HT_PHASOR_QUADRATURE: 0.0140
+STOCH_D: 0.0139
+MINUS_DI: 0.0138
+MFI: 0.0138
+TRIX: 0.0136
+CMO: 0.0135
+ADXR: 0.0135
+RSI: 0.0134
+ROCP: 0.0133
+MACDHIST: 0.0133
+PLUS_DI: 0.0133
+HT_DCPHASE: 0.0133
+HT_SINE: 0.0131
+HT_LEADSINE: 0.0130
+ADX: 0.0130
+DX: 0.0130
+AD: 0.0129
+OBV: 0.0126
+ROCR100: 0.0125
+momentum_ao: 0.0124
+APO: 0.0122
+MACDSIGNAL: 0.0122
+ROCR: 0.0121
+PPO: 0.0121
+datetime: 0.0120
+MACD: 0.0120
+Date: 0.0109
+MOM: 0.0106
+AROONOSC: 0.0078
+SAREXT: 0.0078
+AROON_DOWN: 0.0077
+AROON_UP: 0.0065
+MA_200: 0.0058
+EMA_200: 0.0056
+MA_50: 0.0051
+UPPERBAND: 0.0050
+SAR: 0.0050
+EMA_50: 0.0050
+SMA: 0.0050
+KAMA: 0.0050
+LOWERBAND: 0.0049
+DEMA: 0.0049
+HT_TRENDLINE: 0.0049
+TEMA: 0.0049
+MAMA: 0.0049
+High: 0.0048
+AVGPRICE: 0.0048
+TRIMA: 0.0048
+FAMA: 0.0048
+T3: 0.0048
+Low: 0.0048
+Close: 0.0048
+MA_20: 0.0048
+MIDDLEBAND: 0.0048
+WMA: 0.0048
+MEDPRICE: 0.0048
+EMA_20: 0.0048
+TYPPRICE: 0.0048
+MA_10: 0.0048
+Open: 0.0048
+EMA_10: 0.0047
+stochrsi_signal: 0.0047
+WCLPRICE: 0.0047
+eom_signal: 0.0036
+stoch_signal: 0.0025
+williams_signal: 0.0024
+dpo_Signal: 0.0022
+cmf_signal: 0.0019
+w5_8_13_signal: 0.0016
+dpo_direction_Signal: 0.0014
+5_8_13_signal: 0.0014
+cci_direction: 0.0014
+HT_TRENDMODE: 0.0014
+cci_Signal: 0.0013
+Signal: 0.0013
+CDLENGULFING: 0.0013
+CDL3OUTSIDE: 0.0011
+macd_signal: 0.0011
+CDLMARUBOZU: 0.0011
+kst_direction: 0.0010
+kst_signal: 0.0010
+ichi_direction: 0.0010
+PPO_signal: 0.0009
+ichi_signal: 0.0008
+ma_signal: 0.0008
+kama_cross_signal: 0.0008
+macd_direction: 0.0007
+CDLHAMMER: 0.0007
+ma_direction: 0.0007
+Ao_signal: 0.0007
+mfi_signal: 0.0007
+EMA_Signal: 0.0007
+rsi_signal: 0.0007
+tsi_signal: 0.0006
+EMA_Direction_Signal: 0.0006
+CDLHARAMI: 0.0004
+CDL3INSIDE: 0.0004
+CDL3LINESTRIKE: 0.0002
+CDLDRAGONFLYDOJI: 0.0002
+CDLEVENINGSTAR: 0.0001
+CDL3BLACKCROWS: 0.0000
+CDLMORNINGSTAR: 0.0000
+sell_signal: 0.0000
+roc_signal: 0.0000
+CDL2CROWS: 0.0000
+CDL3STARSINSOUTH: 0.0000
+CDLABANDONEDBABY: 0.0000
+CDLSHOOTINGSTAR: 0.0000
