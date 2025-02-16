@@ -4,7 +4,7 @@ import pandas as pd
 from backtesting import Backtest, Strategy
 
 # Load dataset
-file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\trade_signals.csv"
+file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\trade_signals.csv"
 data = pd.read_csv(file_path, header=0)
 
 # 🔍 Debug: Check if "signal" column contains strings
@@ -63,7 +63,7 @@ import pandas as pd
 import numpy as np
 
 # Load dataset
-file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\trade_signals.csv"
+file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\trade_signals.csv"
 data = pd.read_csv(file_path)
 
 # Convert columns to string

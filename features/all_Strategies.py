@@ -1,5 +1,4 @@
 #%%
-import numpy as np
 import pandas as pd
 from ta import momentum, trend, volatility, volume
 
@@ -622,85 +621,22 @@ def eom_signals(stock_df, window=14):
 
 #%%
 def compute_new_features(df):
-    """
-    Adds statistical and technical indicators to the given DataFrame.
 
-    Parameters:
-    df (pd.DataFrame): DataFrame containing Open, High, Low, Close, and Volume.
-
-    Returns:
-    pd.DataFrame: DataFrame with additional calculated features.
-    """
-
-    # Ensure data is sorted by Date and Time
-    df['Datetime'] = pd.to_datetime(df['Date'].astype(str) + ' ' + df['Time'])
-    df = df.sort_values('Datetime').reset_index(drop=True)
-
-    # ---------------------------------
-    # 1. Statistical Features
-    # ---------------------------------
-    df['rolling_mean'] = df['Close'].rolling(window=14).mean()
-    df['rolling_std'] = df['Close'].rolling(window=14).std()
-    df['z_score'] = (df['Close'] - df['rolling_mean']) / df['rolling_std']
-    df['autocorr'] = df['Close'].rolling(window=14).apply(lambda x: x.autocorr(), raw=True)
-
-    # ---------------------------------
-    # 2. Relative Volatility Index (RVI)
-    # ---------------------------------
     df['rvi'] = volatility.bollinger_pband(df['Close'], window=14, fillna=True)
-
-    # ---------------------------------
-    # 3. Chande Momentum Oscillator (CMO)
-    # ---------------------------------
     df['cmo'] = momentum.roc(df['Close'], window=14, fillna=True)
-
-    # ---------------------------------
-    # 4. Williams %R
-    # ---------------------------------
     df['williams_r'] = momentum.williams_r(df['High'], df['Low'], df['Close'], lbp=14, fillna=True)
-
-    # ---------------------------------
-    # 5. Donchian Channel
-    # ---------------------------------
     df['donchian_high'] = df['High'].rolling(window=20).max()
     df['donchian_low'] = df['Low'].rolling(window=20).min()
     df['donchian_mid'] = (df['donchian_high'] + df['donchian_low']) / 2
-
-    # ---------------------------------
-    # 6. Vortex Indicator (VI+ and VI-)
-    # ---------------------------------
     vortex = trend.VortexIndicator(df['High'], df['Low'], df['Close'], window=14, fillna=True)
     df['vortex_vi+'] = vortex.vortex_indicator_pos()
     df['vortex_vi-'] = vortex.vortex_indicator_neg()
-
-    # ---------------------------------
-    # 7. Klinger Oscillator (KO)
-    # ---------------------------------
     df['ko'] = volume.klinger_volume_oscillator(df['High'], df['Low'], df['Close'], df['Volume'], fillna=True)
-
-    # ---------------------------------
-    # 8. Parabolic SAR Acceleration
-    # ---------------------------------
     df['parabolic_sar'] = trend.psar(df['High'], df['Low'], df['Close'], fillna=True)
-
-    # ---------------------------------
-    # 9. Accumulation/Distribution Line (ADL)
-    # ---------------------------------
     df['adl'] = volume.acc_dist_index(df['High'], df['Low'], df['Close'], df['Volume'], fillna=True)
-
-    # ---------------------------------
-    # 10. On-Balance Volume (OBV) Change
-    # ---------------------------------
     df['obv'] = volume.on_balance_volume(df['Close'], df['Volume'], fillna=True)
     df['obv_change'] = df['obv'].pct_change()
-
-    # ---------------------------------
-    # 11. Rate of Change in Volume
-    # ---------------------------------
     df['volume_roc'] = df['Volume'].pct_change()
-
-    # Drop auxiliary Datetime column
-    df.drop(columns=['Datetime'], inplace=True)
 
     return df
 

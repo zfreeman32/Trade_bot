@@ -1,4 +1,6 @@
-#%% Regression Training Script for EUR/USD Forecasting
+#%% 
+import sys
+sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import numpy as np
 import pandas as pd
 import warnings
@@ -17,12 +19,10 @@ from lightgbm import LGBMRegressor
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sys
-sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 from data import preprocess_data
 
 #%% Load Data
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\sampled_EURUSD_1min.csv'
+file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled_EURUSD_1min.csv'
 data = pd.read_csv(file_path, header=0).tail(1000)
 
 df = preprocess_data.generate_features(data)

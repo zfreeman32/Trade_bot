@@ -1,37 +1,32 @@
 import warnings
 warnings.filterwarnings("ignore")
-import dask.dataframe as dd
-import dask.array as da
-import numpy as np
-import pandas as pd
 from dask_ml.model_selection import train_test_split
 from dask_ml.preprocessing import StandardScaler
 from dask.distributed import Client
+import dask.array as da
+import numpy as np
+import pandas as pd
 import optuna
 from optuna.samplers import TPESampler
-from joblib import parallel_backend
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import (
     RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor,
     BaggingRegressor, HistGradientBoostingRegressor
 )
 from sklearn.neural_network import MLPRegressor
 from sklearn.svm import SVR
-from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
 from sklearn.linear_model import SGDRegressor
 from sklearn.neighbors import KNeighborsRegressor
+from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
+
 
 # Initialize Dask Client
-client = Client(
-    n_workers=6,              # Matches physical cores
-    threads_per_worker=2,     # Utilizes all logical processors (6 × 2 = 12)
-    memory_limit="2.5GB"      # Prevents overuse of RAM (6 workers × 2.5GB = 15GB)
-)
+client = Client(processes=False)
 seed = 42
 
 # Load Data
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\sampled_EURUSD_1min.csv'
+file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled_EURUSD_1min.csv'
 data = pd.read_csv(file_path, header=0)
 
 # Feature Engineering: Use last 240 time steps to predict next 15

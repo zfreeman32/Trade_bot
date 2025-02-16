@@ -1,9 +1,8 @@
 # %%
 import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
-from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
-from keras.layers import Flatten, Input, Dense
+from keras.layers import Flatten, Dense
 from keras.optimizers import Adam
 from layer_build import build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
 import tensorflow as tf
@@ -11,8 +10,10 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
+
 seed = 42
 
+#%%
 # Build the LSTM model
 def build_LSTM_model(hp):
     # input_shape = Input(shape=(train_X.shape[1], train_X.shape[2]))

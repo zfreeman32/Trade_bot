@@ -2,29 +2,17 @@
 import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
+from pandas import DataFrame, concat
 from math import sqrt
-import numpy as np
-from numpy import concatenate
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder, OneHotEncoder
+from matplotlib import pyplot
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error
-from matplotlib import pyplot
+from sklearn.model_selection import train_test_split
+import keras_tuner as kt
+from features.all_indicators import generate_all_indicators
+from model_training import model_build
 from features import call_Strategies
 from data import preprocess_data
-import keras_tuner as kt
-from keras_tuner import HyperParameters
-# from model_training import model_build
-from sklearn.model_selection import train_test_split
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
-import ta
-from pandas import DataFrame, concat
-from features.all_indicators import generate_all_indicators
-from sklearn.ensemble import RandomForestRegressor
-
 
 # Function to frame the dataset as supervised learning
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
@@ -118,17 +106,11 @@ def preprocess_data(data):
 
 #%% regression target and features
 # Load EURUSD 1-minute data
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\sampled_EURUSD_1min.csv'
-df = pd.read_csv(
+file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled_EURUSD_1min.csv'
+data = pd.read_csv(
     file_path, 
     header=0
 )
-df = preprocess_data(df)
-#%%
-output_file = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\data_features.csv'
-df.to_csv(output_file, index=False)
-
-#%%
 data = data.tail(1000)
 
 df = preprocess_data(data)

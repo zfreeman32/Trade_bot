@@ -12,7 +12,7 @@ min_pips = 15  # Minimum number of pips required for a valid signal (adjust as n
 pip_value = 0.0001  # Definition of 1 pip for EURUSD
 
 # Load and prepare data
-file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\sampled_EURUSD_1min.csv"
+file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled_EURUSD_1min.csv"
 data = pd.read_csv(file_path)
 
 # Convert Date and Time to datetime

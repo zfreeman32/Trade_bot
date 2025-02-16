@@ -117,21 +117,14 @@ def generate_all_indicators(df):
         df['CDLMARUBOZU'] = talib.CDLMARUBOZU(open_price, high, low, close)
         df['CDLMORNINGSTAR'] = talib.CDLMORNINGSTAR(open_price, high, low, close)
         df['CDLSHOOTINGSTAR'] = talib.CDLSHOOTINGSTAR(open_price, high, low, close)
+        df['rolling_mean'] = df['Close'].rolling(window=14).mean()
+        df['rolling_std'] = df['Close'].rolling(window=14).std()
+        df['z_score'] = (df['Close'] - df['rolling_mean']) / df['rolling_std']
+        df['autocorr'] = df['Close'].rolling(window=14).apply(lambda x: x.autocorr(), raw=True)
 
     except Exception as e:
         print(f"Error generating indicators: {str(e)}")
         return None
 
     return df
-
-#%%
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\sampled_EURUSD_1min.csv'
-data = pd.read_csv(
-    file_path, 
-    header=0
-)
-
-data = data.tail(1000)
-# Generate indicators
-df_with_indicators = generate_all_indicators(data)
 # %%

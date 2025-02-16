@@ -1,9 +1,6 @@
 #%%
-from numpy import row_stack
-import pandas as pd
 import yfinance as yf  # You may need to install this library
 from datetime import datetime, timedelta
-from scipy.stats import norm
 import numpy as np
 import matplotlib.pyplot as plt
 

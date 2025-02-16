@@ -1,6 +1,6 @@
 #%%
 import sys
-sys.path.append('./Strategies/all_Strategies.py')
+sys.path.append('./features/all_Strategies.py')
 import pandas as pd
 from . import all_Strategies
 

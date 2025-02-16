@@ -3,19 +3,9 @@ import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import plotly.express as px
-import plotly.graph_objects as go
 from scipy import stats
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.ensemble import RandomForestClassifier
-from datetime import datetime
-from model_training import preprocess_data
-
-def Preprocess_Data(df):
-    """ Placeholder for preprocessing function """
-    
-    return df
 
 class TradingDataAnalyzer:
     def __init__(self, df):
@@ -86,7 +76,6 @@ class TradingDataAnalyzer:
 
 def analyze_trading_dataset(file_path):
     df = pd.read_csv(file_path)
-    df = preprocess_data.generate_features(df)
     analyzer = TradingDataAnalyzer(df)
 
     results = {
@@ -124,7 +113,7 @@ def write_results_to_file(results, file_path='sellclass_analysis_results.txt'):
 
 #%%
 if __name__ == "__main__":
-    file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\trade_signals.csv'
+    file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\data_features.csv'
     results, df = analyze_trading_dataset(file_path)
     write_results_to_file(results)
 

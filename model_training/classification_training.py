@@ -5,20 +5,16 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import (AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier,
                               GradientBoostingClassifier, RandomForestClassifier, HistGradientBoostingClassifier)
-from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from data import preprocess_data
 import optuna
 from dask.distributed import Client
-import dask.dataframe as dd
 from dask_ml.model_selection import train_test_split
 from dask_ml.preprocessing import StandardScaler
-import dask.array as da
 from numpy.lib.stride_tricks import sliding_window_view
-import zarr
 
 seed = 7
 np.random.seed(seed)
@@ -31,7 +27,7 @@ client
 
 #%%
 # Load Data Efficiently
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\currency_data\trade_signals.csv'
+file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\trade_signals.csv'
 data = pd.read_csv(file_path, header=0)
 
 #%%
