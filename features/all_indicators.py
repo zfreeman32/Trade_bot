@@ -12,12 +12,10 @@ def generate_all_indicators(df):
     
     Returns:
     pandas.DataFrame: Original dataframe with all technical indicators added
+
+    147 Indicators from TA-Lib and Manually Calculated
     """
     
-    # Create a copy of the dataframe to avoid modifying the original
-    df = df.copy()
-    
-    # Get OHLCV data and convert to float64 (double type)
     open_price = df['Open'].values.astype(np.float64)
     high = df['High'].values.astype(np.float64)
     low = df['Low'].values.astype(np.float64)
@@ -46,7 +44,7 @@ def generate_all_indicators(df):
         df['TEMA'] = talib.TEMA(close, timeperiod=30)
         df['TRIMA'] = talib.TRIMA(close, timeperiod=30)
         df['WMA'] = talib.WMA(close, timeperiod=30)
-
+        
         # Momentum Indicators
         df['ADX'] = talib.ADX(high, low, close, timeperiod=14)
         df['ADXR'] = talib.ADXR(high, low, close, timeperiod=14)
@@ -76,23 +74,23 @@ def generate_all_indicators(df):
         df['TRIX'] = talib.TRIX(close, timeperiod=30)
         df['ULTOSC'] = talib.ULTOSC(high, low, close)
         df['WILLR'] = talib.WILLR(high, low, close, timeperiod=14)
-
+        
         # Volume Indicators
         df['AD'] = talib.AD(high, low, close, volume)
         df['ADOSC'] = talib.ADOSC(high, low, close, volume)
         df['OBV'] = talib.OBV(close, volume)
-
+        
         # Volatility Indicators
         df['ATR'] = talib.ATR(high, low, close, timeperiod=14)
         df['NATR'] = talib.NATR(high, low, close, timeperiod=14)
         df['TRANGE'] = talib.TRANGE(high, low, close)
-
+        
         # Price Transform
         df['AVGPRICE'] = talib.AVGPRICE(open_price, high, low, close)
         df['MEDPRICE'] = talib.MEDPRICE(high, low)
         df['TYPPRICE'] = talib.TYPPRICE(high, low, close)
         df['WCLPRICE'] = talib.WCLPRICE(high, low, close)
-
+        
         # Cycle Indicators
         df['HT_DCPERIOD'] = talib.HT_DCPERIOD(close)
         df['HT_DCPHASE'] = talib.HT_DCPHASE(close)
@@ -100,31 +98,50 @@ def generate_all_indicators(df):
         df['HT_SINE'], df['HT_LEADSINE'] = talib.HT_SINE(close)
         df['HT_TRENDMODE'] = talib.HT_TRENDMODE(close)
 
-        # Pattern Recognition
-        # Adding candlestick patterns (returns integers)
-        df['CDL2CROWS'] = talib.CDL2CROWS(open_price, high, low, close)
-        df['CDL3BLACKCROWS'] = talib.CDL3BLACKCROWS(open_price, high, low, close)
-        df['CDL3INSIDE'] = talib.CDL3INSIDE(open_price, high, low, close)
-        df['CDL3LINESTRIKE'] = talib.CDL3LINESTRIKE(open_price, high, low, close)
-        df['CDL3OUTSIDE'] = talib.CDL3OUTSIDE(open_price, high, low, close)
-        df['CDL3STARSINSOUTH'] = talib.CDL3STARSINSOUTH(open_price, high, low, close)
-        df['CDLABANDONEDBABY'] = talib.CDLABANDONEDBABY(open_price, high, low, close)
-        df['CDLDRAGONFLYDOJI'] = talib.CDLDRAGONFLYDOJI(open_price, high, low, close)
-        df['CDLENGULFING'] = talib.CDLENGULFING(open_price, high, low, close)
-        df['CDLEVENINGSTAR'] = talib.CDLEVENINGSTAR(open_price, high, low, close)
-        df['CDLHAMMER'] = talib.CDLHAMMER(open_price, high, low, close)
-        df['CDLHARAMI'] = talib.CDLHARAMI(open_price, high, low, close)
-        df['CDLMARUBOZU'] = talib.CDLMARUBOZU(open_price, high, low, close)
-        df['CDLMORNINGSTAR'] = talib.CDLMORNINGSTAR(open_price, high, low, close)
-        df['CDLSHOOTINGSTAR'] = talib.CDLSHOOTINGSTAR(open_price, high, low, close)
+        # Statistical Indicators
         df['rolling_mean'] = df['Close'].rolling(window=14).mean()
         df['rolling_std'] = df['Close'].rolling(window=14).std()
         df['z_score'] = (df['Close'] - df['rolling_mean']) / df['rolling_std']
-        df['autocorr'] = df['Close'].rolling(window=14).apply(lambda x: x.autocorr(), raw=True)
 
+        # Additional Indicators
+        df['VWAP'] = (df['Volume'] * (df['High'] + df['Low'] + df['Close']) / 3).cumsum() / df['Volume'].cumsum()
+        df['HMA'] = talib.WMA(2 * talib.WMA(close, timeperiod=10 // 2) - talib.WMA(close, timeperiod=10), timeperiod=int(np.sqrt(10)))
+        df['KELTNER_UPPER'] = talib.SMA(close, timeperiod=20) + (2 * talib.ATR(high, low, close, timeperiod=10))
+        df['KELTNER_LOWER'] = talib.SMA(close, timeperiod=20) - (2 * talib.ATR(high, low, close, timeperiod=10))
+        df['DONCHIAN_HIGH'] = df['High'].rolling(window=20).max()
+        df['DONCHIAN_LOW'] = df['Low'].rolling(window=20).min()
+        df['EFI'] = talib.EMA((df['Close'] - df['Close'].shift(1)) * df['Volume'], timeperiod=13)
+        df['SUPER_TREND'] = df['Close'] - df['ATR'] * 2  # Basic supertrend calculation
+
+        # Candlestick Patterns
+        patterns = [
+            'CDL2CROWS', 'CDL3BLACKCROWS', 'CDL3INSIDE', 'CDL3LINESTRIKE', 'CDL3STARSINSOUTH', 'CDL3WHITESOLDIERS',
+            'CDLABANDONEDBABY', 'CDLADVANCEBLOCK', 'CDLBELTHOLD', 'CDLBREAKAWAY', 'CDLCLOSINGMARUBOZU',
+            'CDLCONCEALBABYSWALL', 'CDLCOUNTERATTACK', 'CDLDARKCLOUDCOVER', 'CDLDOJI', 'CDLDOJISTAR',
+            'CDLDRAGONFLYDOJI', 'CDLENGULFING', 'CDLEVENINGDOJISTAR', 'CDLEVENINGSTAR', 'CDLGAPSIDESIDEWHITE',
+            'CDLGRAVESTONEDOJI', 'CDLHAMMER', 'CDLHANGINGMAN', 'CDLHARAMI', 'CDLHARAMICROSS', 'CDLHIGHWAVE',
+            'CDLHIKKAKE', 'CDLHIKKAKEMOD', 'CDLHOMINGPIGEON', 'CDLIDENTICAL3CROWS', 'CDLINNECK', 'CDLINVERTEDHAMMER',
+            'CDLKICKING', 'CDLKICKINGBYLENGTH', 'CDLLADDERBOTTOM', 'CDLLONGLEGGEDDOJI', 'CDLLONGLINE', 'CDLMARUBOZU',
+            'CDLMATCHINGLOW', 'CDLMATHOLD', 'CDLMORNINGDOJISTAR', 'CDLMORNINGSTAR', 'CDLONNECK', 'CDLPIERCING',
+            'CDLRICKSHAWMAN', 'CDLRISEFALL3METHODS', 'CDLSEPARATINGLINES', 'CDLSHOOTINGSTAR', 'CDLSHORTLINE',
+            'CDLSPINNINGTOP', 'CDLSTALLEDPATTERN', 'CDLSTICKSANDWICH', 'CDLTAKURI', 'CDLTASUKIGAP', 'CDLTHRUSTING',
+            'CDLTRISTAR', 'CDLUNIQUE3RIVER', 'CDLUPSIDEGAP2CROWS', 'CDLXSIDEGAP3METHODS'
+        ]
+        for pattern in patterns:
+            df[pattern] = getattr(talib, pattern)(open_price, high, low, close)
+        
     except Exception as e:
         print(f"Error generating indicators: {str(e)}")
         return None
 
     return df
+# %%
+# test
+
+# file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled2k_EURUSD_1min.csv"
+# data=pd.read_csv(file_path, header=0)
+
+# data = generate_all_indicators(data)
+
+# data
 # %%

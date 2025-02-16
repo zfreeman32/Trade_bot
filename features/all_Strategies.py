@@ -2,626 +2,630 @@
 import pandas as pd
 from ta import momentum, trend, volatility, volume
 
-#%%
-# PPO
+#%% 
+# PPO (Percentage Price Oscillator)
 def ppo_signals(stock_data, fast_window=12, slow_window=26, signal_window=9):
+    """
+    Computes PPO crossover signals.
+
+    Returns:
+    A DataFrame with 'PPO_signal'.
+    """
     signals = pd.DataFrame(index=stock_data.index)
-    signals['PPO_signal'] = ''
 
+    # Calculate PPO and PPO signal
     ppo = momentum.PercentagePriceOscillator(stock_data['Close'], fast_window, slow_window, signal_window)
+    signals['PPO'] = ppo.ppo()
+    signals['PPO_Signal'] = ppo.ppo_signal()
 
-    ppo_values = ppo.ppo()
-    ppo_signal = ppo.ppo_signal()
-
-    # Generate signals using proper indexing
-    for i in range(1, len(stock_data)):
-        # Make sure the current index exists and is within bounds
-        if i < len(stock_data):
-            if ppo_values[i] > ppo_signal[i] and ppo_values[i - 1] <= ppo_signal[i - 1]:
-                signals.loc[stock_data.index[i], 'PPO_signal'] = 'long'  # long signal (PPO crosses above signal line)
-            elif ppo_values[i] < ppo_signal[i] and ppo_values[i - 1] >= ppo_signal[i - 1]:
-                signals.loc[stock_data.index[i], 'PPO_signal'] = 'short'  # short signal (PPO crosses below signal line)
-
-    return signals
-
-#%%
-# Awesome Oscilator 0 cross
-def Awesome_Oscillator_signals(stock_df):
-    # Define long and short signals
-    signals = pd.DataFrame(index=stock_df.index)
-    ao_indicator = momentum.AwesomeOscillatorIndicator(high=stock_df['High'], low=stock_df['Low'])
-    signals['Ao_signal'] = ''
-    stock_df['momentum_ao'] = ao_indicator.awesome_oscillator()
-
-    for i in range(1, len(stock_df)):
-        if (
-            stock_df['momentum_ao'].iloc[i-1] < 0 and
-            stock_df['momentum_ao'].iloc[i] >= 0
-        ):
-            signals['Ao_signal'].iloc[i] = 'long' # long signal
-        elif (
-            stock_df['momentum_ao'].iloc[i-1] >= 0 and
-            stock_df['momentum_ao'].iloc[i] < 0
-        ):
-            signals['Ao_signal'].iloc[i] = 'short'  # short signal
+    # Generate buy/sell signals on PPO crossover
+    signals['PPO_signal'] = 'neutral'
+    signals.loc[(signals['PPO'] > signals['PPO_Signal']) & 
+                (signals['PPO'].shift(1) <= signals['PPO_Signal'].shift(1)), 'PPO_signal'] = 'long'
     
+    signals.loc[(signals['PPO'] < signals['PPO_Signal']) & 
+                (signals['PPO'].shift(1) >= signals['PPO_Signal'].shift(1)), 'PPO_signal'] = 'short'
+
     return signals
 
-#%%
-# KAMA Cross
+#%% 
+# Awesome Oscillator Zero Cross Strategy
+def Awesome_Oscillator_signals(stock_df):
+    """
+    Computes Awesome Oscillator zero-crossing signals.
+
+    Returns:
+    A DataFrame with 'Ao_signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # Calculate Awesome Oscillator
+    ao_indicator = momentum.AwesomeOscillatorIndicator(high=stock_df['High'], low=stock_df['Low'])
+    signals['AO'] = ao_indicator.awesome_oscillator()
+
+    # Generate signals on zero-crossing
+    signals['Ao_signal'] = 'neutral'
+    signals.loc[(signals['AO'].shift(1) < 0) & (signals['AO'] >= 0), 'Ao_signal'] = 'long'
+    signals.loc[(signals['AO'].shift(1) >= 0) & (signals['AO'] < 0), 'Ao_signal'] = 'short'
+
+    return signals
+
+#%% 
+# KAMA Cross Strategy
 def kama_cross_signals(stock_df, fast_period=10, slow_period=20):
+    """
+    Computes KAMA crossover and price cross signals.
+
+    Returns:
+    A DataFrame with 'kama_cross_signal' and 'kama_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['kama_cross_signal'] = ''
-    signals['kama_signal'] = ''
 
-    # Calculate Fast KAMA
+    # Compute Fast and Slow KAMA
     fast_kama = momentum.kama(stock_df['Close'], window=fast_period)
-
-    # Calculate Slow KAMA
     slow_kama = momentum.kama(stock_df['Close'], window=slow_period)
-    for i in range(1, len(stock_df)):
-        if fast_kama[i] > slow_kama[i] and fast_kama[i - 1] <= slow_kama[i - 1] and stock_df['Close'][i] > fast_kama[i]:
-            signals['kama_cross_signal'].iloc[i] = 'long'  # long signal (fast KAMA above slow KAMA and price above fast KAMA)
-        elif fast_kama[i] < slow_kama[i] and fast_kama[i - 1] >= slow_kama[i - 1] and stock_df['Close'][i] < fast_kama[i]:
-            signals['kama_cross_signal'].iloc[i] = 'short'  # short signal (fast KAMA below slow KAMA and price below fast KAMA)
-        elif stock_df['Close'][i] > fast_kama[i] and stock_df['Close'][i - 1] <= fast_kama[i - 1]:
-            stock_df.loc[i, 'kama_signal'] = 'long' # long signal (price crosses above KAMA)
-        elif stock_df['Close'][i] < fast_kama[i] and stock_df['Close'][i - 1] >= fast_kama[i - 1]:
-            stock_df.loc[i, 'kama_signal'] = 'short'
+
+    # Generate crossover signals
+    signals['kama_cross_signal'] = 'neutral'
+    signals.loc[(fast_kama > slow_kama) & (fast_kama.shift(1) <= slow_kama.shift(1)) & (stock_df['Close'] > fast_kama), 
+                'kama_cross_signal'] = 'long'
+    
+    signals.loc[(fast_kama < slow_kama) & (fast_kama.shift(1) >= slow_kama.shift(1)) & (stock_df['Close'] < fast_kama), 
+                'kama_cross_signal'] = 'short'
+
+    # Generate price cross KAMA signals
+    signals['kama_signal'] = 'neutral'
+    signals.loc[(stock_df['Close'] > fast_kama) & (stock_df['Close'].shift(1) <= fast_kama.shift(1)), 'kama_signal'] = 'long'
+    signals.loc[(stock_df['Close'] < fast_kama) & (stock_df['Close'].shift(1) >= fast_kama.shift(1)), 'kama_signal'] = 'short'
 
     return signals
 
-#%%
-# Stoch
+#%% 
+# Stochastic Oscillator Strategy
 def stoch_signals(stock_df, fast_period=10, slow_period=20):
+    """
+    Computes Stochastic Oscillator crossover signals.
+
+    Returns:
+    A DataFrame with 'stoch_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['stoch_signal'] = 0
 
     # Calculate Stochastic Oscillator
     stoch = momentum.StochasticOscillator(stock_df['High'], stock_df['Low'], stock_df['Close'], window=14, smooth_window=3)
-
     signals['%K'] = stoch.stoch()
     signals['%D'] = stoch.stoch_signal()
 
-    # Generate long (1) and short (-1) signals based on Stochastic Oscillator
-    for i in range(1, len(signals)):
-        if signals['%K'][i] > signals['%D'][i] and signals['%K'][i - 1] <= signals['%D'][i - 1]:
-            signals.loc[i, 'stoch_signal'] = 'long'  # long signal (%K crosses above %D)
-        elif signals['%K'][i] < signals['%D'][i] and signals['%K'][i - 1] >= signals['%D'][i - 1]:
-            signals.loc[i, 'stoch_signal'] = 'short'  # short signal (%K crosses below %D)
+    # Generate crossover signals
+    signals['stoch_signal'] = 'neutral'
+    signals.loc[
+        (signals['%K'] > signals['%D']) & (signals['%K'].shift(1) <= signals['%D'].shift(1)), 'stoch_signal'
+    ] = 'long'
+    
+    signals.loc[
+        (signals['%K'] < signals['%D']) & (signals['%K'].shift(1) >= signals['%D'].shift(1)), 'stoch_signal'
+    ] = 'short'
 
+    # Drop temporary columns
     signals.drop(['%K', '%D'], axis=1, inplace=True)
 
     return signals
 
-#%%
-# TSI 
+#%% 
+# True Strength Index (TSI) Strategy
 def tsi_signals(stock_df, window_slow=25, window_fast=13):
+    """
+    Computes True Strength Index (TSI) crossover signals.
+
+    Returns:
+    A DataFrame with 'tsi_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['tsi_signal'] = 0
 
-    # Calculate True Strength Index (TSI)
+    # Calculate TSI
     tsi = momentum.TSIIndicator(stock_df['Close'], window_slow, window_fast)
-
     signals['TSI'] = tsi.tsi()
 
-    # Generate long (1) and short (-1) signals based on TSI
-    for i in range(1, len(signals)):
-        if signals['TSI'][i] > 0 and signals['TSI'][i - 1] <= 0:
-            signals.loc[i, 'tsi_signal'] = 'long'  # long signal (TSI crosses above 0)
-        elif signals['TSI'][i] < 0 and signals['TSI'][i - 1] >= 0:
-            signals.loc[i, 'tsi_signal'] = 'short'  # short signal (TSI crosses below 0)
+    # Generate signals based on TSI zero-crossing
+    signals['tsi_signal'] = 'neutral'
+    signals.loc[(signals['TSI'] > 0) & (signals['TSI'].shift(1) <= 0), 'tsi_signal'] = 'long'
+    signals.loc[(signals['TSI'] < 0) & (signals['TSI'].shift(1) >= 0), 'tsi_signal'] = 'short'
 
+    # Drop temporary column
     signals.drop(['TSI'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# Williams R overbough/oversold
+#%% 
+# Williams %R Overbought/Oversold Strategy
 def williams_signals(stock_df, lbp=14):
+    """
+    Computes Williams %R overbought and oversold signals.
+
+    Returns:
+    A DataFrame with 'williams_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['williams_signal'] = 0
 
     # Calculate Williams %R
     williams_r = momentum.WilliamsRIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], lbp)
-
     signals['WilliamsR'] = williams_r.williams_r()
 
-    # Generate overbought (1) and oversold (-1) signals based on Williams %R
-    for i in range(len(signals)):
-        if signals['WilliamsR'][i] <= -80:
-            signals.loc[i, 'williams_signal'] = 'overbought'  # Overbought signal (Williams %R crosses below or equal to -80)
-        elif signals['WilliamsR'][i] >= -20:
-            signals.loc[i, 'williams_signal'] = 'oversold'  # Oversold signal (Williams %R crosses above or equal to -20)
+    # Generate overbought/oversold signals
+    signals['williams_signal'] = 'neutral'
+    signals.loc[signals['WilliamsR'] <= -80, 'williams_signal'] = 'overbought'
+    signals.loc[signals['WilliamsR'] >= -20, 'williams_signal'] = 'oversold'
 
+    # Drop temporary column
     signals.drop(['WilliamsR'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# ROC overbough/oversold
+#%% 
+# Rate of Change (ROC) Overbought/Oversold Strategy
 def roc_signals(stock_df, window=12):
+    """
+    Computes ROC overbought and oversold signals.
+
+    Returns:
+    A DataFrame with 'roc_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['roc_signal'] = 0
 
     # Calculate Rate of Change (ROC)
     roc = momentum.ROCIndicator(stock_df['Close'], window)
-
     signals['ROC'] = roc.roc()
 
-    # Generate overbought (1) and oversold (-1) signals based on ROC
-    for i in range(1, len(signals)):
-        if signals['ROC'][i] >= 10:
-            signals.loc[i, 'roc_signal'] = 'overbought'  # Overbought signal (ROC crosses above or equal to 10)
-        elif signals['ROC'][i] <= -10:
-            signals.loc[i, 'roc_signal'] = 'oversold'  # Oversold signal (ROC crosses below or equal to -10)
+    # Generate overbought/oversold signals
+    signals['roc_signal'] = 'neutral'
+    signals.loc[signals['ROC'] >= 10, 'roc_signal'] = 'overbought'
+    signals.loc[signals['ROC'] <= -10, 'roc_signal'] = 'oversold'
 
+    # Drop temporary column
     signals.drop(['ROC'], axis=1, inplace=True)
 
     return signals
 
-#%%
-# RSI overbough/oversold
+#%% 
+# Relative Strength Index (RSI) Overbought/Oversold Strategy
 def rsi_signals(stock_df, window=14):
+    """
+    Computes RSI overbought and oversold signals.
+
+    Returns:
+    A DataFrame with 'rsi_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['rsi_signal'] = 0
 
     # Calculate RSI
     rsi = momentum.RSIIndicator(stock_df['Close'], window)
-
     signals['RSI'] = rsi.rsi()
 
-    # Generate overbought (1) and oversold (-1) signals based on RSI
-    for i in range(1, len(signals)):
-        if signals['RSI'][i] >= 70:
-            signals.loc[i, 'rsi_signal'] = 'overbought'  # Overbought signal (RSI crosses above or equal to 70)
-        elif signals['RSI'][i] <= 30:
-            signals.loc[i, 'rsi_signal'] = 'oversold'  # Oversold signal (RSI crosses below or equal to 30)
-    
+    # Generate overbought/oversold signals
+    signals['rsi_signal'] = 'neutral'
+    signals.loc[signals['RSI'] >= 70, 'rsi_signal'] = 'overbought'
+    signals.loc[signals['RSI'] <= 30, 'rsi_signal'] = 'oversold'
+
+    # Drop temporary column
     signals.drop(['RSI'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# Stoch RSI
+#%% 
+# Stochastic RSI Overbought/Oversold Strategy
 def stochrsi_signals(stock_df, window=14, smooth1=3, smooth2=3):
+    """
+    Computes StochRSI overbought and oversold signals.
+
+    Returns:
+    A DataFrame with 'stochrsi_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['stochrsi_signal'] = 0
 
     # Calculate StochRSI
     stoch_rsi = momentum.StochRSIIndicator(stock_df['Close'], window, smooth1, smooth2)
-
     signals['StochRSI'] = stoch_rsi.stochrsi()
 
-    # Generate overbought (1) and oversold (-1) signals based on StochRSI
-    for i in range(1, len(signals)):
-        if signals['StochRSI'][i] >= 0.8:
-            signals.loc[i, 'stochrsi_signal'] = 'overbought'  # Overbought signal (StochRSI crosses above or equal to 0.8)
-        elif signals['StochRSI'][i] <= 0.2:
-            signals.loc[i, 'stochrsi_signal'] = 'oversold'  # Oversold signal (StochRSI crosses below or equal to 0.2)
-    
+    # Generate overbought/oversold signals
+    signals['stochrsi_signal'] = 'neutral'
+    signals.loc[signals['StochRSI'] >= 0.8, 'stochrsi_signal'] = 'overbought'
+    signals.loc[signals['StochRSI'] <= 0.2, 'stochrsi_signal'] = 'oversold'
+
+    # Drop temporary column
     signals.drop(['StochRSI'], axis=1, inplace=True)
 
     return signals
 
-#%%
-# aroon
-def aroon_strategy(stock_df, window=25):
-    # Create Aroon Indicator
-    aroon = trend.AroonIndicator(stock_df['Close'], window)
-
-    # Create a DataFrame to store signals
-    signals = pd.DataFrame(index=stock_df.index)
-    
-    # Calculate Aroon Up and Aroon Down values
-    signals['Aroon_Up'] = aroon.aroon_up()
-    signals['Aroon_Down'] = aroon.aroon_down()
-
-    # Determine trend strength and save as 'aroon_Trend_Strength'
-    signals['aroon_Trend_Strength'] = 'weak'
-    signals.loc[(signals['Aroon_Up'] >= 70) | (signals['Aroon_Down'] >= 70), 'aroon_Trend_Strength'] = 'strong'
-
-    # Determine bullish and bearish signals based on 'aroon_direction_signal'
-    signals['aroon_direction_signal'] = 'bearish'
-    signals.loc[signals['Aroon_Up'] > signals['Aroon_Down'], 'aroon_direction_signal'] = 'bullish'
-    
-    # Generate long (1) and short (-1) signals based on Aroon crossovers
-    signals['aroon_signal'] = 0
-    for i in range(1, len(signals)):
-        if signals['aroon_direction_signal'][i] == 'bullish' and signals['aroon_direction_signal'][i - 1] == 'bearish':
-            signals.loc[signals.index[i], 'aroon_signal'] = 'long'  # long signal (Aroon Up crosses above Aroon Down)
-        elif signals['aroon_direction_signal'][i] == 'bearish' and signals['aroon_direction_signal'][i - 1] == 'bullish':
-            signals.loc[signals.index[i], 'aroon_signal'] = 'short'  # short signal (Aroon Down crosses above Aroon Up)
-
-    signals.drop(['Aroon_Up', 'Aroon_Down'], axis=1, inplace=True)
-
-    return signals
-
-# %%
-# CCI
+#%% 
+# Commodity Channel Index (CCI) Strategy
 def cci_signals(stock_df, window=20, constant=0.015, overbought=100, oversold=-100):
+    """
+    Computes CCI trend direction and trading signals.
+
+    Returns:
+    A DataFrame with 'cci_direction' and 'cci_Signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
     # Create CCI Indicator
     cci = trend.CCIIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window, constant)
-
-    # Create a DataFrame to store the trading signals
-    signals = pd.DataFrame(index=stock_df.index)
     signals['CCI'] = cci.cci()
 
-    # Generate trading signals
-    signals['cci_Signal'] = 0  # Initialize the signal column with zeros
+    # Determine market direction
+    signals['cci_direction'] = 'neutral'
+    signals.loc[signals['CCI'] > oversold, 'cci_direction'] = 'bullish'
+    signals.loc[signals['CCI'] < overbought, 'cci_direction'] = 'bearish'
 
-    for i in range(window, len(signals)):
-        cci_value = signals['CCI'][i]
+    # Generate buy/sell signals based on overbought/oversold conditions
+    signals['cci_Signal'] = 'neutral'
+    signals.loc[(signals['CCI'] > overbought) & (signals['CCI'].shift(1) <= overbought), 'cci_Signal'] = 'long'
+    signals.loc[(signals['CCI'] < oversold) & (signals['CCI'].shift(1) >= oversold), 'cci_Signal'] = 'short'
 
-        # Bullish market and long signal
-        if cci_value > oversold:
-            signals.loc[signals.index[i], 'cci_direction'] = 'bullish'
-
-        # Bearish market and short signal
-        elif cci_value < overbought:
-            signals.loc[signals.index[i], 'cci_direction'] = 'bearish'
-
-                # Bullish market and long signal
-        if cci_value > overbought and signals['CCI'][i - 1] <= overbought:
-            signals.loc[signals.index[i], 'cci_Signal'] = 'long'
-
-        # Bearish market and short signal
-        elif cci_value < oversold and signals['CCI'][i - 1] >= oversold:
-            signals.loc[signals.index[i], 'cci_Signal'] = 'short'
+    # Drop temporary column
     signals.drop(['CCI'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# dpo
+#%% 
+# Detrended Price Oscillator (DPO) Strategy
 def dpo_signals(stock_df, window=20):
+    """
+    Computes DPO trend direction and crossover signals.
+
+    Returns:
+    A DataFrame with 'dpo_direction_Signal' and 'dpo_Signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['dpo_Signal'] = 0
-    signals['dpo_direction_Signal'] = 0
 
-    # Create the DPO indicator
+    # Create DPO Indicator
     dpo = trend.DPOIndicator(stock_df['Close'], window)
+    signals['DPO'] = dpo.dpo()
 
-    # Calculate the DPO values
-    dpo_values = dpo.dpo()
+    # Determine market direction
+    signals['dpo_direction_Signal'] = 'neutral'
+    signals.loc[signals['DPO'] > 0, 'dpo_direction_Signal'] = 'bullish'
+    signals.loc[signals['DPO'] < 0, 'dpo_direction_Signal'] = 'bearish'
 
-    # Generate trading signals
-    for i in range(window, len(signals)):
-        if dpo_values[i] > 0:
-            signals.loc[signals.index[i], 'dpo_direction_Signal'] = 'bullish'  # Bullish signal
-        elif dpo_values[i] < 0:
-            signals.loc[signals.index[i], 'dpo_direction_Signal'] = 'bearish'  # Bearish signal
-        if dpo_values[i] > 0 and dpo_values[i - 1] <= 0:
-            signals.loc[signals.index[i], 'dpo_Signal'] = 'long'  # long signal (DPO crosses above zero)
-        elif dpo_values[i] < 0 and dpo_values[i - 1] >= 0:
-            signals.loc[signals.index[i], 'dpo_Signal'] = 'short'
-    
+    # Generate buy/sell signals based on zero-crossing
+    signals['dpo_Signal'] = 'neutral'
+    signals.loc[(signals['DPO'] > 0) & (signals['DPO'].shift(1) <= 0), 'dpo_Signal'] = 'long'
+    signals.loc[(signals['DPO'] < 0) & (signals['DPO'].shift(1) >= 0), 'dpo_Signal'] = 'short'
+
+    # Drop temporary column
+    signals.drop(['DPO'], axis=1, inplace=True)
+
     return signals
 
-# %%
-# EMA
+#%% 
+# Exponential Moving Average (EMA) Crossover Strategy
 def ema_signals(stock_df, short_window=12, long_window=26):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['EMA_Signal'] = 0  # Initialize the signal column with zeros
-    signals['EMA_Direction_Signal'] = 0
-    # Calculate short-term EMA
-    ema_short = stock_df['Close'].ewm(span=short_window, adjust=False).mean()
+    """
+    Computes EMA crossover trend and trading signals.
 
-    # Calculate long-term EMA
+    Returns:
+    A DataFrame with 'EMA_Direction_Signal' and 'EMA_Signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # Calculate short-term and long-term EMAs
+    ema_short = stock_df['Close'].ewm(span=short_window, adjust=False).mean()
     ema_long = stock_df['Close'].ewm(span=long_window, adjust=False).mean()
 
-    # Generate EMA signals
-    for i in range(1, len(stock_df)):
-        if ema_short[i] > ema_long[i] and ema_short[i - 1] <= ema_long[i - 1]:
-            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'long'  # Bullish (long) Signal
-        elif ema_short[i] < ema_long[i] and ema_short[i - 1] >= ema_long[i - 1]:
-            signals.loc[stock_df.index[i], 'EMA_Signal'] = 'short'  # Bearish (short) Signal
-        if ema_short[i] > ema_long[i]:
-            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bullish'  # Bullish (long) Signal
-        elif ema_short[i] < ema_long[i]:
-            signals.loc[stock_df.index[i], 'EMA_Direction_Signal'] = 'bearish'  # Bearish (short) Signal
+    # Determine market direction
+    signals['EMA_Direction_Signal'] = 'neutral'
+    signals.loc[ema_short > ema_long, 'EMA_Direction_Signal'] = 'bullish'
+    signals.loc[ema_short < ema_long, 'EMA_Direction_Signal'] = 'bearish'
+
+    # Generate buy/sell signals based on EMA crossovers
+    signals['EMA_Signal'] = 'neutral'
+    signals.loc[(ema_short > ema_long) & (ema_short.shift(1) <= ema_long.shift(1)), 'EMA_Signal'] = 'long'
+    signals.loc[(ema_short < ema_long) & (ema_short.shift(1) >= ema_long.shift(1)), 'EMA_Signal'] = 'short'
 
     return signals
 
-#%%
-# Ichi
+#%% 
+# Ichimoku Cloud Strategy
 def ichimoku_signals(stock_df, window1=9, window2=26):
-    # Create the Ichimoku Indicator
-    ichimoku = trend.IchimokuIndicator(stock_df['High'], stock_df['Low'], window1, window2)
+    """
+    Computes Ichimoku trend direction and crossover signals.
 
-    # Create a DataFrame to store the signals
+    Returns:
+    A DataFrame with 'ichi_signal' and 'ichi_direction'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['ichi_signal'] = 0
-    signals['ichi_direction'] = 0
 
+    # Create Ichimoku Indicator
+    ichimoku = trend.IchimokuIndicator(stock_df['High'], stock_df['Low'], window1, window2)
+    signals['tenkan_sen'] = ichimoku.ichimoku_conversion_line()
+    signals['kijun_sen'] = ichimoku.ichimoku_base_line()
+    signals['senkou_span_a'] = ichimoku.ichimoku_a()
+    signals['senkou_span_b'] = ichimoku.ichimoku_b()
 
-    # Calculate Tenkan-sen and Kijun-sen values
-    tenkan_sen = ichimoku.ichimoku_conversion_line()
-    kijun_sen = ichimoku.ichimoku_base_line()
-    senkou_span_a = ichimoku.ichimoku_a()
-    senkou_span_b = ichimoku.ichimoku_b()
-    cloud_color = ['green' if a > b else 'red' for a, b in zip(senkou_span_a, senkou_span_b)]
+    # Determine cloud color
+    signals['cloud_color'] = 'neutral'
+    signals.loc[signals['senkou_span_a'] > signals['senkou_span_b'], 'cloud_color'] = 'green'
+    signals.loc[signals['senkou_span_a'] < signals['senkou_span_b'], 'cloud_color'] = 'red'
 
-    # Generate signals based on crossovers
-    for i in range(1, len(signals)):
-        if tenkan_sen[i] > kijun_sen[i] and tenkan_sen[i - 1] <= kijun_sen[i - 1]:
-            signals.loc[signals.index[i], 'ichi_signal'] = 'long'
-        elif tenkan_sen[i] < kijun_sen[i] and tenkan_sen[i - 1] >= kijun_sen[i - 1]:
-            signals.loc[signals.index[i], 'ichi_signal'] = 'short'
+    # Generate crossover signals
+    signals['ichi_signal'] = 'neutral'
+    signals.loc[(signals['tenkan_sen'] > signals['kijun_sen']) & 
+                (signals['tenkan_sen'].shift(1) <= signals['kijun_sen'].shift(1)), 'ichi_signal'] = 'long'
+    
+    signals.loc[(signals['tenkan_sen'] < signals['kijun_sen']) & 
+                (signals['tenkan_sen'].shift(1) >= signals['kijun_sen'].shift(1)), 'ichi_signal'] = 'short'
 
-        if tenkan_sen[i] > kijun_sen[i] :
-            signals.loc[signals.index[i], 'ichi_direction'] = 'bullish'
-        elif tenkan_sen[i] < kijun_sen[i] :
-            signals.loc[signals.index[i], 'ichi_direction'] = 'bearish'
+    # Determine trend direction
+    signals['ichi_direction'] = 'neutral'
+    signals.loc[signals['cloud_color'] == 'green', 'ichi_direction'] = 'bullish'
+    signals.loc[signals['cloud_color'] == 'red', 'ichi_direction'] = 'bearish'
 
-        if cloud_color[i] == 'green':
-            signals.loc[signals.index[i], 'ichi_direction'] = 'bullish'
-        else:
-            signals.loc[signals.index[i], 'ichi_direction'] = 'bearish'
+    # Drop temporary columns
+    signals.drop(['tenkan_sen', 'kijun_sen', 'senkou_span_a', 'senkou_span_b', 'cloud_color'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# KST
+#%% 
+# Know Sure Thing (KST) Strategy
 def kst_signals(stock_df, roc1=10, roc2=15, roc3=20, roc4=30, window1=10, window2=10, window3=10, window4=15, nsig=9):
+    """
+    Computes KST trend direction and crossover signals.
+
+    Returns:
+    A DataFrame with 'kst_signal' and 'kst_direction'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
     # Create KST Indicator
     kst = trend.KSTIndicator(stock_df['Close'], roc1, roc2, roc3, roc4, window1, window2, window3, window4, nsig)
+    signals['KST'] = kst.kst()
+    signals['KST_Signal'] = kst.kst_sig()
 
-    # Create a DataFrame to store the trading signals
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['kst_signal'] = 0 
-    signals['kst_direction'] = 0 # Initialize signals with zeros
+    # Generate crossover signals
+    signals['kst_signal'] = 'neutral'
+    signals.loc[(signals['KST'] > signals['KST_Signal']) & 
+                (signals['KST'].shift(1) <= signals['KST_Signal'].shift(1)), 'kst_signal'] = 'long'
+    
+    signals.loc[(signals['KST'] < signals['KST_Signal']) & 
+                (signals['KST'].shift(1) >= signals['KST_Signal'].shift(1)), 'kst_signal'] = 'short'
 
-    # Calculate KST and its signal line
-    kst_values = kst.kst()
-    kst_signal_line = kst.kst_sig()
+    # Determine trend direction
+    signals['kst_direction'] = 'neutral'
+    signals.loc[signals['KST'] > signals['KST_Signal'], 'kst_direction'] = 'bullish'
+    signals.loc[signals['KST'] < signals['KST_Signal'], 'kst_direction'] = 'bearish'
 
-    # Generate bullish (1) and bearish (-1) signals based on KST crossovers
-    for i in range(1, len(stock_df)):
-        if kst_values[i] > kst_signal_line[i] and kst_values[i - 1] <= kst_signal_line[i - 1]:
-            signals.loc[signals.index[i], 'kst_signal'] = 'long'  # Bullish crossover
-        elif kst_values[i] < kst_signal_line[i] and kst_values[i - 1] >= kst_signal_line[i - 1]:
-            signals.loc[signals.index[i], 'kst_signal'] = 'short'  # Bearish crossover
-
-        if kst_values[i] > kst_signal_line[i]:
-            signals.loc[signals.index[i], 'kst_direction'] = 'bullish'  # Bullish crossover
-        elif kst_values[i] < kst_signal_line[i] :
-            signals.loc[signals.index[i], 'kst_direction'] = 'bearish'  # Bearish crossover
+    # Drop temporary columns
+    signals.drop(['KST', 'KST_Signal'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# MACD
+#%% 
+# Moving Average Convergence Divergence (MACD) Strategy
 def macd_signals(stock_df, window_slow=26, window_fast=12, window_sign=9):
-    # Create MACD indicator
+    """
+    Computes MACD trend direction and crossover signals.
+
+    Returns:
+    A DataFrame with 'macd_signal' and 'macd_direction'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # Create MACD Indicator
     macd = trend.MACD(stock_df['Close'], window_slow, window_fast, window_sign)
+    signals['MACD'] = macd.macd()
+    signals['MACD_Signal'] = macd.macd_signal()
 
-    # Create a DataFrame to store the trading signals
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['macd_signal'] = 0  # Initialize the signal column with zeros
-    signals['macd_direction'] = 0
+    # Generate crossover signals
+    signals['macd_signal'] = 'neutral'
+    signals.loc[(signals['MACD'] > signals['MACD_Signal']) & 
+                (signals['MACD'].shift(1) <= signals['MACD_Signal'].shift(1)), 'macd_signal'] = 'long'
+    
+    signals.loc[(signals['MACD'] < signals['MACD_Signal']) & 
+                (signals['MACD'].shift(1) >= signals['MACD_Signal'].shift(1)), 'macd_signal'] = 'short'
 
-    # Calculate MACD values
-    macd_line = macd.macd()
-    signal_line = macd.macd_signal()
+    # Determine trend direction
+    signals['macd_direction'] = 'neutral'
+    signals.loc[signals['MACD'] > signals['MACD_Signal'], 'macd_direction'] = 'bullish'
+    signals.loc[signals['MACD'] < signals['MACD_Signal'], 'macd_direction'] = 'bearish'
 
-    # Generate trading signals
-    for i in range(1, len(signals)):
-        if macd_line[i] > signal_line[i] and macd_line[i - 1] <= signal_line[i - 1]:
-            signals.loc[signals.index[i], 'macd_signal'] = 'long'  # Bullish crossover (long signal)
-        elif macd_line[i] < signal_line[i] and macd_line[i - 1] >= signal_line[i - 1]:
-            signals.loc[signals.index[i], 'macd_signal'] = 'short'  # Bearish crossover (short signal)
-
-        if macd_line[i] > signal_line[i] :
-            signals.loc[signals.index[i], 'macd_direction'] = 'bullish'
-        elif macd_line[i] < signal_line[i] :
-            signals.loc[signals.index[i], 'macd_direction'] = 'bearish'
+    # Drop temporary columns
+    signals.drop(['MACD', 'MACD_Signal'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# Golden Cross SMA
+#%% 
+# Golden Cross SMA Strategy
 def golden_ma_signals(stock_df, short_period=50, long_period=200):
+    """
+    Computes SMA crossover trend and trading signals.
+
+    Returns:
+    A DataFrame with 'ma_direction' and 'ma_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['ma_direction'] = 0
-    signals['ma_signal'] = 0
 
-    # Calculate short and long SMAs
-    short_sma = trend.SMAIndicator(stock_df['Close'], short_period)
-    long_sma = trend.SMAIndicator(stock_df['Close'], long_period)
+    # Compute short and long SMAs
+    short_sma = trend.SMAIndicator(stock_df['Close'], short_period).sma_indicator()
+    long_sma = trend.SMAIndicator(stock_df['Close'], long_period).sma_indicator()
 
-    # Determine market direction (Bullish or Bearish)
-    signals.loc[short_sma.sma_indicator() > long_sma.sma_indicator(), 'ma_direction'] = 'bullish'
-    signals.loc[short_sma.sma_indicator() <= long_sma.sma_indicator(), 'ma_direction'] = 'bearish'
+    # Determine trend direction
+    signals['ma_direction'] = 'neutral'
+    signals.loc[short_sma > long_sma, 'ma_direction'] = 'bullish'
+    signals.loc[short_sma <= long_sma, 'ma_direction'] = 'bearish'
 
-    # Generate long and short signals
-    signals.loc[(short_sma.sma_indicator() > long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'long'
-    signals.loc[(short_sma.sma_indicator() <= long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'short'
+    # Generate crossover signals
+    signals['ma_signal'] = 'neutral'
+    signals.loc[(short_sma > long_sma) & (short_sma.shift(1) <= long_sma.shift(1)), 'ma_signal'] = 'long'
+    signals.loc[(short_sma <= long_sma) & (short_sma.shift(1) > long_sma.shift(1)), 'ma_signal'] = 'short'
 
     return signals
 
-# %%
-# 13-26 MA STrategy
+#%% 
+# 13-26 SMA Strategy
 def short_ma_signals(stock_df, short_period=13, long_period=26):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['ma_direction'] = 0
-    signals['ma_signal'] = 0
+    """
+    Computes SMA crossover trend and trading signals.
 
-    # Calculate short and long SMAs
-    short_sma = trend.SMAIndicator(stock_df['Close'], short_period)
-    long_sma = trend.SMAIndicator(stock_df['Close'], long_period)
+    Returns:
+    A DataFrame with 'ma_direction' and 'ma_signal'.
+    """
+    return golden_ma_signals(stock_df, short_period, long_period)
 
-    # Determine market direction (Bullish or Bearish)
-    signals.loc[short_sma.sma_indicator() > long_sma.sma_indicator(), 'ma_direction'] = 'bullish'
-    signals.loc[short_sma.sma_indicator() <= long_sma.sma_indicator(), 'ma_direction'] = 'bearish'
-
-    # Generate long and short signals
-    signals.loc[(short_sma.sma_indicator() > long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) <= long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'long'
-    signals.loc[(short_sma.sma_indicator() <= long_sma.sma_indicator()) &
-                (short_sma.sma_indicator().shift(1) > long_sma.sma_indicator().shift(1)), 'ma_signal'] = 'short'
-
-    return signals
-
-#%%
+#%% 
+# 5-8-13 SMA Strategy
 def strategy_5_8_13(stock_df):
+    """
+    Computes 5-8-13 SMA crossover trend direction.
+
+    Returns:
+    A DataFrame with '5_8_13_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['5_8_13_signal'] = 0
 
-    # Calculate SMAs with periods 5, 8, and 13
-    sma5 = trend.SMAIndicator(stock_df['Close'], 5)
-    sma8 = trend.SMAIndicator(stock_df['Close'], 8)
-    sma13 = trend.SMAIndicator(stock_df['Close'], 13)
+    # Compute short SMAs
+    sma5 = trend.SMAIndicator(stock_df['Close'], 5).sma_indicator()
+    sma8 = trend.SMAIndicator(stock_df['Close'], 8).sma_indicator()
+    sma13 = trend.SMAIndicator(stock_df['Close'], 13).sma_indicator()
 
-    # Determine the market direction (Bullish or Bearish)
-    signals.loc[(sma5.sma_indicator() > sma8.sma_indicator()) &
-                (sma8.sma_indicator() > sma13.sma_indicator()), '5_8_13_signal'] = 'bearish'
-
-    signals.loc[(sma5.sma_indicator() < sma8.sma_indicator()) &
-                (sma8.sma_indicator() < sma13.sma_indicator()), '5_8_13_signal'] = 'bullish'
+    # Determine market direction
+    signals['5_8_13_signal'] = 'neutral'
+    signals.loc[(sma5 > sma8) & (sma8 > sma13), '5_8_13_signal'] = 'bullish'
+    signals.loc[(sma5 < sma8) & (sma8 < sma13), '5_8_13_signal'] = 'bearish'
 
     return signals
 
-#%%
+#%% 
+# 5-8-13 WMA Strategy
 def strategy_w5_8_13(stock_df):
+    """
+    Computes 5-8-13 WMA crossover trend direction.
+
+    Returns:
+    A DataFrame with 'w5_8_13_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['w5_8_13_signal'] = 0
 
-    # Calculate SMAs with periods 5, 8, and 13
-    wma5 = trend.WMAIndicator(stock_df['Close'], 5)
-    wma8 = trend.WMAIndicator(stock_df['Close'], 8)
-    wma13 = trend.WMAIndicator(stock_df['Close'], 13)
+    # Compute weighted moving averages
+    wma5 = trend.WMAIndicator(stock_df['Close'], 5).wma()
+    wma8 = trend.WMAIndicator(stock_df['Close'], 8).wma()
+    wma13 = trend.WMAIndicator(stock_df['Close'], 13).wma()
 
-    # Determine the market direction (Bullish or Bearish)
-    signals.loc[(wma5.wma() > wma8.wma()) &
-                (wma8.wma() > wma13.wma()), 'w5_8_13_signal'] = 'bearish'
-
-    signals.loc[(wma5.wma() < wma8.wma()) &
-                (wma8.wma() < wma13.wma()), 'w5_8_13_signal'] = 'bullish'
+    # Determine market direction
+    signals['w5_8_13_signal'] = 'neutral'
+    signals.loc[(wma5 > wma8) & (wma8 > wma13), 'w5_8_13_signal'] = 'bullish'
+    signals.loc[(wma5 < wma8) & (wma8 < wma13), 'w5_8_13_signal'] = 'bearish'
 
     return signals
 
-#%%
-def atr_signals(stock_df, atr_window=14, ema_window=20):
-    signals = pd.DataFrame(index=stock_df.index)
-    signals['trend_strength'] = 0
-
-    # Calculate Average True Range (ATR)
-    atr = volatility.AverageTrueRange(stock_df['High'], stock_df['Low'], stock_df['Close'], atr_window).average_true_range()
-
-    # Calculate 20-period Exponential Moving Average (EMA)
-    ema = trend.EMAIndicator(atr, ema_window).ema_indicator()
-
-    # Determine trend strength
-    for i in range(ema_window, len(signals)):
-        current_atr = atr[i]
-        current_ema = ema[i]
-
-        if current_atr > current_ema:
-            signals.loc[signals.index[i], 'trend_strength'] = 'strong'
-        else:
-            signals.loc[signals.index[i], 'trend_strength'] = 'weak'
-
-    return signals
-
-#%%
-# Define a function for the trading strategy
+#%% 
+# Keltner Channel Strategy
 def keltner_channel_strategy(stock_df, window=20, window_atr=10, multiplier=2):
-    # Create Keltner Channel indicator
-    keltner_channel = volatility.KeltnerChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window, window_atr, multiplier)
+    """
+    Computes Keltner Channel breakout signals.
 
-    # Create a DataFrame to store the trading signals
+    Returns:
+    A DataFrame with 'kc_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['Signal'] = 0
 
-    # Calculate Keltner Channel values
-    keltner_channel_upper = keltner_channel.keltner_channel_hband()
-    keltner_channel_lower = keltner_channel.keltner_channel_lband()
+    # Compute Keltner Channel bands
+    keltner_channel = volatility.KeltnerChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window, window_atr, multiplier)
+    signals['kc_upper'] = keltner_channel.keltner_channel_hband()
+    signals['kc_lower'] = keltner_channel.keltner_channel_lband()
 
-    # Generate trading signals
-    for i in range(window, len(signals)):
-        if stock_df['Close'][i] > keltner_channel_upper[i]:
-            signals.loc[signals.index[i], 'Signal'] = 'bearish'  # Bearish trend (Short signal)
-        elif stock_df['Close'][i] < keltner_channel_lower[i]:
-            signals.loc[signals.index[i], 'Signal'] = 'bullish'  # Bullish trend (Long signal)
+    # Generate breakout signals
+    signals['kc_signal'] = 'neutral'
+    signals.loc[stock_df['Close'] > signals['kc_upper'], 'kc_signal'] = 'bearish'
+    signals.loc[stock_df['Close'] < signals['kc_lower'], 'kc_signal'] = 'bullish'
+
+    # Drop temporary columns
+    signals.drop(['kc_upper', 'kc_lower'], axis=1, inplace=True)
 
     return signals
 
-#%%
-# Chaikin Money Flow
+#%% 
+# Chaikin Money Flow (CMF) Strategy
 def cmf_signals(stock_df, window=20, threshold=0.1):
+    """
+    Computes CMF trend signals.
+
+    Returns:
+    A DataFrame with 'cmf_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['cmf_signal'] = 0
 
-    # Calculate Chaikin Money Flow (CMF)
+    # Compute CMF
     cmf = volume.ChaikinMoneyFlowIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], stock_df['Volume'], window)
-
     signals['CMF'] = cmf.chaikin_money_flow()
 
-    # Generate long (1) and short (-1) signals based on CMF
-    for i in range(1, len(signals)):
-        if signals['CMF'][i] > threshold:  # You can adjust this threshold as needed
-            signals.loc[i, 'cmf_signal'] = 'bearish'  # long signal (CMF is positive)
-        elif signals['CMF'][i] < -threshold:  # You can adjust this threshold as needed
-            signals.loc[i, 'cmf_signal'] = 'bullish'  # short signal (CMF is negative)
+    # Generate signals
+    signals['cmf_signal'] = 'neutral'
+    signals.loc[signals['CMF'] > threshold, 'cmf_signal'] = 'bearish'
+    signals.loc[signals['CMF'] < -threshold, 'cmf_signal'] = 'bullish'
 
+    # Drop temporary column
     signals.drop(['CMF'], axis=1, inplace=True)
 
     return signals
 
-#%%
-# MFI
+#%% 
+# Money Flow Index (MFI) Strategy
 def mfi_signals(stock_df, window=14):
+    """
+    Computes MFI overbought/oversold signals.
+
+    Returns:
+    A DataFrame with 'mfi_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['mfi_signal'] = 0
 
-    # Calculate Money Flow Index (MFI)
+    # Compute MFI
     mfi = volume.MFIIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], stock_df['Volume'], window)
-
     signals['MFI'] = mfi.money_flow_index()
 
-    # Generate long (1) and short (-1) signals based on MFI
-    for i in range(1, len(signals)):
-        if signals['MFI'][i] > 80:  # You can adjust this overbought threshold as needed
-            signals.loc[i, 'mfi_signal'] = 'overbought'  # short signal (MFI is overbought)
-        elif signals['MFI'][i] < 20:  # You can adjust this oversold threshold as needed
-            signals.loc[i, 'mfi_signal'] = 'oversold' # long signal (MFI is oversold)
+    # Generate signals
+    signals['mfi_signal'] = 'neutral'
+    signals.loc[signals['MFI'] > 80, 'mfi_signal'] = 'overbought'
+    signals.loc[signals['MFI'] < 20, 'mfi_signal'] = 'oversold'
 
+    # Drop temporary column
     signals.drop(['MFI'], axis=1, inplace=True)
 
     return signals
 
-# %%
-# EOM
+#%% 
+# Ease of Movement (EOM) Strategy
 def eom_signals(stock_df, window=14):
+    """
+    Computes EOM trend signals.
+
+    Returns:
+    A DataFrame with 'eom_signal'.
+    """
     signals = pd.DataFrame(index=stock_df.index)
-    signals['eom_signal'] = 0
 
-    # Calculate Ease of Movement (EOM) Indicator
+    # Compute EOM
     eom = volume.EaseOfMovementIndicator(stock_df['High'], stock_df['Low'], stock_df['Volume'], window)
-
     signals['EOM'] = eom.ease_of_movement()
 
-    # Generate bullish (1) and bearish (-1) signals based on EOM
-    for i in range(1, len(signals)):
-        if signals['EOM'][i] > 0:  # You can adjust this threshold as needed
-            signals.loc[i, 'eom_signal'] = 'bullish'  # Bullish signal (EOM is positive)
-        elif signals['EOM'][i] < 0:  # You can adjust this threshold as needed
-            signals.loc[i, 'eom_signal'] = 'bearish'  # Bearish signal (EOM is negative)
+    # Generate signals
+    signals['eom_signal'] = 'neutral'
+    signals.loc[signals['EOM'] > 0, 'eom_signal'] = 'bullish'
+    signals.loc[signals['EOM'] < 0, 'eom_signal'] = 'bearish'
 
+    # Drop temporary column
     signals.drop(['EOM'], axis=1, inplace=True)
 
     return signals
 
-
-#%%
-# Barclay Strategy
-
-#%%
+#%% 
+# Compute New Features Strategy
 def compute_new_features(df):
+    """
+    Computes additional technical indicators as new features.
 
+    Returns:
+    A DataFrame with computed features.
+    """
     df['rvi'] = volatility.bollinger_pband(df['Close'], window=14, fillna=True)
     df['cmo'] = momentum.roc(df['Close'], window=14, fillna=True)
     df['williams_r'] = momentum.williams_r(df['High'], df['Low'], df['Close'], lbp=14, fillna=True)
@@ -631,288 +635,391 @@ def compute_new_features(df):
     vortex = trend.VortexIndicator(df['High'], df['Low'], df['Close'], window=14, fillna=True)
     df['vortex_vi+'] = vortex.vortex_indicator_pos()
     df['vortex_vi-'] = vortex.vortex_indicator_neg()
-    df['ko'] = volume.klinger_volume_oscillator(df['High'], df['Low'], df['Close'], df['Volume'], fillna=True)
-    df['parabolic_sar'] = trend.psar(df['High'], df['Low'], df['Close'], fillna=True)
-    df['adl'] = volume.acc_dist_index(df['High'], df['Low'], df['Close'], df['Volume'], fillna=True)
-    df['obv'] = volume.on_balance_volume(df['Close'], df['Volume'], fillna=True)
-    df['obv_change'] = df['obv'].pct_change()
-    df['volume_roc'] = df['Volume'].pct_change()
 
     return df
 
 #%%
+def aroon_strategy(stock_df, window=25):
+    """
+    Computes Aroon trend strength and direction.
+
+    Returns:
+    A DataFrame with 'aroon_Trend_Strength', 'aroon_direction_signal', and 'aroon_signal'.
+    """
+    # Create Aroon Indicator
+    aroon = trend.AroonIndicator(stock_df['Close'], stock_df['Low'], window=window)
+    
+    # Create a DataFrame to store signals
+    signals = pd.DataFrame(index=stock_df.index)
+    signals['Aroon_Up'] = aroon.aroon_up()
+    signals['Aroon_Down'] = aroon.aroon_down()
+
+    # Determine trend strength
+    signals['aroon_Trend_Strength'] = 'weak'
+    signals.loc[(signals['Aroon_Up'] >= 70) | (signals['Aroon_Down'] >= 70), 'aroon_Trend_Strength'] = 'strong'
+
+    # Determine direction signal
+    signals['aroon_direction_signal'] = 'bearish'
+    signals.loc[signals['Aroon_Up'] > signals['Aroon_Down'], 'aroon_direction_signal'] = 'bullish'
+
+    # Generate trading signals
+    signals['aroon_signal'] = 'neutral'
+    signals.loc[
+        (signals['aroon_direction_signal'] == 'bullish') & 
+        (signals['aroon_direction_signal'].shift(1) == 'bearish'), 'aroon_signal'
+    ] = 'long'
+    
+    signals.loc[
+        (signals['aroon_direction_signal'] == 'bearish') & 
+        (signals['aroon_direction_signal'].shift(1) == 'bullish'), 'aroon_signal'
+    ] = 'short'
+
+    # Drop temporary columns
+    signals.drop(['Aroon_Up', 'Aroon_Down'], axis=1, inplace=True)
+
+    return signals
+#%%
+def atr_signals(stock_df, atr_window=14, ema_window=20):
+    """
+    Computes ATR trend strength signals.
+
+    Returns:
+    A DataFrame with 'atr_trend_strength' column.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # Calculate ATR
+    atr = volatility.AverageTrueRange(stock_df['High'], stock_df['Low'], stock_df['Close'], window=atr_window).average_true_range()
+
+    # Calculate EMA of ATR
+    atr_ema = trend.EMAIndicator(atr, window=ema_window).ema_indicator()
+
+    # Determine trend strength
+    signals['atr_trend_strength'] = 'weak'
+    signals.loc[atr > atr_ema, 'atr_trend_strength'] = 'strong'
+
+    return signals
+#%%
 #RSI Divergence strategy
 
-# def rsi_signals_with_divergence(stock_data, window=14, long_threshold=30, short_threshold=70, width=10):
-#     signals = pd.DataFrame(index=stock_data.index)
-#     signals['RSI_signal'] = 0  # Initialize the signal column with zeros
+def rsi_signals_with_divergence(stock_df, window=14, long_threshold=30, short_threshold=70, width=10):
+    """
+    Computes RSI signals with divergence detection.
 
-#     # Calculate RSI
-#     rsi = momentum.RSIIndicator(stock_data['Close'], window)
+    Returns:
+    A DataFrame with 'RSI_signal' and 'RSI' values.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     signals['RSI'] = rsi.rsi()
+    # Calculate RSI
+    rsi_indicator = momentum.RSIIndicator(stock_df['Close'], window=window)
+    signals['RSI'] = rsi_indicator.rsi()
+
+    # Generate RSI overbought/oversold signals
+    signals['RSI_signal'] = 'neutral'
+    signals.loc[signals['RSI'] < long_threshold, 'RSI_signal'] = 'long'
+    signals.loc[signals['RSI'] > short_threshold, 'RSI_signal'] = 'short'
+
+    # **Divergence Detection**
+    signals['Divergence'] = 'none'
+
+    # Find local peaks (potential bearish divergence) & valleys (potential bullish divergence)
+    local_max = signals['RSI'].rolling(window=width, center=True).max()
+    local_min = signals['RSI'].rolling(window=width, center=True).min()
+
+    # Identify divergence (only if RSI is at extremes)
+    signals.loc[(signals['RSI'] == local_max) & (signals['RSI'] > short_threshold), 'Divergence'] = 'bearish'
+    signals.loc[(signals['RSI'] == local_min) & (signals['RSI'] < long_threshold), 'Divergence'] = 'bullish'
+
+    return signals
 
 #%%
 # ADX 
 
-#NEEDS WORK
+def adx_strength_direction(stock_df, window=14):
+    """
+    Calculates ADX trend strength and direction.
 
-# def adx_strength_direction(stock_df, window=14):
-#     # Create ADX indicator
-#     adx = trend.ADXIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+    Returns:
+    A DataFrame with 'adx_Trend_Strength' and 'adx_Direction' columns.
+    """
+    adx = trend.ADXIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window=window)
 
-#     # Create a DataFrame to store the results
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['ADX'] = adx.adx()  # Call the adx method to get the ADX values
-#     signals['adx_Trend_Strength'] = 0
-#     signals['adx_Direction'] = 0
+    # Store in a signals DataFrame
+    signals = pd.DataFrame(index=stock_df.index)
+    signals['ADX'] = adx.adx()
+    signals['adx_Trend_Strength'] = 'neutral'
+    signals['adx_Direction'] = 'neutral'
 
-#     # Determine trend strength and direction based on ADX values
-#     for i in range(window, len(signals)):
-#         if signals['ADX'][i] > 25:
-#             signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'strong'
-#         elif signals['ADX'][i] < 20:
-#             signals.loc[signals.index[i], 'adx_Trend_Strength'] = 'weak'
+    # Determine trend strength
+    signals.loc[signals['ADX'] > 25, 'adx_Trend_Strength'] = 'strong'
+    signals.loc[signals['ADX'] < 20, 'adx_Trend_Strength'] = 'weak'
 
-#         if adx.adx_pos()[i] > adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
-#             signals.loc[signals.index[i], 'adx_Direction'] = 'bullish'
-#         elif adx.adx_pos()[i] < adx.adx_neg()[i]:  # Call the adx_pos and adx_neg methods
-#             signals.loc[signals.index[i], 'adx_Direction'] = 'bearish'
+    # Determine trend direction
+    signals.loc[adx.adx_pos() > adx.adx_neg(), 'adx_Direction'] = 'bullish'
+    signals.loc[adx.adx_pos() < adx.adx_neg(), 'adx_Direction'] = 'bearish'
 
-#     return signals
+    return signals
 
-# # %%
-# # Mass Index
+# %%
+# Mass Index
 
-# # NEEDS WORK
+def mass_index_signals(stock_df, fast_window=9, slow_window=25):
+    """
+    Computes Mass Index reversal signals.
 
-# def mass_index_signals(stock_data, fast_window=9, slow_window=25):
-#     # Create a DataFrame to store the trading signals
-#     signals = pd.DataFrame(index=stock_data.index)
-#     signals['Signal'] = 0
+    Returns:
+    A DataFrame with 'Mass_Index' and 'mass_signal' columns.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     # Calculate Mass Index
-#     mass_index = trend.MassIndex(stock_data['High'], stock_data['Low'], fast_window, slow_window)
+    # Calculate Mass Index
+    mass_index = trend.MassIndex(stock_df['High'], stock_df['Low'], window_fast=fast_window, window_slow=slow_window)
+    signals['Mass_Index'] = mass_index.mass_index()
+
+    # Calculate Short & Long EMAs for trend direction
+    short_ema = trend.EMAIndicator(stock_df['Close'], window=fast_window).ema_indicator()
+    long_ema = trend.EMAIndicator(stock_df['Close'], window=slow_window).ema_indicator()
+
+    # Set thresholds for Mass Index reversals
+    reversal_bulge_threshold = 27
+    reversal_bulge_exit_threshold = 26.5
+
+    # Determine if the market is in a downtrend
+    in_downtrend = short_ema < long_ema
+
+    # Generate signals for reversals
+    signals['mass_signal'] = 'neutral'
+    signals.loc[(in_downtrend) & (signals['Mass_Index'] > reversal_bulge_threshold) & 
+                (signals['Mass_Index'].shift(1) <= reversal_bulge_exit_threshold), 'mass_signal'] = 'long'
     
-#     # Calculate Short and Long EMAs
-#     short_ema = trend.EMAIndicator(stock_data['Close'], window=fast_window)
-#     long_ema = trend.EMAIndicator(stock_data['Close'], window=slow_window)
+    signals.loc[(~in_downtrend) & (signals['Mass_Index'] > reversal_bulge_threshold) & 
+                (signals['Mass_Index'].shift(1) <= reversal_bulge_exit_threshold), 'mass_signal'] = 'short'
 
-#     # Calculate the Mass Index and its reversal thresholds
-#     mass_index_values = mass_index.mass_index()
-#     reversal_bulge_threshold = 27
-#     reversal_bulge_exit_threshold = 26.50
+    return signals
+#%%
+# PSAR 
 
-#     # Generate trading signals
-#     in_downtrend = short_ema.ema_indicator() > long_ema.ema_indicator()
+def psar_signals(stock_df, step=0.02, max_step=0.2):
+    """
+    Computes Parabolic SAR trend direction and signals.
 
-#     for i in range(len(signals)):
-#         if in_downtrend[i] is True and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-#             signals.loc[signals.index[i], 'Signal'] = 'long'
-#         elif in_downtrend[i] is False and mass_index_values[i] > reversal_bulge_threshold and mass_index_values[i - 1] <= reversal_bulge_exit_threshold:
-#             signals.loc[signals.index[i], 'Signal'] = 'short'
+    Returns:
+    A DataFrame with 'psar_direction' and 'psar_signal' columns.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     return signals
+    # Compute PSAR values
+    psar_indicator = trend.PSARIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], step=step, max_step=max_step)
+    psar_values = psar_indicator.psar()
 
-# # %%
-# # PSAR 
+    # Determine PSAR trend direction
+    signals['psar_direction'] = 'neutral'
+    signals.loc[stock_df['Close'] > psar_values, 'psar_direction'] = 'bullish'
+    signals.loc[stock_df['Close'] < psar_values, 'psar_direction'] = 'bearish'
 
-# # NEEDS WORK
+    # Generate buy/sell signals based on crossovers
+    signals['psar_signal'] = 'neutral'
+    signals.loc[(stock_df['Close'] > psar_values) & (stock_df['Close'].shift(1) <= psar_values.shift(1)), 'psar_signal'] = 'long'
+    signals.loc[(stock_df['Close'] < psar_values) & (stock_df['Close'].shift(1) >= psar_values.shift(1)), 'psar_signal'] = 'short'
 
-# def psar_signals(stock_df, step=0.02, max_step=0.2):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['psar_direction'] = ''
-#     signals['psar_signal'] = ''
+    return signals
 
-#     # Calculate Parabolic SAR (PSAR)
-#     psar = trend.PSARIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], step, max_step)
-#     psar = psar.psar_down_indicator
+#%%
+# STC
 
-#     for i in range(1, len(signals)):
-#         if stock_df['Close'][i] > psar[i] and stock_df['Close'][i - 1] <= psar[i - 1]:
-#             signals.loc[signals.index[i], 'psar_signal'] = 'long'  # Bullish crossover (long signal)
-#         elif stock_df['Close'][i] < psar[i] and stock_df['Close'][i - 1] >= psar[i - 1]:
-#             signals.loc[signals.index[i], 'psar_signal'] = 'short'  # Bearish crossover (short signal)
+def stc_signals(stock_df, window_slow=50, window_fast=23, cycle=10, smooth1=3, smooth2=3):
+    """
+    Computes Schaff Trend Cycle (STC) signals.
 
-#         if stock_df['Close'][i] > psar[i] :
-#             signals.loc[signals.index[i], 'psar_direction'] = 'bullish'
-#         elif stock_df['Close'][i] < psar[i] :
-#             signals.loc[signals.index[i], 'psar_direction'] = 'bearish'
+    Returns:
+    A DataFrame with 'stc_signal' and 'stc_direction'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     return signals
+    # Calculate STC
+    stc_indicator = trend.STCIndicator(stock_df['Close'], window_slow, window_fast, cycle, smooth1, smooth2)
+    signals['STC'] = stc_indicator.stc()
 
-# csv_file = 'SPY.csv'
-# stock_df = pd.read_csv(csv_file)
-# ao_signals = pd.DataFrame(psar_signals(stock_df))
-# print(ao_signals)
+    # Determine overbought/oversold conditions
+    signals['stc_signal'] = 'neutral'
+    signals.loc[signals['STC'] > 75, 'stc_signal'] = 'overbought'
+    signals.loc[signals['STC'] < 25, 'stc_signal'] = 'oversold'
 
+    # Determine trend direction
+    signals['stc_direction'] = 'neutral'
+    signals.loc[signals['STC'] > 50, 'stc_direction'] = 'bullish'
+    signals.loc[signals['STC'] < 50, 'stc_direction'] = 'bearish'
 
-# # %%
-# # STC
+    return signals
 
-# #NEEDS WORK
+#%%
+# Vortex
+def vortex_signals(stock_df, window=14):
+    """
+    Computes Vortex Indicator trend direction and signals.
 
-# def stc_signals(stock_df, window_slow=50, window_fast=23, cycle=10, smooth1=3, smooth2=3):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['stc_signal'] = 0
-#     signals['stc_direction'] = 0
+    Returns:
+    A DataFrame with 'vortex_signal' and 'vortex_direction_signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     # Calculate STC (Stochastic RSI)
-#     stc = trend.STCIndicator(stock_df['Close'], window_slow, window_fast, cycle, smooth1, smooth2)
+    # Compute Vortex Indicator values
+    vortex = trend.VortexIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window=window)
+    signals['Positive'] = vortex.vortex_indicator_pos()
+    signals['Negative'] = vortex.vortex_indicator_neg()
 
-#     # Determine overbought/oversold conditions
-#     overbought_condition = stc > 75
-#     oversold_condition = stc < 25
+    # Determine bullish/bearish trend direction
+    signals['vortex_direction_signal'] = 'neutral'
+    signals.loc[signals['Positive'] > signals['Negative'], 'vortex_direction_signal'] = 'bullish'
+    signals.loc[signals['Positive'] < signals['Negative'], 'vortex_direction_signal'] = 'bearish'
 
-#     # Determine bullish/bearish trend
-#     bullish_condition = stc > 50
-#     bearish_condition = stc < 50
+    # Generate trading signals based on crossovers
+    signals['vortex_signal'] = 'neutral'
+    signals.loc[
+        (signals['Positive'] > signals['Negative']) & 
+        (signals['Positive'].shift(1) <= signals['Negative'].shift(1)), 'vortex_signal'
+    ] = 'long'
+    
+    signals.loc[
+        (signals['Positive'] < signals['Negative']) & 
+        (signals['Positive'].shift(1) >= signals['Negative'].shift(1)), 'vortex_signal'
+    ] = 'short'
 
-#     # Generate signals and directions
-#     signals.loc[overbought_condition, 'stc_signal'] = 'overbought'
-#     signals.loc[oversold_condition, 'stc_signal'] = 'oversold'
+    # Drop temporary columns
+    signals.drop(['Positive', 'Negative'], axis=1, inplace=True)
 
-#     signals.loc[bullish_condition, 'stc_direction'] = 'Bullish'
-#     signals.loc[bearish_condition, 'stc_direction'] = 'Bearish'
+    return signals
+#%%
+# Golden Cross WMA
 
+def golden_wma_signals(stock_df, short_period=50, long_period=200):
+    """
+    Computes Weighted Moving Average (WMA) crossover signals.
 
-#     return signals
+    Returns:
+    A DataFrame with 'wma_direction' and 'wma_signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-# # %%
-# # Vortex
+    # Compute short and long WMAs
+    short_wma = trend.WMAIndicator(stock_df['Close'], short_period).wma()
+    long_wma = trend.WMAIndicator(stock_df['Close'], long_period).wma()
 
-# # NEEDS WORK
+    # Determine trend direction
+    signals['wma_direction'] = 'neutral'
+    signals.loc[short_wma > long_wma, 'wma_direction'] = 'bullish'
+    signals.loc[short_wma <= long_wma, 'wma_direction'] = 'bearish'
 
-# def vortex_signals(stock_df, window=14, threshold=1.0):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['vortex_signal'] = 0
-#     signals['vortex_direction_signal'] = 0
+    # Generate crossover signals
+    signals['wma_signal'] = 'neutral'
+    signals.loc[
+        (short_wma > long_wma) & 
+        (short_wma.shift(1) <= long_wma.shift(1)), 'wma_signal'
+    ] = 'long'
+    
+    signals.loc[
+        (short_wma <= long_wma) & 
+        (short_wma.shift(1) > long_wma.shift(1)), 'wma_signal'
+    ] = 'short'
 
-#     # Calculate the Vortex Indicator
-#     vortex = trend.VortexIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
+    return signals
+#%%
+# 13-26 MA STrategy
 
-#     # Create signals based on the crossover of the positive and negative vortex indicators
-#     signals['Positive'] = vortex.vortex_indicator_pos
-#     signals['Negative'] = vortex.vortex_indicator_neg
+def short_wma_signals(stock_df, short_period=13, long_period=26):
+    """
+    Computes 13-26 Weighted Moving Average (WMA) crossover signals.
 
-#     for i in range(1, len(signals)):
-#         if signals['Positive'][i] > signals['Negative'][i] and signals['Positive'][i - 1] <= signals['Negative'][i - 1]:
-#             signals.loc[signals.index[i], 'vortex_signal'] = 'long'  # long signal
-#         elif signals['Positive'][i] < signals['Negative'][i] and signals['Positive'][i - 1] >= signals['Negative'][i - 1]:
-#             signals.loc[signals.index[i], 'vortex_signal'] = 'short'  # short signal
+    Returns:
+    A DataFrame with 'wma_direction' and 'wma_signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#         if signals['Positive'][i] > signals['Negative'][i] :
-#             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bullish'  # long signal
-#         elif signals['Positive'][i] < signals['Negative'][i]:
-#             signals.loc[signals.index[i], 'vortex_direction_signal'] = 'bearish'
+    # Compute short and long WMAs
+    short_wma = trend.WMAIndicator(stock_df['Close'], short_period).wma()
+    long_wma = trend.WMAIndicator(stock_df['Close'], long_period).wma()
 
-#     return signals
+    # Determine trend direction
+    signals['wma_direction'] = 'neutral'
+    signals.loc[short_wma > long_wma, 'wma_direction'] = 'bullish'
+    signals.loc[short_wma <= long_wma, 'wma_direction'] = 'bearish'
 
-# # %%
-# # Weighted Moving Average
-# # Golden Cross WMA
+    # Generate crossover signals
+    signals['wma_signal'] = 'neutral'
+    signals.loc[
+        (short_wma > long_wma) & (short_wma.shift(1) <= long_wma.shift(1)), 'wma_signal'
+    ] = 'long'
+    
+    signals.loc[
+        (short_wma <= long_wma) & (short_wma.shift(1) > long_wma.shift(1)), 'wma_signal'
+    ] = 'short'
 
-# # NEEDS WORK
+    return signals
 
-# def golden_wma_signals(stock_df, short_period=50, long_period=200):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['wma_direction'] = 0
-#     signals['wma_signal'] = 0
+# %%
+# Donchain Channel
 
-#     # Calculate short and long SMAs
-#     short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
-#     long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
+def donchian_channel_strategy(stock_df, window=20):
+    """
+    Computes Donchian Channel breakout signals.
 
-#     # Determine market direction (Bullish or Bearish)
-#     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
-#     signals.loc[short_wma.wma() <= long_wma.wma(), 'mwa_direction'] = 'bearish'
+    Returns:
+    A DataFrame with 'dc_signal'.
+    """
+    signals = pd.DataFrame(index=stock_df.index)
 
-#     # Generate long and short signals
-#     signals.loc[(short_wma.wma() > long_wma.wma()) &
-#                 (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
-#     signals.loc[(short_wma.wma() <= long_wma.wma()) &
-#                 (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
+    # Calculate Donchian Channel
+    donchian = volatility.DonchianChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window=window)
+    signals['Upper_Channel'] = donchian.donchian_channel_hband()
+    signals['Lower_Channel'] = donchian.donchian_channel_lband()
 
-#     return signals
+    # Determine long and short signals (breakout strategy)
+    signals['dc_signal'] = 'neutral'
+    signals.loc[stock_df['Close'] > signals['Upper_Channel'], 'dc_signal'] = 'long'
+    signals.loc[stock_df['Close'] < signals['Lower_Channel'], 'dc_signal'] = 'short'
 
-# #%%
-# # 13-26 MA STrategy
+    # Drop temporary columns
+    signals.drop(['Upper_Channel', 'Lower_Channel'], axis=1, inplace=True)
 
-# # NEEDS WORK
+    return signals
 
-# def short_wma_signals(stock_df, short_period=13, long_period=26):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['wma_direction'] = 0
-#     signals['wma_signal'] = 0
+def turnaround_tuesday_strategy(stock_df):
+    """
+    Implements the Turnaround Tuesday strategy.
+    
+    Returns:
+    A DataFrame with 'Date', 'Signal', 'EntryPrice', and 'ExitPrice'.
+    """
+    # Ensure necessary columns exist
+    if 'Date' not in stock_df.columns or 'Open' not in stock_df.columns or 'Close' not in stock_df.columns:
+        raise ValueError("Input DataFrame must have 'Date', 'Open', and 'Close' columns.")
 
-#     # Calculate short and long SMAs
-#     short_wma = trend.WMAIndicator(stock_df['Close'], short_period)
-#     long_wma = trend.WMAIndicator(stock_df['Close'], long_period)
+    # Convert Date to datetime format
+    stock_df['Date'] = pd.to_datetime(stock_df['Date'])
 
-#     # Determine market direction (Bullish or Bearish)
-#     signals.loc[short_wma.wma() > long_wma.wma, 'wma_direction'] = 'bullish'
-#     signals.loc[short_wma.wma() <= long_wma.wma(), 'wma_direction'] = 'bearish'
+    # Calculate Internal Bar Strength (IBS)
+    stock_df['IBS'] = (stock_df['Close'] - stock_df['Open']) / (stock_df['High'] - stock_df['Low'])
 
-#     # Generate long and short signals
-#     signals.loc[(short_wma.wma() > long_wma.wma()) &
-#                 (short_wma.wma().shift(1) <= long_wma.wma().shift(1)), 'wma_signal'] = 'long'
-#     signals.loc[(short_wma.wma() <= long_wma.wma()) &
-#                 (short_wma.wma().shift(1) > long_wma.wma().shift(1)), 'wma_signal'] = 'short'
+    # Filter for Mondays
+    monday_data = stock_df[stock_df['Date'].dt.day_name() == 'Monday']
 
-#     return signals
+    # Initialize signals DataFrame
+    signals = pd.DataFrame(columns=['Date', 'Signal', 'EntryPrice', 'ExitPrice'])
 
-# # %%
-# # Donchain Channel
+    # Iterate through Mondays to find eligible signals
+    for _, row in monday_data.iterrows():
+        if row['Close'] < row['Open'] and row['IBS'] < 0.2:
+            buy_date = row['Date']
+            entry_price = row['Close']
 
-# # NEEDS WORK
+            # Find corresponding Tuesday's closing price
+            tuesday_data = stock_df[stock_df['Date'] == buy_date + pd.DateOffset(days=1)]
+            exit_price = tuesday_data['Close'].values[0] if not tuesday_data.empty else None
 
-# def donchian_channel_strategy(stock_df, window=20):
-#     signals = pd.DataFrame(index=stock_df.index)
-#     signals['dc_signal'] = 0
+            # Append signal
+            signals = pd.concat([signals, pd.DataFrame([{
+                'Date': buy_date, 'Signal': 'Long', 'EntryPrice': entry_price, 'ExitPrice': exit_price
+            }])], ignore_index=True)
 
-#     # Calculate Donchian Channel
-#     donchian = volatility.DonchianChannel(stock_df['High'], stock_df['Low'], stock_df['Close'], window)
-
-#     # Determine long and short signals
-#     for i in range(window, len(signals)):
-#         upper_channel = donchian.donchian_channel_hband()[i]
-#         lower_channel = donchian.donchian_channel_lband()[i]
-#         current_close = stock_df['Close'][i]
-
-#         if current_close > upper_channel:
-#             signals.loc[signals.index[i], 'dc_signal'] = 'long'  # long signal (breakout above upper channel)
-#         elif current_close < lower_channel:
-#             signals.loc[signals.index[i], 'dc_signal'] = 'short'  # short signal (breakout below lower channel)
-
-#     return signals
-
-# def turnaround_tuesday_strategy(data):
-#     if 'Date' not in data.columns or 'Open' not in data.columns or 'Close' not in data.columns:
-#         raise ValueError("Input DataFrame must have 'Date', 'Open', and 'Close' columns.")
-
-#     data['High'] = data['High'].shift(1)
-#     data['Low'] = data['Low'].shift(1)
-#     data['IBS'] = (data['Close'] - data['Open']) / (data['High'] - data['Low'])
-#     data['Date'] = pd.to_datetime(data['Date'], format='%m/%d/%Y')  # Corrected to 'data'
-
-#     signals = []
-
-#     monday_data = data[data['Date'].dt.day_name() == 'Monday']
-
-#     for index, row in monday_data.iterrows():  # Corrected to unpack 'index' and 'row'
-#         if row['Close'] < row['Open'] and row['IBS'] < 0.2:
-#             buy_date = row['Date']
-#             entry_price = row['Close']
-
-#             # Find Tuesday's close price for the buy signal
-#             tuesday_data = data[data['Date'].dt.day_name() == 'Tuesday']
-#             tuesday_close = tuesday_data[tuesday_data['Date'] == buy_date + pd.DateOffset(days=1)]['Close'].values
-
-#             if len(tuesday_close) > 0:
-#                 exit_price = tuesday_close[0]
-#             else:
-#                 exit_price = None
-
-#             signals.append({'Date': buy_date, 'Signal': 'Long', 'EntryPrice': entry_price, 'ExitPrice': exit_price})
-
-#     return pd.DataFrame(signals)
+    return signals

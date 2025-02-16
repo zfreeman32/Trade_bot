@@ -1,42 +1,67 @@
 #%%
 import sys
-sys.path.append('./features/all_Strategies.py')
 import pandas as pd
-from . import all_Strategies
+import all_Strategies
+from concurrent.futures import ThreadPoolExecutor  # Using threads instead of processes
 
+# Wrapper function for applying strategy
+def apply_strategy(strategy_func, stock_df):
+    return strategy_func(stock_df)
+
+# Apply all strategies using ThreadPoolExecutor
 def generate_all_signals(stock_df):
+    strategy_functions = [
+        all_Strategies.ppo_signals,
+        all_Strategies.Awesome_Oscillator_signals,
+        all_Strategies.kama_cross_signals,
+        all_Strategies.williams_signals,
+        all_Strategies.tsi_signals,
+        all_Strategies.stoch_signals,
+        all_Strategies.roc_signals,
+        all_Strategies.rsi_signals,
+        all_Strategies.stochrsi_signals,
+        all_Strategies.cci_signals,
+        all_Strategies.dpo_signals,
+        all_Strategies.ema_signals,
+        all_Strategies.ichimoku_signals,
+        all_Strategies.kst_signals,
+        all_Strategies.macd_signals,
+        all_Strategies.golden_ma_signals,
+        all_Strategies.short_ma_signals,
+        all_Strategies.strategy_5_8_13,
+        all_Strategies.keltner_channel_strategy,
+        all_Strategies.cmf_signals,
+        all_Strategies.eom_signals,
+        all_Strategies.mfi_signals,
+        all_Strategies.strategy_w5_8_13,
+        all_Strategies.adx_strength_direction,  
+        all_Strategies.mass_index_signals, 
+        all_Strategies.psar_signals,
+        all_Strategies.aroon_strategy, 
+        all_Strategies.atr_signals, 
+        all_Strategies.rsi_signals_with_divergence,
+        all_Strategies.stc_signals, 
+        all_Strategies.vortex_signals, 
+        all_Strategies.golden_wma_signals,
+        all_Strategies.short_wma_signals,  
+        all_Strategies.donchian_channel_strategy,  
+        all_Strategies.turnaround_tuesday_strategy  
+    ]
 
-    # Call your functions and store their results in separate DataFrames
-    ppo_signals_df = all_Strategies.ppo_signals(stock_df)
-    awesome_oscillator_signals_df = all_Strategies.Awesome_Oscillator_signals(stock_df)
-    kama_cross_signals_df = all_Strategies.kama_cross_signals(stock_df)
-    williams_signals_df = all_Strategies.williams_signals(stock_df)
-    tsi_signals_df = all_Strategies.tsi_signals(stock_df)
-    stoch_signals_df = all_Strategies.stoch_signals(stock_df)
-    roc_signals_df = all_Strategies.roc_signals(stock_df)
-    rsi_signals_df = all_Strategies.rsi_signals(stock_df)
-    stochrsi_signals_df = all_Strategies.stochrsi_signals(stock_df)
-    # aroon_signals_df = all_Strategies.aroon_strategy(stock_df)
-    cci_signals_df = all_Strategies.cci_signals(stock_df)
-    dpo_signals_df = all_Strategies.dpo_signals(stock_df)
-    ema_signals_df = all_Strategies.ema_signals(stock_df)
-    ichimoku_signals_df = all_Strategies.ichimoku_signals(stock_df)
-    kst_signals_df = all_Strategies.kst_signals(stock_df)
-    macd_signals_df = all_Strategies.macd_signals(stock_df)
-    golden_ma_signals_df = all_Strategies.golden_ma_signals(stock_df)
-    short_ma_signals_df = all_Strategies.short_ma_signals(stock_df)
-    strategy_5_8_13_df = all_Strategies.strategy_5_8_13(stock_df)
-    # atr_signals_df = all_Strategies.atr_signals(stock_df)
-    keltner_channel_strategy_df = all_Strategies.keltner_channel_strategy(stock_df)
-    cmf_signals_df = all_Strategies.cmf_signals(stock_df)
-    eom_signals_df = all_Strategies.eom_signals(stock_df)
-    mfi_signals_df = all_Strategies.mfi_signals(stock_df)
-    strategy_w5_8_13_df = all_Strategies.strategy_w5_8_13(stock_df)
+    # Use threading instead of multiprocessing
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(lambda func: apply_strategy(func, stock_df), strategy_functions))
 
-    # Concatenate the results into one large DataFrame
-    all_signals_df = pd.concat([stock_df, strategy_w5_8_13_df, mfi_signals_df, eom_signals_df, cmf_signals_df, keltner_channel_strategy_df, cmf_signals_df, strategy_5_8_13_df, short_ma_signals_df, golden_ma_signals_df, macd_signals_df, kst_signals_df, ichimoku_signals_df, ema_signals_df, dpo_signals_df, cci_signals_df, roc_signals_df, rsi_signals_df, stochrsi_signals_df, stoch_signals_df, tsi_signals_df, williams_signals_df, kama_cross_signals_df, ppo_signals_df, awesome_oscillator_signals_df], axis=1)
-    
+    # Merge results efficiently
+    all_signals_df = pd.concat([stock_df] + results, axis=1)
+
     return all_signals_df
+#%%
+# # Load data and apply signals
+# file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled2k_EURUSD_1min.csv'
+# stock_df = pd.read_csv(file_path)
+# signals_df = generate_all_signals(stock_df)
 
-# signals_df = generate_all_signals(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\VIX.csv', r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\VIX.csv')
-# %%
+# # Display output
+# signals_df.head()
+#%%
