@@ -1,7 +1,5 @@
-/tradebotenv
 .pyc
 __pycache__
 .vscode
-untitled_project/
-GRU_trials/
 .env
+*.csv
