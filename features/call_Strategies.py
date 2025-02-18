@@ -45,7 +45,11 @@ def generate_all_signals(stock_df):
         all_Strategies.golden_wma_signals,
         all_Strategies.short_wma_signals,  
         all_Strategies.donchian_channel_strategy,  
-        all_Strategies.turnaround_tuesday_strategy  
+        all_Strategies.turnaround_tuesday_strategy,
+        all_Strategies.ironbot_trend_filter,
+        all_Strategies.frama_signals,
+        all_Strategies.high_volume_points,
+        all_Strategies.fractal_ema_signals
     ]
 
     # Use threading instead of multiprocessing

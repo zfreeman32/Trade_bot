@@ -1,5 +1,6 @@
 #%%
 import pandas as pd
+import numpy as np
 from ta import momentum, trend, volatility, volume
 
 #%% 
@@ -1021,5 +1022,219 @@ def turnaround_tuesday_strategy(stock_df):
             signals = pd.concat([signals, pd.DataFrame([{
                 'Date': buy_date, 'Signal': 'Long', 'EntryPrice': entry_price, 'ExitPrice': exit_price
             }])], ignore_index=True)
+
+    return signals
+
+def ironbot_trend_filter(stock_df, z_length=40, analysis_window=44, high_trend_limit=23.6, 
+                         low_trend_limit=78.6, use_ema=False, ema_length=200):
+    """
+    Implements the IronBot Statistical Trend Filter strategy.
+
+    Parameters:
+    - stock_df: DataFrame containing 'High', 'Low', 'Close' prices.
+    - z_length: Window for Z-score calculation.
+    - analysis_window: Trend analysis period.
+    - high_trend_limit, low_trend_limit: Fibonacci levels for trend confirmation.
+    - use_ema: Whether to use an EMA filter.
+    - ema_length: EMA period.
+
+    Returns:
+    - A DataFrame with trend levels and trading signals.
+    """
+    
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # === Compute Z-Score ===
+    stock_df['z_score'] = (stock_df['Close'] - stock_df['Close'].rolling(z_length).mean()) / stock_df['Close'].rolling(z_length).std()
+
+    # === Compute Fibonacci Trend Levels ===
+    stock_df['highest_high'] = stock_df['High'].rolling(analysis_window).max()
+    stock_df['lowest_low'] = stock_df['Low'].rolling(analysis_window).min()
+    stock_df['price_range'] = stock_df['highest_high'] - stock_df['lowest_low']
+
+    stock_df['high_trend_level'] = stock_df['highest_high'] - stock_df['price_range'] * (high_trend_limit / 100)
+    stock_df['trend_line'] = stock_df['highest_high'] - stock_df['price_range'] * 0.5
+    stock_df['low_trend_level'] = stock_df['highest_high'] - stock_df['price_range'] * (low_trend_limit / 100)
+
+    # === Compute EMA Filter ===
+    if use_ema:
+        ema = trend.EMAIndicator(stock_df['Close'], ema_length)
+        stock_df['ema'] = ema.ema_indicator()
+        stock_df['ema_bullish'] = stock_df['Close'] >= stock_df['ema']
+        stock_df['ema_bearish'] = stock_df['Close'] <= stock_df['ema']
+    else:
+        stock_df['ema_bullish'] = True
+        stock_df['ema_bearish'] = True
+
+    # === Entry Conditions ===
+    stock_df['can_long'] = (stock_df['Close'] >= stock_df['trend_line']) & (stock_df['Close'] >= stock_df['high_trend_level']) & (stock_df['z_score'] >= 0) & stock_df['ema_bullish']
+    stock_df['can_short'] = (stock_df['Close'] <= stock_df['trend_line']) & (stock_df['Close'] <= stock_df['low_trend_level']) & (stock_df['z_score'] <= 0) & stock_df['ema_bearish']
+
+    # === Generate Trading Signals ===
+    signals['ironbot_signal'] = 'neutral'
+    signals.loc[stock_df['can_long'], 'ironbot_signal'] = 'long'
+    signals.loc[stock_df['can_short'], 'ironbot_signal'] = 'short'
+
+    # Store Fibonacci Levels for Visualization
+    signals['high_trend_level'] = stock_df['high_trend_level']
+    signals['trend_line'] = stock_df['trend_line']
+    signals['low_trend_level'] = stock_df['low_trend_level']
+    signals['ema'] = stock_df['ema'] if use_ema else np.nan
+
+    return signals
+
+def high_volume_points(stock_df, left_bars=15, filter_vol=2.0, lookback_period=300):
+    """
+    Identifies high-volume pivot points in price data.
+
+    Parameters:
+    - stock_df: DataFrame containing 'High', 'Low', 'Close', 'Volume'.
+    - left_bars: Number of bars before & after a pivot high/low for validation.
+    - filter_vol: Minimum volume threshold to filter significant pivot points.
+    - lookback_period: Number of bars to consider for percentile volume ranking.
+
+    Returns:
+    - A DataFrame with high-volume pivot points and liquidity grab signals.
+    """
+
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # === Compute Pivot Highs & Lows ===
+    stock_df['pivot_high'] = stock_df['High'][(stock_df['High'] == stock_df['High'].rolling(window=left_bars*2+1, center=True).max())]
+    stock_df['pivot_low'] = stock_df['Low'][(stock_df['Low'] == stock_df['Low'].rolling(window=left_bars*2+1, center=True).min())]
+
+    # === Compute Normalized Volume ===
+    stock_df['rolling_volume'] = stock_df['Volume'].rolling(window=left_bars * 2).sum()
+    reference_vol = stock_df['rolling_volume'].rolling(lookback_period).quantile(0.95)
+    stock_df['norm_vol'] = stock_df['rolling_volume'] / reference_vol * 5  # Normalize between 0-6 scale
+
+    # === Apply Volume Filter ===
+    stock_df['valid_pivot_high'] = (stock_df['pivot_high'].notna()) & (stock_df['norm_vol'] > filter_vol)
+    stock_df['valid_pivot_low'] = (stock_df['pivot_low'].notna()) & (stock_df['norm_vol'] > filter_vol)
+
+    # === Detect Liquidity Grabs ===
+    stock_df['liquidity_grab_high'] = stock_df['valid_pivot_high'] & (stock_df['Close'] < stock_df['pivot_high'].shift(1))
+    stock_df['liquidity_grab_low'] = stock_df['valid_pivot_low'] & (stock_df['Close'] > stock_df['pivot_low'].shift(1))
+
+    # === Store Relevant Features for ML Training ===
+    signals['high_volume_pivot'] = stock_df['valid_pivot_high'] | stock_df['valid_pivot_low']
+    signals['liquidity_grab'] = stock_df['liquidity_grab_high'] | stock_df['liquidity_grab_low']
+    signals['norm_vol'] = stock_df['norm_vol']
+
+    return signals
+
+def frama_signals(stock_df, base_length=20, upper_limit=8, lower_limit=40, atr_length=14, atr_multiplier=1.9):
+    """
+    Implements the G-FRAMA | QuantEdgeB strategy.
+
+    Parameters:
+    - stock_df: DataFrame containing 'High', 'Low', 'Close'.
+    - base_length: Base length for FRAMA calculation.
+    - upper_limit: Minimum smoothing length.
+    - lower_limit: Maximum smoothing length.
+    - atr_length: ATR period.
+    - atr_multiplier: Multiplier for ATR-based filtering.
+
+    Returns:
+    - A DataFrame containing 'frama_signal' column with 'buy' or 'sell' signals.
+    """
+
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # === Compute FRAMA ===
+    high_max = stock_df['High'].rolling(base_length).max()
+    low_min = stock_df['Low'].rolling(base_length).min()
+    hl_range = (high_max - low_min) / base_length
+
+    half_length = base_length // 2
+    high_max1 = stock_df['High'].rolling(half_length).max()
+    low_min1 = stock_df['Low'].rolling(half_length).min()
+    high_max2 = stock_df['High'].shift(half_length).rolling(half_length).max()
+    low_min2 = stock_df['Low'].shift(half_length).rolling(half_length).min()
+
+    hl1 = (high_max1 - low_min1) / half_length
+    hl2 = (high_max2 - low_min2) / half_length
+
+    D = np.log(hl1 + hl2) - np.log(hl_range)
+    D /= np.log(2)
+    
+    D[hl1 <= 0] = D.shift(1)
+    D[hl2 <= 0] = D.shift(1)
+
+    w = np.log(2 / (lower_limit + 1))
+    alpha = np.exp(w * (D - 1))
+    alpha = np.clip(alpha, 0.01, 1)
+
+    old_N = (2 - alpha) / alpha
+    new_N = (lower_limit - upper_limit) * (old_N - 1) / (lower_limit - 1) + upper_limit
+    new_alpha = 2 / (new_N + 1)
+    new_alpha = np.clip(new_alpha, 2 / (lower_limit + 1), 1)
+
+    stock_df['FRAMA'] = stock_df['Close'].ewm(alpha=new_alpha, adjust=False).mean()
+
+    # === Compute ATR Filter ===
+    atr = volatility.AverageTrueRange(stock_df['High'], stock_df['Low'], stock_df['Close'], window=atr_length)
+    stock_df['ATR'] = atr.average_true_range() * atr_multiplier  
+
+    stock_df['LongV'] = stock_df['FRAMA'] + stock_df['ATR']
+    stock_df['ShortV'] = stock_df['FRAMA'] - stock_df['ATR']
+
+    # === Generate 'buy' and 'sell' Signals ===
+    stock_df['frama_signal'] = 'neutral'
+    stock_df.loc[stock_df['Close'] > stock_df['LongV'], 'frama_signal'] = 'buy'
+    stock_df.loc[stock_df['Close'] < stock_df['ShortV'], 'frama_signal'] = 'sell'
+
+    # Store only the 'buy'/'sell' signal column
+    signals['frama_signal'] = stock_df['frama_signal']
+
+    return signals
+
+def fractal_ema_signals(stock_df, ema_short=10, ema_medium=20, ema_long=100, n=2):
+    """
+    Implements the Forex Fractal EMA Scalper strategy.
+
+    Parameters:
+    - stock_df: DataFrame containing 'High', 'Low', 'Close'.
+    - ema_short: Period for the short EMA.
+    - ema_medium: Period for the medium EMA.
+    - ema_long: Period for the long EMA.
+    - n: Number of periods for fractal detection.
+
+    Returns:
+    - A DataFrame containing 'fractal_ema_signal' column with 'buy' or 'sell' signals.
+    """
+
+    signals = pd.DataFrame(index=stock_df.index)
+
+    # === Compute EMAs ===
+    stock_df['EMA_10'] = trend.EMAIndicator(stock_df['Close'], ema_short).ema_indicator()
+    stock_df['EMA_20'] = trend.EMAIndicator(stock_df['Close'], ema_medium).ema_indicator()
+    stock_df['EMA_100'] = trend.EMAIndicator(stock_df['Close'], ema_long).ema_indicator()
+
+    # === Compute Up Fractal ===
+    up_fractal = np.full(len(stock_df), False)
+    for i in range(n, len(stock_df) - n):
+        up_frontier = all(stock_df['High'].iloc[i - j] < stock_df['High'].iloc[i] for j in range(1, n+1))
+        up_backfrontier = any(stock_df['High'].iloc[i + j] < stock_df['High'].iloc[i] for j in range(1, n+1))
+        up_fractal[i] = up_frontier and up_backfrontier
+
+    stock_df['Up_Fractal'] = up_fractal
+
+    # === Compute Down Fractal ===
+    down_fractal = np.full(len(stock_df), False)
+    for i in range(n, len(stock_df) - n):
+        down_frontier = all(stock_df['Low'].iloc[i - j] > stock_df['Low'].iloc[i] for j in range(1, n+1))
+        down_backfrontier = any(stock_df['Low'].iloc[i + j] > stock_df['Low'].iloc[i] for j in range(1, n+1))
+        down_fractal[i] = down_frontier and down_backfrontier
+
+    stock_df['Down_Fractal'] = down_fractal
+
+    # === Generate 'buy' and 'sell' Signals ===
+    stock_df['fractal_ema_signal'] = 'neutral'
+    stock_df.loc[(stock_df['Up_Fractal']) & (stock_df['EMA_10'] > stock_df['EMA_20']) & (stock_df['EMA_20'] > stock_df['EMA_100']), 'fractal_ema_signal'] = 'buy'
+    stock_df.loc[(stock_df['Down_Fractal']) & (stock_df['EMA_10'] < stock_df['EMA_20']) & (stock_df['EMA_20'] < stock_df['EMA_100']), 'fractal_ema_signal'] = 'sell'
+
+    # Store only the 'buy'/'sell' signal column
+    signals['fractal_ema_signal'] = stock_df['fractal_ema_signal']
 
     return signals
