@@ -38,10 +38,7 @@ def acc_dist_strat(df, length = 4, factor = 0.75, vol_ratio= 1 , vol_avg_length 
     # Sell signals
     signals['acc_dist_strat_sell'] = np.where(
         df['fall_below'],
-        -1, 0)
-        
-    signals['acc_dist_strat_signal'] = signals['acc_dist_strat_buy'] + signals['acc_dist_strat_sell']
-    
+        1, 0)
     return signals
 
 # Functions from adxbreakoutsle.py
@@ -49,18 +46,24 @@ import pandas as pd
 from ta import trend
 
 def adx_breakouts_signals(stock_df, highest_length=15, adx_length=14, adx_level=40, offset=0.5):
-    signals = pd.DataFrame(index=stock_df.index)
+    signals = pd.DataFrame(index=stock_df.index)  # Ensure index matches stock_df
+    
     highest = stock_df['High'].rolling(window=highest_length).max()
     adx = trend.ADXIndicator(stock_df['High'], stock_df['Low'], stock_df['Close'], window=adx_length).adx()
 
     signals['adx'] = adx
     signals['highest'] = highest
-    signals['adx_breakout_signal'] = 'neutral'
-    signals.loc[(signals['adx'] > adx_level) & (stock_df['Close'] > (signals['highest'] + offset)), 'adx_breakout_signal'] = 'long'
+    signals['adx_breakout_buy_signal'] = 0
+
+    breakout_condition = (signals['adx'] > adx_level) & (stock_df['Close'] > (signals['highest'] + offset))
+    
+    # Ensure index consistency
+    breakout_condition = breakout_condition.reindex(stock_df.index, fill_value=False)
+
+    signals.loc[breakout_condition, 'adx_breakout_buy_signal'] = 1
     signals.drop(['adx', 'highest'], axis=1, inplace=True)
+
     return signals
-
-
 
 # Functions from adxtrend.py
 import pandas as pd
@@ -88,23 +91,20 @@ def ADXTrend_signals(stock_df, length=14, lag=14, average_length=14, trend_level
         signals['avg_price'] = close.rolling(window=average_length).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
 
     # Generate signals according to strategy rules
-    signals['adx_trend_signal'] = np.where(
+    signals['adx_trend_buy_signal'] = np.where(
         (
             ((signals['ADX'] > signals['min_ADX'] * mult) & (signals['ADX'] > crit_level)) |
             ((signals['ADX'] > trend_level) & (signals['ADX'] < max_level))
-        ) & (close > signals['avg_price']), 'buy', 
-        np.where(
+        ) & (close > signals['avg_price']), 1, 0)
+    signals['adx_trend_sell_signal'] = np.where(
             (
                 ((signals['ADX'] > signals['min_ADX'] * mult) & (signals['ADX'] > crit_level)) |
                 ((signals['ADX'] > trend_level) & (signals['ADX'] < max_level))
-            ) & (close < signals['avg_price']), 'sell', 'neutral'
-        )
-    )
+            ) & (close < signals['avg_price']), 1, 0)
 
     signals.drop(['ADX', 'min_ADX', 'avg_price'], axis=1, inplace=True)
 
     return signals
-
 
 # Functions from atrhighsmabreakoutsle.py
 import pandas as pd
@@ -139,8 +139,8 @@ def atr_high_sma_breakouts_le(df, atr_period=14, sma_period=100, offset=.5, wide
     condition4 = (df['Volume'] > df['Volume'].shift()) if volume_increase else True
 
     # Create signals
-    signals['atr_high_sma_breakouts_le_signal'] = 0
-    signals.loc[condition1 & condition2 & condition3 & condition4, 'atr_high_sma_breakouts_le_signal'] = 1
+    signals['atr_high_sma_breakouts_le_buy_signal'] = 0
+    signals.loc[condition1 & condition2 & condition3 & condition4, 'atr_high_sma_breakouts_le_buy_signal'] = 1
     signals.drop(['recorded_high'], axis=1, inplace=True)
     return signals
 
@@ -162,18 +162,20 @@ def atr_trailing_stop_le_signals(stock_df, atr_period=14, atr_factor=3, average_
     
     signals = pd.DataFrame(index=stock_df.index)
     signals['ATR Trailing Stop'] = atr_trailing_stop
-    signals['atr_trailing_stop_le_signal'] = 0
-    signals.loc[(close > atr_trailing_stop), 'atr_trailing_stop_le_signal'] = 1
-    signals.loc[(close <= atr_trailing_stop), 'atr_trailing_stop_le_signal'] = -1
+    signals['atr_trailing_stop_le_buy_signal'] = np.where(
+        (signals['close'].shift(1) <= signals['atr_trailing_stop'].shift(1)) &  # Previous close was below ATR
+        (signals['close'] > signals['atr_trailing_stop']),  # Current close crosses above ATR
+        1,  # Signal triggered
+        0   # No signal
+    )
+
     signals.drop(['ATR Trailing Stop'], axis=1, inplace=True)
 
     return signals
 
-
 # Functions from atrtrailingstopse.py
 import pandas as pd
 import numpy as np
-import talib
 
 def atr_trailing_stop_se_signals(stock_df, atr_period=14, atr_factor=3.0, trail_type="unmodified"):
 
@@ -194,8 +196,12 @@ def atr_trailing_stop_se_signals(stock_df, atr_period=14, atr_factor=3.0, trail_
 
     # Create a DataFrame for the signals
     signals = pd.DataFrame({'atr_trailing_stop': atr_trailing_stop}, index=stock_df.index)
-    signals['atr_se_signal'] = 'neutral'
-    signals.loc[close < signals['atr_trailing_stop'], 'atr_se_signal'] = 'short'
+    signals['atr_se_sell_signal'] = np.where(
+        (signals['close'].shift(1) >= signals['atr_trailing_stop']) &  # Previous close was above ATR
+        (signals['close'] < signals['atr_trailing_stop']),  # Current close crosses below ATR
+        1,  # Signal triggered
+        0   # No signal
+    )
 
     # Drop the internal 'atr_trailing_stop' column, as it is not part of the output
     signals.drop(columns=['atr_trailing_stop'], inplace=True)
@@ -246,14 +252,12 @@ def BB_Divergence_Strat(dataframe, secondary_data=None):
     )
 
     # Assign Buy and Sell signals
-    dataframe['BB_Divergence_Strat_signal'] = 'neutral'
-    dataframe.loc[conditions_buy, 'BB_Divergence_Strat_signal'] = 'buy'
-    dataframe.loc[conditions_sell, 'BB_Divergence_Strat_signal'] = 'sell'
+    dataframe['BB_Divergence_Strat_buy_signal'] = 0
+    dataframe['BB_Divergence_Strat_sell_signal'] = 0
+    dataframe.loc[conditions_buy, 'BB_Divergence_Strat_buy_signal'] = 1
+    dataframe.loc[conditions_sell, 'BB_Divergence_Strat_sell_signal'] = 1
     
-    return dataframe[['BB_Divergence_Strat_signal']]
-
-
-
+    return dataframe[['BB_Divergence_Strat_buy_signal', 'BB_Divergence_Strat_sell_signal']]
 
 # Functions from bollingerbandsle.py
 import pandas as pd
@@ -267,15 +271,13 @@ def bollinger_bands_le_signals(data, length=20, num_devs_dn=2.0):
     signals = pd.DataFrame(index=data.index)
     signals['lower'] = indicator_bb.bollinger_lband()  # Calculate lower band
     signals['close'] = data['Close']  # Track closing prices
-    signals['bollinger_bands_le_signal'] = 0 # Default all signals to 0.0
+    signals['bollinger_bands_le_buy_signal'] = 0 # Default all signals to 0.0
 
     # Generate 'Long Entry' signal where price crosses above lower band
-    signals['bollinger_bands_le_signal'][signals['close'] > signals['lower'].shift(1)] = 1
+    signals['bollinger_bands_le_buy_signal'][signals['close'] > signals['lower'].shift(1)] = 1
     signals.drop(columns=['close', 'lower'], inplace=True)
     # Return only the signal column
     return signals
-
-
 
 # Functions from bollingerbandsse.py
 import pandas as pd
@@ -332,16 +334,15 @@ def camarilla_pivot_points(stock_df):
 def camarilla_strategy(stock_df):
     stock_df = camarilla_pivot_points(stock_df)
     signals = pd.DataFrame(index=stock_df.index)
-    signals['camarilla_signal'] = ''
+    signals['camarilla_buy_signal'] = 0
+    signals['camarilla_sell_signal'] = 0
   
     # Long entry
-    signals.loc[((stock_df.Open < stock_df.S3) & (stock_df.Close > stock_df.S3)), 'camarilla_signal'] = 'Buy'
+    signals.loc[((stock_df.Open < stock_df.S3) & (stock_df.Close > stock_df.S3)), 'camarilla_buy_signal'] = 1
     # Short entry
-    signals.loc[((stock_df.Open > stock_df.R3) & (stock_df.Close < stock_df.R3)), 'camarilla_signal'] = 'Sell'
+    signals.loc[((stock_df.Open > stock_df.R3) & (stock_df.Close < stock_df.R3)), 'camarilla_sell_signal'] = 2
 
     return signals
-
-
 
 # Functions from consbarsdownse.py
 import numpy as np
@@ -367,11 +368,9 @@ def ConsBarsDownSE(data, consecutive_bars_down=4, price="Close"):
     consecutive_sum = bars_down.rolling(window=consecutive_bars_down).sum()
     
     # Create a signal where the sum equals the specified number of consecutive bars
-    signals["ConsBarsDownSE_signal"] = np.where(consecutive_sum >= consecutive_bars_down, "short", "neutral")
+    signals["ConsBarsDownSE_sell_signal"] = np.where(consecutive_sum >= consecutive_bars_down, 1, 0)
     
     return signals
-
-
 
 # Functions from consbarsuple.py
 import pandas as pd
@@ -379,7 +378,7 @@ import pandas as pd
 def cons_bars_up_le_signals(stock_df, consec_bars_up=4, price='Close'):
     # Initialize the signal DataFrame with the same index as stock_df
     signals = pd.DataFrame(index=stock_df.index)
-    signals['Signal'] = 0.0
+    signals['Signal'] = 0
 
     # Create a boolean mask indicating where price bars are consecutively increasing
     mask = stock_df[price].diff() > 0
@@ -388,50 +387,54 @@ def cons_bars_up_le_signals(stock_df, consec_bars_up=4, price='Close'):
     rolling_sum = mask.rolling(window=consec_bars_up).sum()
     
     # Finally, as in template, long signals where the count of increasing bars exceeds consec_bars_up
-    signals['Signal'][rolling_sum >= consec_bars_up] = 1.0
+    signals['Signal'][rolling_sum >= consec_bars_up] = 1
 
     # Take difference of signals to identify specific 'long' points
     signals['Signal'] = signals['Signal'].diff()
 
     # Replace any NaNs with 0
-    signals['Signal'].fillna(0.0, inplace=True)
+    signals['Signal'].fillna(0, inplace=True)
 
     # Generate trading orders
-    signals['cons_bars_up_le_signal'] = 'Hold'
-    signals.loc[signals['Signal'] > 0, 'cons_bars_up_le_signal'] = 'Long'
+    signals['cons_bars_up_le_signal'] = 0
+    signals.loc[signals['Signal'] > 0, 'cons_bars_up_le_buy_signal'] = 1
     signals.drop(columns=['Signal'], inplace=True)
     return signals
 
-# Functions from donchian.py
-#%%
 import pandas as pd
 import numpy as np
 from ta import volatility
 
 def donchian_signals(df, entry_length=40, exit_length=15, atr_length=20, atr_factor=2, atr_stop_factor=2, atr_average_type='simple'):
     signals = pd.DataFrame(index=df.index)
-    
+
+    # Ensure numeric conversion
+    df['High'] = pd.to_numeric(df['High'], errors='coerce')
+    df['Low'] = pd.to_numeric(df['Low'], errors='coerce')
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+
     # Compute Donchian Channel Stops
-    signals['BuyStop'] = df['High'].rolling(window=entry_length, min_periods=1).max()
-    signals['ShortStop'] = df['Low'].rolling(window=entry_length, min_periods=1).min()
-    signals['CoverStop'] = df['High'].rolling(window=exit_length, min_periods=1).max()
-    signals['SellStop'] = df['Low'].rolling(window=exit_length, min_periods=1).min()
-    
-    # Compute ATR
-    atr = volatility.AverageTrueRange(df['High'], df['Low'], df['Close'], window=atr_length).average_true_range()
+    signals['BuyStop'] = df['High'].rolling(window=entry_length, min_periods=1).max().reindex(df.index)
+    signals['ShortStop'] = df['Low'].rolling(window=entry_length, min_periods=1).min().reindex(df.index)
+    signals['CoverStop'] = df['High'].rolling(window=exit_length, min_periods=1).max().reindex(df.index)
+    signals['SellStop'] = df['Low'].rolling(window=exit_length, min_periods=1).min().reindex(df.index)
+
+    # Compute ATR and reindex to match df
+    atr = volatility.AverageTrueRange(df['High'], df['Low'], df['Close'], window=atr_length).average_true_range().reindex(df.index)
 
     # Apply chosen smoothing type
     if atr_average_type == "simple":
-        atr_smoothed = atr.rolling(window=atr_length, min_periods=1).mean()
+        atr_smoothed = atr.rolling(window=atr_length, min_periods=1).mean().reindex(df.index)
     elif atr_average_type == "exponential":
-        atr_smoothed = atr.ewm(span=atr_length, adjust=False).mean()
+        atr_smoothed = atr.ewm(span=atr_length, adjust=False).mean().reindex(df.index)
     elif atr_average_type == "wilder":
-        atr_smoothed = atr.ewm(alpha=1/atr_length, adjust=False).mean()
+        atr_smoothed = atr.ewm(alpha=1/atr_length, adjust=False).mean().reindex(df.index)
     else:
         raise ValueError(f"Unsupported ATR smoothing type '{atr_average_type}'")
 
     # Preinitialize signal column
-    signals['donchian_signals'] = 0  # Default to 0 (neutral)
+    signals['donchian_buy_signals'] = 0  # Default to 0 (neutral)
+    signals['donchian_sell_signals'] = 0  # Default to 0 (neutral)
 
     # Apply ATR filter
     if atr_factor > 0:
@@ -441,23 +444,14 @@ def donchian_signals(df, entry_length=40, exit_length=15, atr_length=20, atr_fac
         buy_condition = (df['High'] > signals['BuyStop']) & ((df['High'].shift(1) - volatility_filter) > 0)
         sell_condition = (df['Low'] < signals['ShortStop']) & ((df['Low'].shift(1) - volatility_filter) < 0)
 
-        signals.loc[buy_condition, 'donchian_signals'] = 1
-        signals.loc[sell_condition, 'donchian_signals'] = -1
+        signals.loc[buy_condition, 'donchian_buy_signals'] = 1
+        signals.loc[sell_condition, 'donchian_sell_signals'] = 1
     else:
-        signals.loc[df['High'] > signals['BuyStop'], 'donchian_signals'] = 1
-        signals.loc[df['Low'] < signals['ShortStop'], 'donchian_signals'] = -1
-
-    # Apply ATR-based stop loss
-    if atr_stop_factor > 0:
-        atr_stop_loss = atr_smoothed * atr_stop_factor
-        signals['BuyToClose'] = np.where(df['High'] > atr_stop_loss, 1, 0)
-        signals['SellToClose'] = np.where(df['Low'] < atr_stop_loss, -1, 0)
-    else:
-        signals['BuyToClose'] = np.where(df['High'] > signals['CoverStop'], 1, 0)
-        signals['SellToClose'] = np.where(df['Low'] < signals['SellStop'], -1, 0)
+        signals.loc[df['High'] > signals['BuyStop'], 'donchian_buy_signals'] = 1
+        signals.loc[df['Low'] < signals['ShortStop'], 'donchian_sell_signals'] = 1
 
     # Drop unnecessary columns
-    signals.drop(columns=['CoverStop', 'SellStop', 'BuyStop', 'ShortStop', 'BuyToClose', 'SellToClose'], inplace=True)
+    signals.drop(columns=['CoverStop', 'SellStop', 'BuyStop', 'ShortStop'], inplace=True)
 
     return signals.fillna(0)
 
@@ -492,35 +486,32 @@ def ehlers_stoch_signals(stock_df, length1=10, length2=20):
                    np.where(slo < 0, np.where(slo < np.roll(slo, 1), -2, -1), 0))
     
     # Generate buy and sell signals with strong signals
-    signals['ehlers_stoch_signals'] = 'neutral'
-    signals.loc[sig == 1, 'ehlers_stoch_signals'] = 'buy'
-    signals.loc[sig == 2, 'ehlers_stoch_signals'] = 'strong_buy'
-    signals.loc[sig == -1, 'ehlers_stoch_signals'] = 'sell'
-    signals.loc[sig == -2, 'ehlers_stoch_signals'] = 'strong_sell'
+    signals['ehlers_stoch_signals'] = 0
+    signals.loc[sig == 1, 'ehlers_stoch_signals'] = 1
+    signals.loc[sig == 2, 'ehlers_stoch_signals'] = 2
+    signals.loc[sig == -1, 'ehlers_stoch_signals'] = 3
+    signals.loc[sig == -2, 'ehlers_stoch_signals'] = 4
     
     return signals
 
-
-
 # Functions from eightmonthavg.py
-import pandas as pd
-import numpy as np
-
-# Eight Month Average Strategy
 def eight_month_avg_signals(stock_df, length=8):
-    signals = pd.DataFrame(index=stock_df.index)
-    # Calculate the simple moving average over the specified length
+    signals = pd.DataFrame(index=stock_df.index)  # Ensure index matches stock_df
     signals['sma'] = stock_df['Close'].rolling(window=length).mean()
-    # Initialize the signal column
     signals['eight_month_avg_signals'] = 'neutral'
-    # Add a BUY_AUTO order where average crosses below the price
-    signals.loc[(stock_df['Close'] > signals['sma']) & (stock_df['Close'].shift(1) <= signals['sma'].shift(1)), 'eight_month_avg_signals'] = 'buy'
-    # Add a SELL_AUTO order where average crosses above the price
-    signals.loc[(stock_df['Close'] < signals['sma']) & (stock_df['Close'].shift(1) >= signals['sma'].shift(1)), 'eight_month_avg_signals'] = 'sell'
+
+    buy_condition = (stock_df['Close'] > signals['sma']) & (stock_df['Close'].shift(1) <= signals['sma'].shift(1))
+    sell_condition = (stock_df['Close'] < signals['sma']) & (stock_df['Close'].shift(1) >= signals['sma'].shift(1))
+
+    # Ensure the conditions' index matches stock_df.index before applying
+    buy_condition = buy_condition.reindex(stock_df.index, fill_value=False)
+    sell_condition = sell_condition.reindex(stock_df.index, fill_value=False)
+
+    signals.loc[buy_condition, 'eight_month_avg_signals'] = 1
+    signals.loc[sell_condition, 'eight_month_avg_signals'] = 2
+
     signals.drop(['sma'], axis=1, inplace=True)
     return signals
-
-
 
 # Functions from elegantoscillatorstrat.py
 import pandas as pd
@@ -528,10 +519,16 @@ import numpy as np
 
 def rms(data):
     """Calculates the root mean square (RMS)."""
+    data = pd.to_numeric(data, errors='coerce').ffill()  # Ensure numeric and fill NaN
     return np.sqrt(np.mean(data**2, axis=0))
 
-def supersmoother(data, length):
+def supersmoother(data, length=10):
     """Applies the SuperSmoother filter to the input data."""
+    data = pd.to_numeric(data, errors='coerce').ffill()  # Ensure numeric data
+
+    if len(data) < length:  # Prevents issues if not enough data
+        return np.full(len(data), np.nan)
+
     a1 = np.exp(-1.414 * np.pi / length)
     b1 = 2 * a1 * np.cos(1.414 * np.pi / length)
     c2, c3 = -b1, a1 * a1
@@ -546,29 +543,36 @@ def supersmoother(data, length):
 def elegant_oscillator(stock_df, rms_length=10, cutoff_length=10, threshold=0.5):
     """Computes the Elegant Oscillator and generates buy/sell signals."""
     signals = pd.DataFrame(index=stock_df.index)
+
+    # Ensure Close column is numeric
+    stock_df['Close'] = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()
+
     close_price = stock_df['Close']
     
     # Calculate Root Mean Square (RMS)
-    stock_df['rms'] = rms(close_price, rms_length)
-    
+    stock_df['rms'] = rms(close_price)
+
     # Apply SuperSmoother filter
     stock_df['ss_filter'] = supersmoother(stock_df['rms'], cutoff_length)
-    
+
     # Normalize and apply Inverse Fisher Transform
-    min_ss, max_ss = np.min(stock_df['ss_filter']), np.max(stock_df['ss_filter'])
-    x = (2 * (stock_df['ss_filter'] - min_ss) / (max_ss - min_ss) - 1)
-    stock_df['elegant_oscillator'] = (np.exp(2 * x) - 1) / (np.exp(2 * x) + 1)
+    min_ss, max_ss = np.nanmin(stock_df['ss_filter']), np.nanmax(stock_df['ss_filter'])
+
+    # Prevent division by zero
+    if min_ss == max_ss:
+        stock_df['elegant_oscillator'] = 0
+    else:
+        x = (2 * (stock_df['ss_filter'] - min_ss) / (max_ss - min_ss) - 1)
+        stock_df['elegant_oscillator'] = (np.exp(2 * x) - 1) / (np.exp(2 * x) + 1)
 
     # Generate signals
-    signals['elegant_oscillator_signal'] = 'neutral'
+    signals['elegant_oscillator_signal'] = 0
     signals.loc[(stock_df['elegant_oscillator'] > threshold) & 
-                (stock_df['elegant_oscillator'].shift(1) <= threshold), 'elegant_oscillator_signal'] = 'sell'
+                (stock_df['elegant_oscillator'].shift(1) <= threshold), 'elegant_oscillator_signal'] = 2
     signals.loc[(stock_df['elegant_oscillator'] < -threshold) & 
-                (stock_df['elegant_oscillator'].shift(1) >= -threshold), 'elegant_oscillator_signal'] = 'buy'
+                (stock_df['elegant_oscillator'].shift(1) >= -threshold), 'elegant_oscillator_signal'] = 1
 
     return signals
-
-
 
 # Functions from ertrend.py
 import pandas as pd
@@ -576,43 +580,64 @@ import numpy as np
 from ta import trend
 
 # Compute Efficiency Ratio
-def compute_ER(data, window = 14):
-    change = data.diff()
-    volatility = change.rolling(window).sum()
-    ER = change.abs().rolling(window).sum()
-    return volatility / ER
+def compute_ER(data, window=14):
+    """Compute Efficiency Ratio (ER) while ensuring numeric input."""
+    data = pd.to_numeric(data, errors='coerce').ffill()  # Ensure numeric values
+    change = data.diff()  # Compute price change
+    volatility = change.abs().rolling(window).sum()  # Compute volatility
+    ER = change.rolling(window).sum()  # Compute ER as sum of absolute changes
+
+    # Avoid division by zero errors
+    ER = np.where(ER == 0, np.nan, volatility / ER)  
+
+    return pd.Series(ER, index=data.index)  # Return Series with correct index
 
 # ER Trend Signal Strategy
-def ERTrend_signals(stock_df, ER_window=14, ER_avg_length=14, lag=7, avg_length=14, trend_level=0.5, max_level=1.0, crit_level=0.2, mult=1.5, average_type='simple'):
+def ERTrend_signals(stock_df, ER_window=14, ER_avg_length=14, lag=7, avg_length=14, 
+                    trend_level=0.5, max_level=1.0, crit_level=0.2, mult=1.5, average_type='simple'):
     signals = pd.DataFrame(index=stock_df.index)
-    
+
+    # Ensure Close column is numeric
+    stock_df['Close'] = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()
+
     # Use selected moving average type
     if average_type == 'simple':
         MA = trend.SMAIndicator(stock_df['Close'], avg_length).sma_indicator()
     else:
         MA = stock_df['Close'].ewm(span=avg_length).mean()
-    
+
+    # Ensure MA has the same index as stock_df
+    MA = MA.reindex(stock_df.index)
+
+    # Compute ER and ensure it has the correct index
     ER = compute_ER(stock_df['Close'], ER_window)
-    lowest_ER = ER.rolling(lag).min()
-    highest_ER = ER.rolling(lag).max()
+    lowest_ER = ER.rolling(lag).min().reindex(stock_df.index)
+    highest_ER = ER.rolling(lag).max().reindex(stock_df.index)
 
-    buy_flag = (ER > crit_level) & (ER > lowest_ER * mult) & (stock_df['Close'] > MA)
-    strong_trend = (ER > trend_level) & (ER < max_level)
+    # Ensure all conditions have the same index and valid boolean type
+    buy_flag = ((ER > crit_level) & (ER > lowest_ER * mult) & (stock_df['Close'] > MA)).fillna(False)
+    strong_trend = ((ER > trend_level) & (ER < max_level)).fillna(False)
 
-    # Buy signals
-    signals.loc[buy_flag & strong_trend, 'ERTrend_signals'] = 'buy-to-open'
-    signals.loc[(stock_df['Close'].shift(-1) < MA) & (stock_df['Close'].shift(-2) > MA), 'ERTrend_signals'] = 'sell-to-close'
+    # Initialize the signal column
+    signals['ERTrend_signals'] = 0
+
+    # Apply buy signals
+    signals.loc[buy_flag & strong_trend, 'ERTrend_signals'] = 1
     
-    # Sell signals
-    signals.loc[~buy_flag & strong_trend, 'ERTrend_signals'] = 'sell-to-open'
-    signals.loc[(stock_df['Close'].shift(-1) > MA) & (stock_df['Close'].shift(-2) < MA), 'ERTrend_signals'] = 'buy-to-close'
+    # Apply sell-to-close signal
+    sell_close_condition = (stock_df['Close'].shift(-1) < MA) & (stock_df['Close'].shift(-2) > MA)
+    sell_close_condition = sell_close_condition.fillna(False)
+    signals.loc[sell_close_condition, 'ERTrend_signals'] = 2
 
-    # Ensure 'hold' values remain properly assigned without inplace modification
-    signals['ERTrend_signals'] = signals['ERTrend_signals'].fillna('hold')
-        
+    # Apply sell signals
+    signals.loc[~buy_flag & strong_trend, 'ERTrend_signals'] = 3
+
+    # Apply buy-to-close signal
+    buy_close_condition = (stock_df['Close'].shift(-1) > MA) & (stock_df['Close'].shift(-2) < MA)
+    buy_close_condition = buy_close_condition.fillna(False)
+    signals.loc[buy_close_condition, 'ERTrend_signals'] = 4
+
     return signals
-
-
 
 # Functions from firsthourbreakout.py
 import pandas as pd
@@ -627,17 +652,17 @@ def FirstHourBreakout(data):
     data.index = data.index.tz_convert(pytz.timezone('US/Eastern'))
     
     signals = pd.DataFrame(index=data.index)
-    signals['FirstHourBreakout_signals'] = 0
+    signals['FirstHourBreakout_signals'] = 0  # Default signal is 0
     
     # Define times
     market_open = pd.Timestamp('09:30', tz='US/Eastern').time()
     first_hour_end = pd.Timestamp('10:30', tz='US/Eastern').time()
     market_close = pd.Timestamp('16:15', tz='US/Eastern').time()
-    
-    # Iterate over each day
-    for day in data.index.normalize().unique():
-        day_data = data.loc[data.index.normalize() == day]
-        
+
+    # Group by normalized date to avoid filtering issues
+    grouped = data.groupby(data.index.normalize())
+
+    for day, day_data in grouped:
         if day_data.empty:
             continue
         
@@ -648,16 +673,20 @@ def FirstHourBreakout(data):
         
         first_hour_high = first_hour_data['High'].max()
         first_hour_low = first_hour_data['Low'].min()
-        
-        # Issue buy signal
-        signals.loc[(day_data.index > first_hour_data.index[-1]) & (day_data['High'] > first_hour_high), 'FirstHourBreakout_signals'] = 1
-        
-        # Issue sell signal
-        signals.loc[(day_data.index > first_hour_data.index[-1]) & (day_data['Low'] < first_hour_low), 'FirstHourBreakout_signals'] = -1
-        
-        # Close positions at end of day
-        signals.loc[data.index.normalize() == day, 'FirstHourBreakout_signals'] = 0
-        signals.drop(['Date'], axis=1, inplace=True)
+
+        # Generate signals within the day
+        breakout_signals = day_data.apply(
+            lambda row: 1 if row['High'] > first_hour_high else (2 if row['Low'] < first_hour_low else 0),
+            axis=1
+        )
+
+        # Assign signals to the original DataFrame
+        signals.loc[day_data.index, 'FirstHourBreakout_signals'] = breakout_signals
+
+        # Close positions at the end of the day
+        end_of_day_index = day_data.index[day_data.index.time == market_close]
+        signals.loc[end_of_day_index, 'FirstHourBreakout_signals'] = 0
+
     return signals
 
 
@@ -692,8 +721,8 @@ def four_day_breakout_le_signals(stock_df, average_length=20, pattern_length=4, 
                                  (stock_df['Close'] > (max_pattern_high + breakout_amount)), 1, 0)
     
     # Create a column for simplified, visual-friendly signals
-    signals['four_day_breakout_le_signals'] = 'Neutral'
-    signals.loc[signals['Signal'] == 1, 'four_day_breakout_le_signals'] = 'Buy'
+    signals['four_day_breakout_le_signals'] = 0
+    signals.loc[signals['Signal'] == 1, 'four_day_breakout_le_signals'] = 1
     
     # Remove all the other columns
     signals.drop(['Signal'], axis=1, inplace=True)
@@ -706,8 +735,7 @@ import pandas as pd
 import numpy as np
 
 # GandalfProjectResearchSystem Strategy
-def gandalf_signals(df, exit_length=10, gain_exit_length=20):
-    df.index = pd.to_datetime(df.index)  # Ensure index is in datetime format
+def gandalf_signals(df, exit_length=10, gain_exit_length=20):  
     signals = pd.DataFrame(index=df.index)
     
     # Calculating ohlc4
@@ -718,17 +746,17 @@ def gandalf_signals(df, exit_length=10, gain_exit_length=20):
     df['mid_body'] = (df['Open'] + df['Close']) / 2
     
     # Buy signal
-    signals['buy_signal'] = 0
+    signals['gandalf_buy_signals'] = 0
     signals.loc[((df['ohlc4'].shift(1) < df['median_price'].shift(1)) &
                  (df['median_price'].shift(2) <= df['ohlc4'].shift(1)) &
                  (df['median_price'].shift(2) <= df['ohlc4'].shift(3))) |
                 ((df['ohlc4'].shift(1) < df['median_price'].shift(3)) &
                  (df['mid_body'] < df['median_price'].shift(2)) &
-                 (df['mid_body'].shift(1) < df['mid_body'].shift(2))), 'buy_signal'] = 1
+                 (df['mid_body'].shift(1) < df['mid_body'].shift(2))), 'gandalf_buy_signals'] = 1
 
     # Sell signal
-    signals['sell_signal'] = 0
-    buy_indices = signals.index[signals['buy_signal'] == 1]
+    signals['gandalf_sell_signal'] = 0
+    buy_indices = signals.index[signals['gandalf_signal'] == 1]
     
     for buy_index in buy_indices:
         buy_timestamp = signals.index[signals.index == buy_index]
@@ -751,7 +779,7 @@ def gandalf_signals(df, exit_length=10, gain_exit_length=20):
                                      (df['median_price'].shift(-4) < df['ohlc4'].shift(-3)) &
                                      (df['mid_body'].shift(-1) < df['ohlc4'].shift(-1))))))
                 
-                signals.loc[sell_condition, 'sell_signal'] = 1
+                signals.loc[sell_condition, 'gandalf_signal'] = 2
     
     signals.fillna(0, inplace=True)
     return signals
@@ -1108,55 +1136,63 @@ def macd_signals(df, fast_length=12, slow_length=26, macd_length=9):
     signals.drop(['MACD_line','MACD_signal'], axis=1, inplace=True)
     return signals
 
-
-
 # Functions from meanreversionswingle.py
 import pandas as pd
 
 # Function to detect uptrend based on moving averages
-def detect_uptrend(close_prices, min_length, min_range_for_uptrend):
+def detect_uptrend(close_prices, min_length=20, min_range_for_uptrend=5.0):
     rolling_min = close_prices.rolling(window=min_length).min()
     rolling_max = close_prices.rolling(window=min_length).max()
     return (rolling_max - rolling_min) > min_range_for_uptrend
 
-# Function to detect pullbacks (retracements from highs)
-def detect_pullback(close_prices, uptrend_signal, tolerance):
+def detect_pullback(close_prices, tolerance=1.0):
+    close_prices = pd.to_numeric(close_prices, errors='coerce').ffill()  # Ensure numeric data
     rolling_high = close_prices.rolling(window=10).max()
     return (rolling_high - close_prices) > tolerance
 
-# Function to detect upward movement after pullback
-def detect_up_move(close_prices, pullback_signal, min_up_move):
+def detect_up_move(close_prices, pullback_signal, min_up_move=0.5):
+    close_prices = pd.to_numeric(close_prices, errors='coerce').ffill()  # Ensure numeric
     price_diff = close_prices.diff()
     return (price_diff > min_up_move) & pullback_signal
 
-# Function to limit the pattern length
-def limit_pattern_length(signals, max_length):
-    signals['pattern_length'] = signals['mean_reversion_swing_le'].groupby((signals['mean_reversion_swing_le'] != signals['mean_reversion_swing_le'].shift()).cumsum()).cumcount() + 1
+def limit_pattern_length(signals, max_length=400):
+    if 'mean_reversion_swing_le' not in signals:
+        return signals  # Avoid errors if column is missing
+
+    signals['pattern_length'] = signals['mean_reversion_swing_le'].groupby(
+        (signals['mean_reversion_swing_le'] != signals['mean_reversion_swing_le'].shift()).cumsum()
+    ).cumcount() + 1
+
     signals.loc[signals['pattern_length'] > max_length, 'mean_reversion_swing_le'] = 'neutral'
     return signals.drop(columns=['pattern_length'])
 
-# Mean Reversion Swing Strategy (Long Entries)
 def mean_reversion_swing_le(stock_df, min_length=20, max_length=400, min_range_for_uptrend=5.0,
                             min_up_move=0.5, tolerance=1.0):
     signals = pd.DataFrame(index=stock_df.index)
-    
+
+    # Ensure Close column is numeric
+    stock_df['Close'] = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()
+
     # Compute trend-based conditions
     signals['uptrend'] = detect_uptrend(stock_df['Close'], min_length, min_range_for_uptrend)
-    signals['pullback'] = detect_pullback(stock_df['Close'], signals['uptrend'], tolerance)
+
+    # Ensure detect_pullback() receives a numeric Close series
+    signals['pullback'] = detect_pullback(stock_df['Close'], tolerance)
+
+    # Ensure detect_up_move() receives valid inputs
     signals['up_move'] = detect_up_move(stock_df['Close'], signals['pullback'], min_up_move)
-    
+
     # Generate trade signals
     signals['mean_reversion_swing_le'] = 'neutral'
     signals.loc[signals['uptrend'] & signals['pullback'] & signals['up_move'], 'mean_reversion_swing_le'] = 'long'
-    
+
     # Ensure the pattern length does not exceed max_length
     signals = limit_pattern_length(signals, max_length)
-    
+
     # Drop intermediate calculation columns
-    signals = signals.drop(['uptrend', 'pullback', 'up_move'], axis=1)
+    signals = signals.drop(columns=['uptrend', 'pullback', 'up_move'])
 
     return signals
-
 
 
 # Functions from middlehighlowmastrat.py
@@ -1167,34 +1203,56 @@ def calculate_mid_range(price_high, price_low):
     return (price_high + price_low) / 2
 
 def calculate_moving_average(data, length, average_type='simple'):
+    # Ensure data is a numeric 1D Series
+    data = pd.to_numeric(data, errors='coerce').dropna()
+
     if average_type == 'simple':
         return data.rolling(window=length).mean()
     elif average_type == 'exponential':
         return data.ewm(span=length).mean()
     elif average_type == 'weighted':
-        weights = np.arange(1, len(data) + 1)
+        if len(data) < length:
+            return pd.Series(np.nan, index=data.index)  # Prevents short-length errors
+        weights = np.arange(1, length + 1)  # Fix array length
         return data.rolling(window=length).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
     elif average_type == 'wilder':
         return data.ewm(alpha=1/length).mean()
     elif average_type == 'hull':
-        return np.sqrt(data.rolling(window=int(np.sqrt(length))).mean()).ewm(span=int(np.sqrt(length))).mean()
+        sqrt_length = int(np.sqrt(length))  # Ensure valid window size
+        if sqrt_length < 1:
+            return pd.Series(np.nan, index=data.index)
+        return np.sqrt(data.rolling(window=sqrt_length).mean()).ewm(span=sqrt_length).mean()
     else:
         raise ValueError("Invalid average type. Expected one of: 'simple', 'exponential', 'weighted', 'wilder', 'hull'")
 
 def MHLMA_signals(stock_df, length=50, high_low_length=15, average_type='simple'):
     signals = pd.DataFrame(index=stock_df.index)
-    stock_df['MidRange'] = calculate_mid_range(stock_df['High'].rolling(window=high_low_length).max(), 
-                                               stock_df['Low'].rolling(window=high_low_length).min())
+    
+    # Ensure numeric conversion before calculations
+    stock_df[['High', 'Low', 'Close']] = stock_df[['High', 'Low', 'Close']].apply(pd.to_numeric, errors='coerce')
+
+    # Compute MidRange with correct input arguments
+    rolling_high = stock_df['High'].rolling(window=high_low_length).max()
+    rolling_low = stock_df['Low'].rolling(window=high_low_length).min()
+    
+    stock_df['MidRange'] = calculate_mid_range(rolling_high, rolling_low)
+
+    # Ensure MidRange is numeric
+    stock_df['MidRange'] = pd.to_numeric(stock_df['MidRange'], errors='coerce')
+
+    # Compute moving averages
     signals['MA'] = calculate_moving_average(stock_df['Close'], length, average_type)
     signals['MHL_MA'] = calculate_moving_average(stock_df['MidRange'], length, average_type)
     
+    # Generate signals
     signals['MHLMA_signals'] = 0
     signals.loc[signals['MA'] > signals['MHL_MA'], 'MHLMA_signals'] = 1
     signals.loc[signals['MA'] < signals['MHL_MA'], 'MHLMA_signals'] = -1
+
+    # Drop intermediate columns
     signals = signals.drop(['MA'], axis=1)
 
     return signals
-
 
 
 # Functions from momentumle.py
@@ -1578,9 +1636,6 @@ def profit_target_lx_signals(stock_df, target=0.01, offset_type="percent"):
 
     return signals
 
-# %%
-
-
 # Functions from profittargetsx.py
 import pandas as pd
 import numpy as np
@@ -1596,34 +1651,48 @@ def profit_target_SX(df, target=0.75, offset_type='value', tick_size=0.01):
         signals['profit_target_SX_signals'] = np.where(df['Close'].pct_change() <= -target/100, 'Short Exit', signals['profit_target_SX_signals'])  
     return signals
 
-
-
 # Functions from r2trend.py
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
 import statsmodels.api as sm
 
-def calculate_RSquared(df, length=18):
-    if len(df) < length:
+def calculate_RSquared(series, length=18):
+    """Calculate R-Squared of a rolling linear regression."""
+    series = pd.Series(series).dropna()  # Convert to Series and drop NaNs
+
+    if len(series) < length:
         return np.nan  # Prevent errors when there isn't enough data
 
-    X = np.arange(length)
-    X = sm.add_constant(X) 
-    Y = df.tail(length).values
-    model = sm.OLS(Y, X)
+    X = np.arange(length).reshape(-1, 1)  # Ensure X is 1D
+    Y = series.values[-length:].astype(float)  # Ensure Y is numeric
+
+    if len(X) != len(Y):  # Ensure dimensions match
+        return np.nan
+
+    model = sm.OLS(Y, sm.add_constant(X))  # Fit model
     results = model.fit()
     return results.rsquared
 
-def calculate_slope(df, length=18):
-    if len(df) < length:
+
+def calculate_slope(series, length=18):
+    """Calculate the slope of a rolling linear regression."""
+    series = pd.Series(series).dropna()  # Convert to Series and drop NaNs
+
+    if len(series) < length:
         return np.nan  # Prevent errors when there isn't enough data
 
-    X = np.arange(length)
-    Y = df.tail(length).values
-    return linregress(X, Y).slope
+    X = np.arange(length).reshape(-1, 1)  # Ensure X is a 1D array
+    Y = series.values[-length:].astype(float)  # Ensure Y is 1D and numeric
+
+    if len(X) != len(Y):  # Ensure dimensions match
+        return np.nan
+
+    return linregress(X.flatten(), Y).slope  # Ensure 1D input
+
 
 def calculate_moving_average(df, length=18, average_type='simple'):
+    df = pd.to_numeric(df, errors='coerce')  # Ensure numeric data
     if len(df) < length:
         return np.nan  # Prevent errors when there isn't enough data
 
@@ -1638,11 +1707,23 @@ def calculate_moving_average(df, length=18, average_type='simple'):
 
 def r2trend_signals(df, length=18, lag=10, average_length=50, max_level=0.85, lr_crit_level=10, average_type='SIMPLE'):
     signals = pd.DataFrame(index=df.index)
-    signals['RSquared'] = df['Close'].rolling(length).apply(calculate_RSquared, raw=False)
-    signals['slope'] = df['Close'].rolling(length).apply(calculate_slope, raw=False)
+
+    # Ensure Close is numeric before processing
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce').ffill()
+
+    signals['RSquared'] = df['Close'].rolling(length).apply(
+        lambda x: calculate_RSquared(pd.Series(x), length) if len(x) == length else np.nan, raw=False
+    )
+    
+    signals['slope'] = df['Close'].rolling(length).apply(
+        lambda x: calculate_slope(pd.Series(x), length) if len(x) == length else np.nan, raw=False
+    )
 
     # Apply moving average calculation safely
-    signals['ma'] = df['Close'].rolling(average_length).apply(lambda x: calculate_moving_average(pd.Series(x), average_length, average_type), raw=False)
+    signals['ma'] = df['Close'].rolling(average_length).apply(
+        lambda x: calculate_moving_average(pd.Series(x), average_length, average_type) if len(x) == average_length else np.nan,
+        raw=False
+    )
 
     # Fill missing values in ma to prevent NaN comparison errors
     signals['ma'].fillna(method='ffill', inplace=True)
@@ -1654,7 +1735,7 @@ def r2trend_signals(df, length=18, lag=10, average_length=50, max_level=0.85, lr
     cond1 = (signals['RSquared'] > max_level) & \
             (signals['RSquared'] > signals['RSquared_lag']) & \
             (signals['slope'] > lr_crit_level) & \
-            (df['Close'] > signals['ma'])  # Safe comparison
+            (df['Close'] > signals['ma'])
 
     signals.loc[cond1, 'r2trend_signals'] = 1
 
@@ -1662,13 +1743,12 @@ def r2trend_signals(df, length=18, lag=10, average_length=50, max_level=0.85, lr
     cond2 = (signals['RSquared'] > max_level) & \
             (signals['RSquared'] > signals['RSquared_lag']) & \
             (signals['slope'] < -lr_crit_level) & \
-            (df['Close'] < signals['ma'])  # Safe comparison
+            (df['Close'] < signals['ma'])
 
     signals.loc[cond2, 'r2trend_signals'] = -1
     signals.drop(['slope', 'ma', 'RSquared_lag'], axis=1, inplace=True)
 
     return signals
-
 
 
 # Functions from rateofchangewithbandsstrat.py
@@ -1721,24 +1801,28 @@ def rocwb_signals(stock_df, roc_length=14, average_length=9, ema_length=12, num_
     # Return signals DataFrame
     return signals
 
-
-
 # Functions from reverseemastrat.py
 import numpy as np
 import pandas as pd
 
 def reverse_ema(price_series, period):
-    # Z-transform is a signal processing technique to normalize data. 
-    # It's similar to using percentage change in this case.
-    z_price = price_series.pct_change()
-    weights = np.array([a for a in range(1, period+1)])
-    return z_price.rolling(period).apply(lambda prices: np.dot(prices, weights)/weights.sum(), raw=True)
+    """Computes a weighted rolling percentage change (Z-transform)."""
+    price_series = pd.to_numeric(price_series, errors='coerce')  # Ensure numeric
+    z_price = price_series.pct_change()  # Compute percentage change
+    weights = np.arange(1, period + 1)  # Generate weights from 1 to period
+    return z_price.rolling(period).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
 
 def reverse_ema_strat(df, trend_length=39, cycle_length=6):
     signals = pd.DataFrame(index=df.index)
-    signals['trend_ema'] = reverse_ema(df['Close'], period=trend_length)
-    signals['cycle_ema'] = reverse_ema(df['Close'], period=cycle_length)
-    
+
+    # Ensure Close column is numeric
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+
+    # Compute trend and cycle EMAs with correct period passing
+    signals['trend_ema'] = reverse_ema(df['Close'], trend_length)
+    signals['cycle_ema'] = reverse_ema(df['Close'], cycle_length)
+
+    # Generate signals
     signals['buy_to_open'] = np.where((signals['cycle_ema'] > 0) & (signals['trend_ema'] > 0), 1, 0)
     signals['sell_to_close'] = np.where((signals['cycle_ema'] < 0) | (signals['trend_ema'] < 0), -1, 0)
     signals['sell_to_open'] = np.where((signals['cycle_ema'] < 0) & (signals['trend_ema'] < 0), -1, 0)
@@ -1746,10 +1830,14 @@ def reverse_ema_strat(df, trend_length=39, cycle_length=6):
 
     # If there's signal for both actions 'to open' and 'to close',
     # priority is given to 'close' actions
-    signals['reverse_ema_strat_signals'] = np.where((signals['buy_to_open']+signals['sell_to_close'])==0,
-                                 signals['sell_to_open'], signals['buy_to_close'])
+    signals['reverse_ema_strat_signals'] = np.where(
+        (signals['buy_to_open'] + signals['sell_to_close']) == 0,
+        signals['sell_to_open'],
+        signals['buy_to_close']
+    )
 
     return signals['reverse_ema_strat_signals']
+
 
 # Functions from rsistrat.py
 import pandas as pd
@@ -1775,9 +1863,9 @@ def rsi_signals(df, length=14, overbought=70, oversold=30, rsi_average_type='sim
 
 
 # Functions from rsitrend.py
-import pandas as pd
-import numpy as np
 from ta import momentum
+import numpy as np
+import pandas as pd
 from scipy.signal import argrelextrema
 
 # Custom ZigZag Function
@@ -1788,21 +1876,28 @@ def calculate_zigzag(price_series, percentage_reversal=5):
     :param percentage_reversal: Percentage move required to define a ZigZag.
     :return: ZigZag trend values (+1 for peaks, -1 for troughs, 0 otherwise)
     """
+    price_series = pd.to_numeric(price_series, errors='coerce').ffill()  # Ensure numeric and fill NaN
     zigzag = np.zeros(len(price_series))
+
+    if len(price_series) < 5:  # Ensure enough data
+        return zigzag  # Return an array of zeros if not enough data
 
     # Calculate percentage price move
     price_change = price_series.pct_change() * 100
 
-    # Find local maxima (peaks)
-    peaks = argrelextrema(price_series.values, np.greater, order=2)[0]
+    # Set a dynamic `order` value (default 2, but lower for small datasets)
+    order = min(2, len(price_series) // 3)
+
+    # Find local maxima (peaks) with correct comparator
+    peaks = argrelextrema(price_series.values, comparator=np.greater, order=order)[0]
     for peak in peaks:
-        if price_change.iloc[peak] >= percentage_reversal:
+        if peak < len(price_change) and price_change.iloc[peak] >= percentage_reversal:
             zigzag[peak] = 1  # Mark as peak
 
-    # Find local minima (troughs)
-    troughs = argrelextrema(price_series.values, np.less, order=2)[0]
+    # Find local minima (troughs) with correct comparator
+    troughs = argrelextrema(price_series.values, comparator=np.less, order=order)[0]
     for trough in troughs:
-        if abs(price_change.iloc[trough]) >= percentage_reversal:
+        if trough < len(price_change) and abs(price_change.iloc[trough]) >= percentage_reversal:
             zigzag[trough] = -1  # Mark as trough
 
     return zigzag
@@ -1810,7 +1905,7 @@ def calculate_zigzag(price_series, percentage_reversal=5):
 # RSI Trend Strategy with ZigZag
 def rsi_trend_signals(stock_df, length=14, over_bought=70, over_sold=30, percentage_reversal=5, average_type='simple'):
     signals = pd.DataFrame(index=stock_df.index)
-    price = stock_df['Close']
+    price = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()  # Ensure numeric data
 
     # Compute RSI
     if average_type == 'simple':
@@ -1835,27 +1930,44 @@ def rsi_trend_signals(stock_df, length=14, over_bought=70, over_sold=30, percent
 
     return signals
 
-
 # Functions from simplemeanreversion.py
 import pandas as pd
 import numpy as np
 
 def calculate_z_score(series):
-    return (series - series.mean()) / np.std(series)
+    """Calculate the Z-score of a series, ensuring numerical consistency."""
+    series = pd.to_numeric(series, errors='coerce').dropna()  # Convert to numeric and drop NaNs
+    mean = series.mean()
+    std_dev = np.nanstd(series)  # Use nanstd to avoid division errors
+
+    if std_dev == 0:  # Prevent divide-by-zero errors
+        return pd.Series(np.nan, index=series.index)
+
+    return (series - mean) / std_dev
+
 
 def simple_moving_average(series, window):
+    """Compute a simple moving average with error handling."""
+    series = pd.to_numeric(series, errors='coerce').dropna()  # Ensure numeric
     return series.rolling(window).mean()
+
 
 def simple_mean_reversion_signals(stock_df, length=30, fast_length_factor=1, slow_length_factor=10,
                                   z_score_entry_level=1.0, z_score_exit_level=0.5):
 
+    # Ensure Close column is numeric before processing
+    stock_df['Close'] = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()
+
     close_prices = stock_df['Close']
     signals = pd.DataFrame(index=stock_df.index)
-    
+
     # Compute SMA and Z-Score
-    signals['FasterSMA'] = simple_moving_average(close_prices, length * fast_length_factor)
-    signals['SlowerSMA'] = simple_moving_average(close_prices, length * slow_length_factor)
-    signals['zScore'] = calculate_z_score(close_prices)
+    fast_window = max(1, length * fast_length_factor)  # Ensure valid window size
+    slow_window = max(1, length * slow_length_factor)  # Ensure valid window size
+
+    signals['FasterSMA'] = simple_moving_average(close_prices, fast_window)
+    signals['SlowerSMA'] = simple_moving_average(close_prices, slow_window)
+    signals['zScore'] = calculate_z_score(close_prices)  # Now safe to calculate
 
     # Initialize signal column
     signals['simple_mean_reversion_signals'] = 'neutral'
@@ -1964,7 +2076,6 @@ def StiffnessStrat(df, length=84, average_length=20, exit_length=84, num_dev=2, 
     df.loc[df['Sell_Signal'] == 'sell', 'stiffness_strat_signal'] = 'sell'
 
     return df[['stiffness_strat_signal']]
-
 
 
 # Functions from stochastic.py
@@ -2281,6 +2392,8 @@ import numpy as np
 from ta import trend
 
 def calculate_moving_avg(close, length=10, average_type='simple'):
+    close = pd.to_numeric(close, errors='coerce').ffill()  # Ensure numeric data
+
     if average_type == 'simple':
         return close.rolling(window=length).mean()
     elif average_type == 'exponential':
@@ -2294,16 +2407,20 @@ def calculate_moving_avg(close, length=10, average_type='simple'):
 
 def trend_following_signals(stock_df, length=10, average_type='simple', entry_percent=3.0, exit_percent=4.0):
     signals = pd.DataFrame(index=stock_df.index)
-    close = stock_df['Close']
-    moving_avg = calculate_moving_avg(close, length, average_type)
     
+    # Ensure Close column is numeric
+    close = pd.to_numeric(stock_df['Close'], errors='coerce').ffill()
+    
+    # Calculate moving average
+    moving_avg = calculate_moving_avg(close, length, average_type)
+
     # Define conditions
     long_entry = close > moving_avg * (1 + entry_percent / 100)
     long_exit = close < moving_avg * (1 - exit_percent / 100)
     short_entry = close < moving_avg * (1 - entry_percent / 100)
     short_exit = close > moving_avg * (1 + exit_percent / 100)
 
-    # Create two separate signal columns with function name included
+    # Create signal columns
     signals['trend_following_buy_signals'] = 'neutral'
     signals['trend_following_sell_signals'] = 'neutral'
 
@@ -2339,7 +2456,7 @@ def universal_oscillator_strategy(data, cutoff_length=20, mode='reversal'):
     signals.drop(['osc'], axis=1, inplace=True)
     return signals
 
-def ehlers_universal_oscillator(close, cutoff_length):
+def ehlers_universal_oscillator(close, cutoff_length=20):
     alpha = (np.cos(np.sqrt(2) * np.pi / cutoff_length))**2
     beta = 1 - alpha
     a = (1 - beta / 2) * beta
