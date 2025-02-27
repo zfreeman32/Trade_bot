@@ -135,13 +135,3 @@ def generate_all_indicators(df):
         return None
 
     return df
-# %%
-# test
-
-# file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\sampled2k_EURUSD_1min.csv"
-# data=pd.read_csv(file_path, header=0)
-
-# data = generate_all_indicators(data)
-
-# data
-# %%

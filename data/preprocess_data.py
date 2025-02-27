@@ -1,42 +1,28 @@
+#%%
 import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-from features import call_Strategies
-import features.all_indicators as all_indicators
 
 # Generate indicators
-def generate_features(data):
-    df_with_indicators = all_indicators.generate_all_indicators(data)
-
+def clean_data(data):
     # Generate Signals
-    df_strategies = pd.DataFrame(data).reset_index(drop=True)
-    print(df_strategies.head())
+    df = pd.DataFrame(data).reset_index(drop=True)
+    print(df.head())
 
-    # Now pass the DataFrame to the generate_all_signals function
-    df_strategies = call_Strategies.generate_all_signals(df_strategies)
-    df_strategies = df_strategies.drop(['kama_signal'],axis=1)
+    def find_duplicate_columns(df):
+        duplicate_cols = {}
+        cols = df.columns
+        for i in range(len(cols)):
+            for j in range(i + 1, len(cols)):
+                if df[cols[i]].equals(df[cols[j]]):
+                    duplicate_cols[cols[i]] = cols[j]
+        return duplicate_cols
 
-    # Convert columns to string
-    data['Date'] = data['Date'].astype(str)  
-    data['Time'] = data['Time'].astype(str)
-    data['datetime'] = pd.to_datetime(data['Date'] + ' ' + data['Time'], format='%Y%m%d %H:%M:%S')
+    duplicate_cols = find_duplicate_columns(df)
+    print('Duplicate Columns:\n', duplicate_cols)
 
-    # Identify common columns except 'Date'
-    common_cols = [col for col in df_strategies.columns if col in df_with_indicators.columns and col != 'Date']
-
-    # Remove common columns from df2 before merging
-    df_with_indicators = df_with_indicators.drop(columns=common_cols)
-
-    # Then do your merge
-    df_strategies = df_strategies.set_index('Date')
-    df_with_indicators = df_with_indicators.set_index('Date')
-    merged_df = pd.concat([df_strategies, df_with_indicators], axis=1).reset_index()
-    df = pd.DataFrame(merged_df)
-    df = df.loc[:,~df.columns.duplicated()].copy()
-    df['Time'] = pd.to_datetime(df['Time'], format='%H:%M:%S')  # Convert to datetime
-    df['Minutes'] = (df['Time'] - df['Time'].min()).dt.total_seconds() / 60  
-    df.drop(columns=['Time'], inplace=True)
+    df = df.loc[:, ~df.T.duplicated()]
 
     # Identify non-numeric columns
     non_numeric_cols = df.select_dtypes(exclude=['number']).columns
@@ -59,3 +45,15 @@ def generate_features(data):
 
     df.fillna(-9999, inplace=True)
     return df
+
+#%%
+# import pandas as pd
+
+# # File Path should be OHLCV Data
+# file_path = r"C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv"
+
+# # Read CSV into DataFrame
+# df = pd.read_csv(file_path, header=0)
+# strat_df = clean_data(df)
+# strat_df
+# %%
