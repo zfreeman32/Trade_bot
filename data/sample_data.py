@@ -1,14 +1,11 @@
 #%%
-import pandas as pd
-
-#%%
 # File paths
 import pandas as pd
 
 # File paths
 input_file = r"C:\Users\zebfr\Documents\All_Files\TRADING\EURUSD_full_1min.txt"
 output_file = "EURUSD_1min_sampled.csv"
-num_lines = 30_000  # Number of lines to sample
+num_lines = 500_000  # Number of lines to sample
 
 # Define column names
 column_names = ["Date", "Time", "Open", "High", "Low", "Close", "Volume"]
