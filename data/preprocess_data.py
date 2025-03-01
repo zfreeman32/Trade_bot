@@ -3,6 +3,7 @@ import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from scipy import stats
 
 # Generate indicators
 def clean_data(data):
@@ -43,7 +44,15 @@ def clean_data(data):
         df[col] = le.fit_transform(df[col]) 
         label_encoders[col] = le 
 
-    df.fillna(-9999, inplace=True)
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    # Then use appropriate imputation per feature
+    for col in numeric_cols:
+        if df[col].isna().sum() > 0:
+            # Use median for skewed distributions
+            if abs(stats.skew(df[col].dropna())) > 1:
+                df[col] = df[col].fillna(df[col].median())
+            else:
+                df[col] = df[col].fillna(df[col].mean())
     return df
 
 #%%
