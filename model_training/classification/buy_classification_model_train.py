@@ -366,16 +366,19 @@ early_stopper = EarlyStopper(baseline=0.65)  # Stop if accuracy below 65% after 
 #----------------------- ROBUST PROCESSING -----------------------#
 def robust_preprocessing(X_train, X_test, threshold=10.0):
     """
-    Apply robust preprocessing to prevent NaNs during training
+    Apply robust preprocessing to prevent NaNs during training for 3D time series data
     
     Args:
-        X_train: Training data
-        X_test: Test data
+        X_train: Training data with shape (samples, timesteps, features)
+        X_test: Test data with shape (samples, timesteps, features)
         threshold: Capping value for extreme values
         
     Returns:
         Processed X_train, X_test
     """
+    # Get shapes
+    n_samples_train, n_timesteps, n_features = X_train.shape
+    
     # Replace NaNs with zeros
     X_train = np.nan_to_num(X_train, nan=0.0, posinf=threshold, neginf=-threshold)
     X_test = np.nan_to_num(X_test, nan=0.0, posinf=threshold, neginf=-threshold)
@@ -387,16 +390,21 @@ def robust_preprocessing(X_train, X_test, threshold=10.0):
         X_train = np.clip(X_train, -threshold, threshold)
         X_test = np.clip(X_test, -threshold, threshold)
     
-    # Check for constant features (can cause division by zero in normalization)
-    std_per_feature = np.std(X_train, axis=0)
+    # Check for constant features across all timesteps
+    # Reshape to 2D temporarily for easier analysis
+    X_train_reshaped = X_train.reshape(-1, n_features)
+    std_per_feature = np.std(X_train_reshaped, axis=0)
     constant_features = np.where(std_per_feature < 1e-10)[0]
+    
     if len(constant_features) > 0:
         print(f"Warning: {len(constant_features)} constant features detected. Adding small noise...")
         for idx in constant_features:
-            X_train[:, idx] += np.random.normal(0, 1e-6, size=X_train.shape[0])
+            # Add tiny noise to each sample's feature, across all timesteps
+            noise = np.random.normal(0, 1e-6, size=(n_samples_train, n_timesteps))
+            # Ensure noise is properly broadcast to the right dimension (samples, timesteps)
+            X_train[:, :, idx] += noise
     
     return X_train, X_test
-
 # Use this instead of your current preprocessing
 train_X, test_X = robust_preprocessing(train_X, test_X)
 
