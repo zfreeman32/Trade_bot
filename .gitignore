@@ -3,3 +3,5 @@ __pycache__
 .vscode
 .env
 *.csv
+EURUSD_full_30min.txt
+EURUSD_full_1min.txt

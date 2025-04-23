@@ -2749,3 +2749,45 @@ def day_of_the_week(df):
     days_df = pd.DataFrame({'day_of_week': day_numbers}, index=df_copy.index)
     return days_df
 
+#%% 
+# MARKET MICROSTRUCTURE
+def market_microstructure(data):
+    signals = pd.DataFrame(index=data.index)
+
+    # 1. Approximate bid-ask spread using high-low range
+    signals['approx_spread'] = data['High'] - data['Low']
+    signals['relative_spread'] = data['approx_spread'] / data['Close'] * 100  # as percentage
+
+    # 2. Volatility measures
+    signals['intraday_volatility'] = data['High'] / data['Low'] - 1
+    signals['gap_volatility'] = abs(data['Open'] / data['Close'].shift(1) - 1)
+
+    # 3. Price impact indicators
+    signals['volume_price_impact'] = (data['Close'] - data['Open']) / (data['Volume'] + 1)  # +1 to avoid div by zero
+    signals['dollar_volume'] = data['Close'] * data['Volume']
+
+    # 4. Order flow imbalance proxy (based on close position within high-low range)
+    signals['close_loc'] = (data['Close'] - data['Low']) / data['approx_spread'].replace(0, np.nan)
+    signals['close_loc'] = data['close_loc'].fillna(0.5)  # Default to middle when high=low
+
+    # 5. Liquidity indicators
+    signals['amihud_illiquidity'] = abs(data['Close'] / data['Close'].shift(1) - 1) / (data['Volume'] + 1)
+    signals['kyle_lambda'] = abs(data['Close'] - data['Open']) / data['Volume'].replace(0, np.nan)
+    signals['kyle_lambda'] = data['kyle_lambda'].fillna(0)
+
+    # 6. Order flow toxicity proxy (based on price movement and volume)
+    signals['order_toxicity'] = data['Close'].diff() * data['Volume'] / data['Close']
+
+    # 7. Intraday momentum
+    signals['intraday_momentum'] = data['Close'] / data['Open'] - 1
+
+    # 8. Market efficiency coefficient (ratio of variance of returns to variance of price changes)
+    # Using a rolling window
+    returns = data['Close'].pct_change(1)
+    log_returns = np.log(data['Close'] / data['Close'].shift(1))
+    signals['market_efficiency'] = (log_returns.rolling(10).std() / returns.rolling(10).std()).replace([np.inf, -np.inf], np.nan).fillna(0)
+
+    # 10. Trading intensity
+    signals['trading_intensity'] = data['Volume'] / (data['High'] - data['Low'] + 0.001)  # Avoid div by zero
+
+    return signals

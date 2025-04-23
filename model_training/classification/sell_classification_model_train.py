@@ -1,18 +1,14 @@
-# %%
+#%% Import Libraries
 import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import TimeSeriesSplit, train_test_split
 from sklearn.preprocessing import RobustScaler
-from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
 import keras_tuner as kt
 import tensorflow as tf
-import shap
 from sklearn.utils.class_weight import compute_class_weight
 from numpy.lib.stride_tricks import sliding_window_view
-from imblearn.over_sampling import SMOTE
 from data import preprocess_data
 # Import all classification models
 from classification_model_build import (
@@ -32,8 +28,6 @@ seed = 42
 np.random.seed(seed)
 tf.random.set_seed(seed)
 
-MODEL_TYPE = "LSTM"  # Options: LSTM, GRU, Conv1D, Conv1D_LSTM, BiLSTM_Attention, Transformer, MultiStream, ResNet, TCN
-
 # Dictionary of model builders
 MODEL_BUILDERS = {
     "LSTM": build_LSTM_classifier,
@@ -47,25 +41,28 @@ MODEL_BUILDERS = {
     "TCN": build_TCN_classifier
 }
 
-# %%
-# Classification training
-file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
-print(f"Loading data from {file_path}...")
-data = pd.read_csv(file_path, header=0)
+#%% SET VARIABLES
+#----------------------- SET VARIABLES -----------------------#
+target_col = 'short_signal'
+raw_data = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
+# .txt file with Important Features list from Feature Importance Study
+important_features_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\short_signal_important_features.txt'
+# List of most important Lags from Feature Importance Study
+lag_list = [70, 24, 10, 74, 39]
+results_file_path = "sell_class_model_training_results.txt"
 
-# Optional: Use subset for faster testing
-data = data.tail(1000)
-print(f"Using {len(data)} rows of data")
-
-# Preprocess the data
+# %% LOAD DATA
+#----------------------- LOAD DATA -----------------------#
+print("Loading Data...")
+print(f"Loading data from {raw_data}...")
+data = pd.read_csv(raw_data, header=0)
 print("Preprocessing data...")
 data = preprocess_data.clean_data(data)
 
-#----------------------- ADD THESE SECTIONS -----------------------#
-
-# 1. HANDLE VOLUME-BASED FEATURES WITH HIGH OUTLIERS
+#%% Transform Volume Based Features
+#----------------------- Transform Volume Based Features -----------------------#
 print("Transforming volume-based features...")
-volume_cols = ['Volume', 'vol_av', 'vol_last_av', 'vol_ratio_av', 'rolling_volume', 'norm_vol']
+volume_cols = ['Volume']
 
 for col in volume_cols:
     if col in data.columns:
@@ -79,16 +76,15 @@ for col in volume_cols:
         # Rank transform (completely resistant to outliers)
         data[f'{col}_rank'] = data[col].rank(pct=True)
 
-# 2. ADD LAG FEATURES BASED ON PERIODIC PATTERNS
+#%% ADD LAG FEATURES
+#----------------------- ADD LAG FEATURES -----------------------#
 print("Adding lag features...")
-target_col = 'short_signal'
-lag_list = [70, 24, 29, 34, 39]  # Based on your analysis
 
 for lag in lag_list:
     data[f'{target_col}_lag_{lag}'] = data[target_col].shift(lag)
     
     # Also add lagged versions of key technical indicators
-    for indicator in ['RSI', 'CCI', 'EFI']:
+    for indicator in ['RSI', 'CCI', 'EFI', 'CMO', 'ROC', 'ROCR']:
         if indicator in data.columns:
             data[f'{indicator}_lag_{lag}'] = data[indicator].shift(lag)
 
@@ -96,22 +92,16 @@ for lag in lag_list:
 data['target_lag_mean'] = data[[f'{target_col}_lag_{lag}' for lag in lag_list]].mean(axis=1)
 data['target_lag_std'] = data[[f'{target_col}_lag_{lag}' for lag in lag_list]].std(axis=1)
 
-# 3. FEATURE SELECTION BASED ON IMPORTANCE
+#%% FEATURE SELECTION
+#----------------------- FEATURE SELECTION -----------------------#
 print("Performing feature selection...")
-# Load pre-computed feature importance if available, otherwise use basic selection
-# This is based on your analysis results.txt
-important_features = [
-    'bb_short_entry_signal', 'stiffness_strat_sell_signal', 'moving_average_buy_signal',
-    'Bullish', 'EFI', 'CCI', 'RSI', 'ROC', 'Offset', 'PLUS_DM', 'WILLR', 'vol_ratio_av',
-    'price_range', 'ATR', 'MOM', 'Volume', 'Volume_log', 'Volume_winsor', 'Volume_rank'
-]
+with open(important_features_path, 'r') as f:
+    important_features = [line.strip() for line in f.readlines()]
+
 # Add the lag features we created
 important_features.extend([f'{target_col}_lag_{lag}' for lag in lag_list])
 important_features.extend(['target_lag_mean', 'target_lag_std'])
-
-# Keep only important features + any new transformed features
 all_cols = list(data.columns)
-# Add any transformed/new features we created above
 for col in all_cols:
     if '_log' in col or '_winsor' in col or '_rank' in col or 'lag_' in col:
         if col not in important_features:
@@ -125,17 +115,18 @@ data = data[keep_cols]
 # Fill any missing values in lag features
 data = data.fillna(method='bfill').fillna(method='ffill')
 
-#----------------------- END OF ADDITIONS -----------------------#
-
 # Split features and target
-features = data.drop(columns=['long_signal', 'short_signal', 'close_position'])  # All features except targets
-target = data[['short_signal']]  # Target is 'short_signal'
+columns_to_drop = ['long_signal', 'short_signal', 'close_position']
+features = data.drop(columns=columns_to_drop)  # All features except targets
+target = data[target_col]
 
 # Ensure target is categorical (0 or 1)
 target = target.astype(int)
 
-# Compute **class weights** dynamically
-classes = np.array([0, 1])  # No-signal vs. short-signal
+#%% COMPUTE CLASS WEIGHT
+#----------------------- COMPUTE CLASS WEIGHT -----------------------#
+print("Getting Class Weights...")
+classes = np.array([0, 1]) 
 class_weights = compute_class_weight(
     class_weight="balanced",
     classes=classes,
@@ -145,7 +136,9 @@ class_weights = compute_class_weight(
 class_weight_dict = {int(cls): float(weight) for cls, weight in zip(classes, class_weights)}
 print(f"Computed class weights: {class_weight_dict}")
 
-# Configuration for window size
+#%% BATCHING DATA
+#----------------------- BATCHING DATA -----------------------#
+print("Create Sliding Window...")
 n_in = 240  # Number of past observations (lookback window)
 n_features = features.shape[1]  # Number of feature columns
 
@@ -156,12 +149,90 @@ print(f"Using lookback window of {n_in} timesteps")
 print("Creating sliding windows...")
 features_array = sliding_window_view(features.values, n_in, axis=0)
 
-# Match target with end of window
-target_array = target.values[n_in-1:]  # Target at the end of each window
-features_array = features_array[:len(target_array)]  # Trim features to match target length
+features_array = sliding_window_view(features.values, n_in, axis=0)
+target_array = target.values[n_in-1:]
+features_array = features_array[:len(target_array)]
 
-# Handle NaN and Inf values
-features_array = np.where(np.isinf(features_array), np.nan, features_array)
+def create_time_series_generator(features, targets, window_size, batch_size=64, shuffle=False):
+    """Memory-efficient generator for time series data"""
+    data_len = len(features)
+    indices = np.arange(window_size, data_len)
+    
+    while True:
+        if shuffle:
+            np.random.shuffle(indices)
+        
+        for start_idx in range(0, len(indices), batch_size):
+            batch_indices = indices[start_idx:start_idx + batch_size]
+            batch_x = np.array([features[i-window_size:i].values for i in batch_indices])
+            batch_y = np.array(targets.iloc[batch_indices].values)
+            
+            yield batch_x, batch_y
+
+def calculate_robust_batch_size_for_large_dataset(data_length, window_size, gpu_memory_gb=None):
+    """
+    Calculate an appropriate batch size for very large datasets
+    
+    Args:
+        data_length: Length of dataset
+        window_size: Size of lookback window
+        gpu_memory_gb: GPU memory in GB (if known)
+    
+    Returns:
+        batch_size: Calculated batch size
+        steps_per_epoch: Number of steps per epoch
+    """
+    # Available samples after windowing
+    available_samples = data_length - window_size
+    
+    if gpu_memory_gb is not None:
+        # With known GPU memory, we can be more precise
+        # Rule of thumb: each sample takes ~feature_count*window_size*4 bytes (float32)
+        # Allow only 70% of GPU memory for batches to leave room for model
+        feature_count = n_features
+        bytes_per_sample = feature_count * window_size * 4
+        max_samples_in_memory = int(0.7 * gpu_memory_gb * 1e9 / bytes_per_sample)
+        batch_size = min(512, max_samples_in_memory)
+    else:
+        # Conservative default for large datasets
+        batch_size = 256
+    
+    # Calculate steps per epoch - for large datasets, we might not want to use all data in each epoch
+    # Using approximately 100,000 samples per epoch is reasonable for most models
+    target_samples_per_epoch = min(100000, available_samples)
+    steps_per_epoch = target_samples_per_epoch // batch_size
+    
+    # Ensure at least 50 steps per epoch for stable training
+    if steps_per_epoch < 50 and available_samples > 50 * batch_size:
+        steps_per_epoch = 50
+    
+    print(f"Dataset size: {data_length:,} samples")
+    print(f"Using batch size: {batch_size}, with {steps_per_epoch} steps per epoch")
+    print(f"Each epoch will use {batch_size * steps_per_epoch:,} samples ({batch_size * steps_per_epoch / available_samples:.1%} of available data)")
+    
+    return batch_size, steps_per_epoch
+
+# Define split point (80% train, 20% test)
+split_idx = int(len(features) * 0.8)
+print(f"Training set: {split_idx:,} samples, Test set: {len(features) - split_idx:,} samples")
+
+# Calculate robust batch sizes for very large dataset
+# If you know your GPU memory, specify it for better optimization
+train_batch_size, train_steps = calculate_robust_batch_size_for_large_dataset(
+    split_idx, n_in, gpu_memory_gb=8)
+test_batch_size, val_steps = calculate_robust_batch_size_for_large_dataset(
+    len(features) - split_idx, n_in, gpu_memory_gb=8)
+
+# Create generators with calculated batch sizes
+train_generator = create_time_series_generator(
+    features[:split_idx], target[:split_idx], n_in, batch_size=train_batch_size, shuffle=False)
+test_generator = create_time_series_generator(
+    features[split_idx:], target[split_idx:], n_in, batch_size=test_batch_size, shuffle=False)
+
+#%% HANDLE MISSING AND INF VALUES
+#----------------------- HANDLE MISSING AND INF VALUES -----------------------#
+print("Handling NaN and Inf values...")
+features_array = np.where(np.isinf(features_array), 0, features_array)
 if np.isnan(features_array).sum() > 0:
     print(f"Warning: Found {np.isnan(features_array).sum()} NaN values. Replacing with column means.")
     # Reshape to 2D for easier preprocessing
@@ -179,47 +250,35 @@ if np.isnan(features_array).sum() > 0:
 print(f"Window data shape: {features_array.shape}")
 print(f"Target data shape: {target_array.shape}")
 
-# Train-test split (maintain time sequence)
+#%% SPLIT DATASET
+#----------------------- SPLIT DATASET -----------------------#
+# 7. Train-test split (maintain time sequence)
 print("Splitting data into train and test sets...")
-train_X, test_X, train_y, test_y = train_test_split(
-    features_array, target_array, test_size=0.2, random_state=seed, shuffle=False
-)
+train_features, test_features, train_target, test_target = train_test_split(
+    features, target, test_size=0.2, random_state=seed, shuffle=False)
 
+#%% SCALE FEATURES
+#----------------------- SCALE FEATURES -----------------------#
 print("Scaling features...")
 
-# Reshape to 2D for scaling
+train_X = sliding_window_view(train_features.values, n_in, axis=0)
+train_y = train_target.values[n_in-1:]
+train_X = train_X[:len(train_y)]
+
+# Create windows for test data
+test_X = sliding_window_view(test_features.values, n_in, axis=0)
+test_y = test_target.values[n_in-1:]
+test_X = test_X[:len(test_y)]
+
+# Now scale, fitting scaler ONLY on training data
+scaler = RobustScaler(quantile_range=(10.0, 90.0))
 train_X_2d = train_X.reshape(-1, n_features)
-
-# Check for infinity or NaN values before scaling
-if np.isinf(train_X_2d).any() or np.isnan(train_X_2d).any():
-    print("Warning: Found Inf or NaN values in training data before scaling. Replacing...")
-    train_X_2d = np.nan_to_num(train_X_2d, nan=0.0, posinf=0.0, neginf=0.0)
-
-# Use RobustScaler and fit on training data only
-scaler = RobustScaler(quantile_range=(5.0, 95.0))  # More robust to outliers
 train_X_2d = scaler.fit_transform(train_X_2d)
-
-# Cap extreme values after scaling
-train_X_2d = np.clip(train_X_2d, -10, 10)
-
-# Reshape back to 3D
 train_X = train_X_2d.reshape(train_X.shape)
 
-# Apply same scaling to test data
+# Apply the already-fitted scaler to test data
 test_X_2d = test_X.reshape(-1, n_features)
-
-# Replace any Inf/NaN values in test data
-if np.isinf(test_X_2d).any() or np.isnan(test_X_2d).any():
-    print("Warning: Found Inf or NaN values in test data before scaling. Replacing...")
-    test_X_2d = np.nan_to_num(test_X_2d, nan=0.0, posinf=0.0, neginf=0.0)
-
-# Transform test data using fitted scaler
 test_X_2d = scaler.transform(test_X_2d)
-
-# Cap extreme values in test data too
-test_X_2d = np.clip(test_X_2d, -10, 10)
-
-# Reshape back to 3D
 test_X = test_X_2d.reshape(test_X.shape)
 
 # Check data stats after scaling
@@ -235,205 +294,461 @@ print(f"Training data stats after scaling and capping: {train_X_stats}")
 train_y = train_y.flatten()
 test_y = test_y.flatten()
 
+#%% ADD FOCAL LOSS FOR NEURAL NETWORKS
 #----------------------- ADD FOCAL LOSS FOR NEURAL NETWORKS -----------------------#
-# Define a focal loss function for neural network training
 def focal_loss(gamma=2.0, alpha=0.25):
     def focal_loss_fn(y_true, y_pred):
-        # Clip prediction values to avoid log(0) error - use smaller epsilon
-        epsilon = 1e-7
+        epsilon = 1e-7  # Prevent log(0)
         y_pred = tf.clip_by_value(y_pred, epsilon, 1.0 - epsilon)
         
-        # Convert data types to float32 to ensure numerical stability
         y_true = tf.cast(y_true, tf.float32)
         y_pred = tf.cast(y_pred, tf.float32)
-        
-        # Binary cross entropy
+
         cross_entropy = -y_true * tf.math.log(y_pred) - (1 - y_true) * tf.math.log(1 - y_pred)
-        
-        # Focal scaling factor with safe calculations
+
         p_t = tf.where(tf.equal(y_true, 1.0), y_pred, 1.0 - y_pred)
         alpha_factor = tf.where(tf.equal(y_true, 1.0), alpha, 1.0 - alpha)
         modulating_factor = tf.pow(1.0 - p_t, gamma)
-        
-        # Calculate focal loss
+
         loss = alpha_factor * modulating_factor * cross_entropy
         
-        # Add a small constant to prevent complete zeros
+        # Add small constant to prevent complete zero gradients
         loss = loss + 1e-8
-        
-        # Return mean of loss to reduce to a scalar
+
+        # Replace NaNs with zero loss (prevents exploding loss)
+        loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)
+
         return tf.reduce_mean(loss)
-    
+
     return focal_loss_fn
 
+#%% CALLBACK METHODS
+#----------------------- CALLBACK METHODS -----------------------#
 nan_callback = tf.keras.callbacks.TerminateOnNaN()
-#----------------------- END OF ADDITIONS -----------------------#
+early_stopping_callback = tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss',
+    patience=5,
+    restore_best_weights=True,
+    min_delta=0.001  # Minimum change to count as improvement
+)
 
-# %%
-# Set up the model tuner
-print(f"Setting up {MODEL_TYPE} model for hyperparameter tuning...")
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.2,
+    patience=5,  # Increased patience since we have warm-up
+    min_lr=1e-6
+)
 
-try:
-    # Create the tuner using the selected model
-    model_builder = MODEL_BUILDERS[MODEL_TYPE]
+def lr_schedule(epoch, lr):
+    if epoch < 3:  # Warm-up phase
+        return lr * 1.1  # Gradually increase LR during warm-up
+    return lr
     
-    # Custom builder that incorporates focal loss
-    def custom_model_builder(hp):
-        # Get the base model
-        model = model_builder(hp, num_classes=2)
+lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
+
+class EarlyStopper(tf.keras.callbacks.Callback):
+    def __init__(self, baseline=0.8, min_epoch=5):
+        super(EarlyStopper, self).__init__()
+        self.baseline = baseline
+        self.min_epoch = min_epoch
+    
+    def on_epoch_end(self, epoch, logs=None):
+        # Only check after minimum epochs
+        if epoch >= self.min_epoch:
+            current = logs.get('val_accuracy')
+            if current < self.baseline:
+                print(f"\nStopping trial: val_accuracy {current} below threshold {self.baseline}")
+                self.model.stop_training = True
+
+early_stopper = EarlyStopper(baseline=0.65)  # Stop if accuracy below 65% after 5 epochs
+
+#%% ROBUST PROCESSING
+#----------------------- ROBUST PROCESSING -----------------------#
+def robust_preprocessing(X_train, X_test, threshold=10.0):
+    """
+    Apply robust preprocessing to prevent NaNs during training for 3D time series data
+    
+    Args:
+        X_train: Training data with shape (samples, timesteps, features)
+        X_test: Test data with shape (samples, timesteps, features)
+        threshold: Capping value for extreme values
         
-        # Get optimizer with gradient clipping - choose only one clipping method
-        optimizer = tf.keras.optimizers.Adam(
-            learning_rate=hp.Float("learning_rate", min_value=1e-5, max_value=1e-3, sampling="log"),
-            clipnorm=1.0  # Keep only this clipping method and remove clipvalue
-        )
-        
-        # Recompile with focal loss and robust optimizer
-        model.compile(
-            optimizer=optimizer,
-            loss=focal_loss(
-                gamma=hp.Float("focal_gamma", min_value=0.5, max_value=5.0, step=0.5, default=2.0),
-                alpha=hp.Float("focal_alpha", min_value=0.1, max_value=0.9, step=0.1, default=0.25)
-            ),
-            metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), 
-                    tf.keras.metrics.AUC()]
-        )
-        
-        return model
+    Returns:
+        Processed X_train, X_test
+    """
+    # Get shapes
+    n_samples_train, n_timesteps, n_features = X_train.shape
+    
+    # Replace NaNs with zeros
+    X_train = np.nan_to_num(X_train, nan=0.0, posinf=threshold, neginf=-threshold)
+    X_test = np.nan_to_num(X_test, nan=0.0, posinf=threshold, neginf=-threshold)
+    
+    # Check if we have extreme values
+    train_max = np.max(np.abs(X_train))
+    if train_max > threshold:
+        print(f"Warning: Extreme values detected ({train_max:.2f}). Clipping to ±{threshold}...")
+        X_train = np.clip(X_train, -threshold, threshold)
+        X_test = np.clip(X_test, -threshold, threshold)
+    
+    # Check for constant features across all timesteps
+    # Reshape to 2D temporarily for easier analysis
+    X_train_reshaped = X_train.reshape(-1, n_features)
+    std_per_feature = np.std(X_train_reshaped, axis=0)
+    constant_features = np.where(std_per_feature < 1e-10)[0]
+    
+    if len(constant_features) > 0:
+        print(f"Warning: {len(constant_features)} constant features detected. Adding small noise...")
+        for idx in constant_features:
+            # Add tiny noise to each sample's feature, across all timesteps
+            noise = np.random.normal(0, 1e-6, size=(n_samples_train, n_timesteps))
+            # Ensure noise is properly broadcast to the right dimension (samples, timesteps)
+            X_train[:, :, idx] += noise
+    
+    return X_train, X_test
+# Use this instead of your current preprocessing
+train_X, test_X = robust_preprocessing(train_X, test_X)
 
-    # 4. Data preprocessing fixes - check for extreme values
-    # Check for extreme values in your scaled data
-    train_X_stats = {
-        'min': np.min(train_X),
-        'max': np.max(train_X),
-        'mean': np.mean(train_X),
-        'std': np.std(train_X)
-    }
-    print(f"Training data stats after scaling: {train_X_stats}")
-
-    # If values are extreme, consider capping them
-    if train_X_stats['max'] > 10 or train_X_stats['min'] < -10:
-        print("Warning: Extreme values detected in scaled training data. Capping values...")
-        train_X = np.clip(train_X, -10, 10)
-        test_X = np.clip(test_X, -10, 10)
-
-    # 5. Updated callbacks with NaN detection
-    # Define single consolidated callbacks list
-    callbacks = [
-        tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss',
-            patience=5,
-            restore_best_weights=True
-        ),
-        tf.keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss',
-            factor=0.2,
-            patience=3,
-            min_lr=1e-6
-        ),
-        nan_callback  # Add NaN detection
-    ]
-
-    # Set up the hyperparameter tuner
-    tuner = kt.Hyperband(
-        hypermodel=custom_model_builder,
-        objective='val_loss',
-        max_epochs=50,
-        factor=3,
-        hyperband_iterations=1,
-        directory='models_dir',
-        project_name=f'{MODEL_TYPE}_Enhanced_Classification',
-        overwrite=True,  # Start fresh
-        executions_per_trial=1,
-    )
-
-    # Start hyperparameter search
-    print("Starting hyperparameter search...")
-
-    tuner.search(
-        train_X, train_y,
-        epochs=10,  # Limited epochs for tuning
+#%% PROGRESSIVE TRAINING
+#----------------------- PROGRESSIVE TRAINING -----------------------#
+def implement_progressive_training(model_builder, hp, train_X, train_y, test_X, test_y, 
+                                   train_generator, test_generator, steps_per_epoch, validation_steps,
+                                   callbacks, class_weight_dict, model_name):
+    """
+    Implement progressive training approach:
+    1. First train on a smaller subset of data
+    2. Then fine-tune on the full dataset
+    
+    Returns:
+        Trained model
+    """
+    print(f"\n⚙️ Implementing progressive training for {model_name}...")
+    
+    # Phase 1: Initial training on smaller subset
+    # Use 20% of training data for initial phase
+    subset_size = len(train_X) // 5
+    print(f"Phase 1: Training on {subset_size:,} samples ({subset_size/len(train_X):.1%} of training data)")
+    
+    # Build model with the given hyperparameters
+    model = model_builder(hp)
+    
+    # Initial training phase - train on subset
+    initial_history = model.fit(
+        train_X[:subset_size], train_y[:subset_size],
+        epochs=15, 
         batch_size=64,
         validation_data=(test_X, test_y),
         callbacks=callbacks,
         class_weight=class_weight_dict,
-        verbose=1  # Add verbosity to see progress
-    )
-
-    # Get the best hyperparameters and model
-    print("Hyperparameter search complete. Getting best model...")
-    best_hp = tuner.get_best_hyperparameters(1)[0]
-    best_model = tuner.get_best_models(1)[0]
-
-    # Print best hyperparameters
-    print("\nBest Hyperparameters:")
-    for param in best_hp.values:
-        print(f"- {param}: {best_hp.values[param]}")
-
-    # Evaluate the model
-    print("\nEvaluating best model on test data...")
-    evaluation = best_model.evaluate(test_X, test_y, verbose=1)
-    
-    # Print metrics
-    metrics = best_model.metrics_names
-    print("\nTest Metrics:")
-    for i, metric in enumerate(metrics):
-        print(f"{metric}: {evaluation[i]:.4f}")
-
-    # Train the final model using the best hyperparameters
-    print("\nTraining final model with best hyperparameters...")
-    history = best_model.fit(
-        train_X, train_y,
-        epochs=50,
-        batch_size=64,
-        validation_data=(test_X, test_y),
-        verbose=1,
-        callbacks=callbacks,
-        class_weight=class_weight_dict
+        verbose=1
     )
     
-    #----------------------- ADD FEATURE IMPORTANCE ANALYSIS -----------------------#
-    # After training, analyze feature importance (for interpretability)
-    print("\nAnalyzing feature importance using SHAP values...")
+    print(f"Phase 1 completed. Initial validation metrics:")
+    initial_eval = model.evaluate(test_X, test_y, verbose=0)
+    for i, metric_name in enumerate(model.metrics_names):
+        print(f"- {metric_name}: {initial_eval[i]:.4f}")
     
-    # Need to flatten the input for SHAP to understand it
-    X_sample = test_X[:100].reshape(100, -1)  # Take a sample for efficiency
+    # Phase 2: Full dataset fine-tuning
+    print(f"\nPhase 2: Fine-tuning on full dataset ({len(train_X):,} samples)")
     
-    try:
-        # Create explainer - choose appropriate one based on model type
-        if MODEL_TYPE in ["RandomForest", "XGBoost", "GradientBoosting", "LightGBM", "CatBoost"]:
-            explainer = shap.TreeExplainer(best_model)
+    # Reduce learning rate for fine-tuning phase
+    K = tf.keras.backend
+    current_lr = K.get_value(model.optimizer.learning_rate)
+    K.set_value(model.optimizer.learning_rate, current_lr * 0.5)
+    print(f"Reducing learning rate from {current_lr:.6f} to {current_lr * 0.5:.6f} for fine-tuning")
+    
+    # Fine-tuning on the full dataset - can use generator for memory efficiency
+    if steps_per_epoch is not None and train_generator is not None:
+        print("Using generator for fine-tuning phase")
+        final_history = model.fit(
+            train_generator,
+            steps_per_epoch=steps_per_epoch,
+            epochs=35,
+            validation_data=test_generator,
+            validation_steps=validation_steps,
+            callbacks=callbacks,
+            class_weight=class_weight_dict,
+            verbose=1
+        )
+    else:
+        # Fall back to regular training if generator not provided
+        print("Using full dataset for fine-tuning phase")
+        final_history = model.fit(
+            train_X, train_y,
+            epochs=35,
+            batch_size=64,
+            validation_data=(test_X, test_y),
+            callbacks=callbacks,
+            class_weight=class_weight_dict,
+            verbose=1
+        )
+    
+    print(f"Phase 2 completed. Final validation metrics:")
+    final_eval = model.evaluate(test_X, test_y, verbose=0)
+    for i, metric_name in enumerate(model.metrics_names):
+        print(f"- {metric_name}: {final_eval[i]:.4f}")
+    
+    # Compare before and after fine-tuning
+    print("\nImprovement from progressive training:")
+    for i, metric_name in enumerate(model.metrics_names):
+        diff = final_eval[i] - initial_eval[i]
+        if 'loss' in metric_name:
+            # For loss, lower is better
+            print(f"- {metric_name}: {initial_eval[i]:.4f} → {final_eval[i]:.4f} ({diff:.4f})")
         else:
-            # For deep learning models, use DeepExplainer or GradientExplainer
-            background = train_X[:100].reshape(100, -1)  # Small background dataset
-            explainer = shap.DeepExplainer(best_model, background)
-        
-        # Calculate SHAP values
-        shap_values = explainer.shap_values(X_sample)
-        
-        # Get feature names
-        feature_names = []
-        for f in important_features:
-            for i in range(n_in):
-                feature_names.append(f"{f}_t-{n_in-i}")
-        
-        # Show top important features based on SHAP values
-        shap_importance = np.abs(shap_values).mean(axis=0)
-        top_indices = np.argsort(shap_importance)[-20:]  # Top 20 features
-        
-        print("\nTop 20 important features based on SHAP values:")
-        for i in reversed(top_indices):
-            if i < len(feature_names):
-                print(f"{feature_names[i]}: {shap_importance[i]:.4f}")
+            # For accuracy, AUC, etc., higher is better
+            print(f"- {metric_name}: {initial_eval[i]:.4f} → {final_eval[i]:.4f} (+{diff:.4f})")
     
+    return model, final_history
+
+#%% MODEL TRAINING
+#----------------------- MODEL TRAINING -----------------------#
+print(f"Setting up models for hyperparameter tuning...")
+
+# Open the log file to store results
+with open(results_file_path, "w") as log_file:
+    log_file.write("Hyperparameter Tuning and Training Results\n")
+    log_file.write("=" * 80 + "\n\n")
+
+for model_name, model_builder in MODEL_BUILDERS.items():
+    print(f"\n\n🚀 Training model: {model_name}")
+    try:
+        # Custom builder that incorporates focal loss
+        def custom_model_builder(hp):
+            model = model_builder(hp, num_classes=2)
+            optimizer = tf.keras.optimizers.Adam(
+                hp.Float("learning_rate", min_value=1e-6, max_value=5e-4, sampling="log"),
+                clipvalue=1.0  # Clip gradients to avoid exploding values
+            )
+            model.compile(
+                optimizer=optimizer,
+                loss=focal_loss(
+                    gamma=hp.Float("focal_gamma", min_value=1.0, max_value=3.0, step=0.5, default=2.0),
+                    alpha=hp.Float("focal_alpha", min_value=0.1, max_value=0.9, step=0.1, default=0.25)
+                ),
+                metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.AUC()]
+            )
+            return model
+
+        train_X = np.nan_to_num(train_X, nan=0.0, posinf=0.0, neginf=0.0)
+        test_X = np.nan_to_num(test_X, nan=0.0, posinf=0.0, neginf=0.0)
+
+        # If values are extreme, consider capping them
+        if train_X_stats['max'] > 10 or train_X_stats['min'] < -10:
+            print("Warning: Extreme values detected in scaled training data. Capping values...")
+            train_X = np.clip(train_X, -10, 10)
+            test_X = np.clip(test_X, -10, 10)
+
+        # 5. Updated callbacks with NaN detection
+        # Define single consolidated callbacks list
+        callbacks = [
+            reduce_lr,
+            nan_callback, 
+            early_stopping_callback,
+            lr_scheduler,
+            early_stopper
+        ]
+
+        # Set up the hyperparameter tuner
+        tuner = kt.BayesianOptimization(
+            hypermodel=custom_model_builder,
+            objective='val_loss',
+            max_trials=50,
+            directory='models',
+            project_name=f'sell_trials_{model_name}',
+            overwrite=True,
+            executions_per_trial=1,
+            max_consecutive_failed_trials=20,
+            seed = 42
+        )
+
+        print("Starting hyperparameter search...")
+
+        try:
+            tuner.search(
+                train_X, train_y,
+                epochs=10,
+                batch_size=64,
+                validation_data=(test_X, test_y),
+                callbacks=callbacks,
+                class_weight=class_weight_dict,
+                verbose=1 
+            )
+        except Exception as e:
+            print(f"Trial failed due to: {e}. Moving to next trial...")
+
+        #----------------------- CROSS-VALIDATION -----------------------#
+        # Implement cross-validation for model selection
+        print("Selecting best model using custom criteria...")
+        def time_series_cross_validate(tuner, X, y, n_folds=5, class_weights=None, callbacks=None):
+            """
+            Cross-validate with time-ordered splits
+            """
+            print(f"Running {n_folds}-fold time series cross-validation...")
+            
+            # Get top hyperparameter configurations
+            top_hps = tuner.get_best_hyperparameters(3)
+            
+            # Setup TimeSeriesSplit
+            tscv = TimeSeriesSplit(n_folds=n_folds)
+            
+            cv_results = []
+            
+            # For each hyperparameter configuration
+            for hp_idx, hp in enumerate(top_hps):
+                print(f"\nValidating hyperparameter set {hp_idx+1}/{len(top_hps)}")
+                
+                fold_metrics = {
+                    'val_loss': [],
+                    'val_accuracy': [],
+                    'val_precision': [],
+                    'val_recall': [],
+                    'val_auc': []
+                }
+                
+                nan_count = 0
+                
+                # Run time series cross-validation
+                for fold, (train_idx, val_idx) in enumerate(tscv.split(X)):
+                    print(f"  Fold {fold+1}/{n_folds}")
+                    
+                    # Split data - maintaining temporal order
+                    X_train_fold, X_val_fold = X[train_idx], X[val_idx]
+                    y_train_fold, y_val_fold = y[train_idx], y[val_idx]
+                    
+                    # Build model with these hyperparameters
+                    model = tuner.hypermodel.build(hp)
+                    
+                    # Train with early stopping
+                    history = model.fit(
+                        X_train_fold, y_train_fold,
+                        validation_data=(X_val_fold, y_val_fold),
+                        epochs=30,  # Lower epochs for CV
+                        batch_size=64,
+                        verbose=0,
+                        callbacks=callbacks,
+                        class_weight=class_weights
+                    )
+                    
+                    # Get the final validation metrics
+                    val_results = model.evaluate(X_val_fold, y_val_fold, verbose=0)
+                    
+                    # Check for NaN values
+                    if np.isnan(val_results[0]):  # val_loss is typically first
+                        print(f"  ⚠️ NaN detected in fold {fold+1}")
+                        nan_count += 1
+                        continue
+                    
+                    # Store metrics for this fold
+                    for i, metric_name in enumerate(model.metrics_names):
+                        if metric_name in fold_metrics:
+                            fold_metrics[metric_name].append(val_results[i])
+                    
+                    # Clear session to free memory
+                    tf.keras.backend.clear_session()
+                
+                # Calculate mean and std of metrics across folds
+                cv_summary = {}
+                for metric, values in fold_metrics.items():
+                    if values:  # Only if we have valid values
+                        cv_summary[f'{metric}_mean'] = np.mean(values)
+                        cv_summary[f'{metric}_std'] = np.std(values)
+                
+                cv_summary['nan_folds'] = nan_count
+                cv_summary['valid_folds'] = n_folds - nan_count
+                cv_summary['hyperparameters'] = hp
+                
+                # Skip if too many NaN results
+                if nan_count > n_folds // 2:
+                    print(f"  ❌ Too many NaN results ({nan_count}/{n_folds}) - skipping this hyperparameter set")
+                    continue
+                    
+                val_loss_mean = cv_summary.get('val_loss_mean', 'N/A')
+                val_acc_mean = cv_summary.get('val_acc_mean', 'N/A')
+
+                # Use conditional formatting to prevent errors
+                val_loss_str = f"{val_loss_mean:.4f}" if isinstance(val_loss_mean, (int, float)) else str(val_loss_mean)
+                val_acc_str = f"{val_acc_mean:.4f}" if isinstance(val_acc_mean, (int, float)) else str(val_acc_mean)
+
+                print(f"  Results: val_loss_mean={val_loss_str}, val_acc_mean={val_acc_str}")
+            # Select the best hyperparameters based on cross-validation results
+            if cv_results:
+                # Sort by mean validation loss (ascending)
+                cv_results.sort(key=lambda x: x.get('val_loss_mean', float('inf')))
+                best_cv_result = cv_results[0]
+                best_hp = best_cv_result['hyperparameters']
+                
+                print(f"\nBest cross-validated model:")
+                print(f"- val_loss: {best_cv_result.get('val_loss_mean', 'N/A'):.4f} ± {best_cv_result.get('val_loss_std', 'N/A'):.4f}")
+                print(f"- val_accuracy: {best_cv_result.get('val_accuracy_mean', 'N/A'):.4f} ± {best_cv_result.get('val_accuracy_std', 'N/A'):.4f}")
+                print(f"- val_auc: {best_cv_result.get('val_auc_mean', 'N/A'):.4f} ± {best_cv_result.get('val_auc_std', 'N/A'):.4f}")
+                
+                return best_hp, cv_results
+            else:
+                print("No valid hyperparameter sets found during cross-validation")
+                return None, []
+            
+        # Use this after hyperparameter tuning
+        best_hp, cv_results = time_series_cross_validate(
+            tuner, 
+            train_X, train_y, 
+            n_folds=5, 
+            class_weights=class_weight_dict,
+            callbacks=callbacks
+        )
+
+        # Then build your final model with these cross-validated hyperparameters
+        if best_hp is not None:
+            print("\nTraining final model with cross-validated hyperparameters...")
+            
+            # Calculate steps for generators
+            steps_per_epoch = (split_idx - n_in) // train_batch_size
+            validation_steps = (len(features) - split_idx - n_in) // test_batch_size
+            
+            # Use progressive training instead of regular training
+            best_model, history = implement_progressive_training(
+                model_builder=lambda hp: tuner.hypermodel.build(best_hp),
+                hp=best_hp,
+                train_X=train_X, 
+                train_y=train_y,
+                test_X=test_X, 
+                test_y=test_y,
+                train_generator=train_generator,
+                test_generator=test_generator,
+                steps_per_epoch=steps_per_epoch,
+                validation_steps=validation_steps,
+                callbacks=callbacks,
+                class_weight=class_weight_dict,
+                model_name=model_name
+            )
+            
+            # Save the progressively trained model
+            model_path = f'models/sell_models/{model_name}.h5'
+            best_model.save(model_path)
+            print(f"Model saved to {model_path}")
+            
+        else:
+            print("Skipping final model training due to cross-validation failures")
+        print(f"📊 Evaluating {model_name} model...")
+        evaluation = best_model.evaluate(test_X, test_y, verbose=1)
+
+        # Log results
+        with open(results_file_path, "a") as log_file:
+            log_file.write(f"\n📌 Model: {model_name}\n")
+            log_file.write("=" * 40 + "\n")
+            for param in best_hp.values:
+                log_file.write(f"- {param}: {best_hp.values[param]}\n")
+
+            log_file.write("\nTest Metrics:\n")
+            for i, metric in enumerate(best_model.metrics_names):
+                log_file.write(f"{metric}: {evaluation[i]:.4f}\n")
+            
+            log_file.write("=" * 80 + "\n\n")
+
     except Exception as e:
-        print(f"SHAP analysis failed: {e}")
-        print("Consider using simpler feature importance methods for this model type.")
-    #----------------------- END OF ADDITIONS -----------------------#
-    
-except Exception as e:
-    print(f"An error occurred during model training: {e}")
-    import traceback
-    traceback.print_exc()
+        print(f"❌ Error training {model_name}: {e}")
+        import traceback
+        traceback.print_exc()
+
+print(f"\n✅ All models trained! Results saved to {results_file_path}")
 
 #%%

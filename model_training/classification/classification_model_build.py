@@ -15,6 +15,39 @@ from catboost import CatBoostClassifier
 
 seed = 42
 
+#%%
+#----------------------- MODEL EVAL METRICS -----------------------#
+# ADD MODEL EVAL METRICS
+def directional_accuracy(y_true, y_pred):
+    """Measures if the prediction is directionally correct (up/down)"""
+    # Convert probabilities to binary
+    pred_binary = tf.cast(tf.greater_equal(y_pred, 0.5), tf.float32)
+    true_binary = tf.cast(y_true, tf.float32)
+    
+    # Calculate accuracy
+    correct_predictions = tf.equal(pred_binary, true_binary)
+    return tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
+
+def precision_recall_f1(y_true, y_pred):
+    """Calculate precision, recall and F1 all at once"""
+    # Convert probabilities to binary
+    pred_binary = tf.cast(tf.greater_equal(y_pred, 0.5), tf.float32)
+    true_binary = tf.cast(y_true, tf.float32)
+    
+    # Calculate metrics
+    true_positives = tf.reduce_sum(true_binary * pred_binary)
+    predicted_positives = tf.reduce_sum(pred_binary)
+    actual_positives = tf.reduce_sum(true_binary)
+    
+    precision = true_positives / (predicted_positives + tf.keras.backend.epsilon())
+    recall = true_positives / (actual_positives + tf.keras.backend.epsilon())
+    f1 = 2 * precision * recall / (precision + recall + tf.keras.backend.epsilon())
+    
+    return precision, recall, f1
+
+metrics=['accuracy', directional_accuracy, tf.keras.metrics.AUC(),
+         tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+
 def build_LSTM_classifier(hp, num_classes=2):
     """
     LSTM-based classifier for time-series data
@@ -44,11 +77,11 @@ def build_LSTM_classifier(hp, num_classes=2):
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -88,11 +121,11 @@ def build_GRU_classifier(hp, num_classes=2):
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -135,11 +168,11 @@ def build_Conv1D_classifier(hp, num_classes=2, data_format='channels_last'):
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -184,11 +217,11 @@ def build_Conv1D_LSTM_classifier(hp, num_classes=2, data_format='channels_last')
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -240,11 +273,11 @@ def build_BiLSTM_Attention_classifier(hp, num_classes=2):
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -301,11 +334,11 @@ def build_Transformer_classifier(hp, num_classes=2, data_format='channels_last')
     if num_classes == 2:
         model.add(Dense(1, activation='sigmoid'))
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         model.add(Dense(num_classes, activation='softmax'))
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Compile the model
     model.compile(
@@ -367,11 +400,11 @@ def build_MultiStream_classifier(hp, num_classes=2, data_format='channels_last')
     if num_classes == 2:
         output_layer = Dense(1, activation='sigmoid')(merged)
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         output_layer = Dense(num_classes, activation='softmax')(merged)
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Create and compile the model
     model = Model(inputs=input_layer, outputs=output_layer)
@@ -444,11 +477,11 @@ def build_ResNet_classifier(hp, num_classes=2, data_format='channels_last'):
     if num_classes == 2:
         output_layer = Dense(1, activation='sigmoid')(x)
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         output_layer = Dense(num_classes, activation='softmax')(x)
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Create and compile the model
     model = Model(inputs=input_layer, outputs=output_layer)
@@ -529,11 +562,11 @@ def build_TCN_classifier(hp, num_classes=2, data_format='channels_last'):
     if num_classes == 2:
         output_layer = Dense(1, activation='sigmoid')(x)
         loss = 'binary_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     else:
         output_layer = Dense(num_classes, activation='softmax')(x)
         loss = 'categorical_crossentropy'
-        metrics = ['accuracy', tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+        
     
     # Create and compile the model
     model = Model(inputs=input_layer, outputs=output_layer)

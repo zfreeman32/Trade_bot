@@ -2,7 +2,7 @@ pandas
 numpy
 ta
 scikit-learn
-tensorflow
+tensorflow==2.10
 keras
 keras-tuner
 matplotlib
@@ -12,3 +12,7 @@ pandas
 requests
 dash
 dask
+ipykernel
+shap
+lightgbm
+catboost

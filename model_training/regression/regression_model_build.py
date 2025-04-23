@@ -2,7 +2,7 @@
 import sys
 sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 from keras.models import Sequential
-from keras.layers import Flatten, Dense
+from keras.layers import Flatten, Dense, Reshape
 from keras.optimizers import Adam
 from model_training.model_layers import build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
 import tensorflow as tf
@@ -15,114 +15,147 @@ seed = 42
 
 #%%
 # Build the LSTM model
-def build_LSTM_model(hp):
+def build_LSTM_model(hp, train_X,  n_out=1):
     # input_shape = Input(shape=(train_X.shape[1], train_X.shape[2]))
     model = Sequential()
     # Add LSTM layers based on the hyperparameters
     for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
-        model.add(build_LSTM_layer(hp, return_sequences=True))
+        model.add(build_LSTM_layer(hp,  return_sequences=True))
     # Add last LSTM
-    model.add(build_LSTM_layer(hp, return_sequences=False))
+    model.add(build_LSTM_layer(hp,  return_sequences=False))
     # Add Dense layers based on the hyperparameters
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
-    # Add output layer
-    model.add(Dense(units=1))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
     # Compile the model
     model.compile(optimizer=Adam(learning_rate=.0001),
-        loss='mean_squared_error', metrics=['accuracy'])
+        loss='mean_squared_error', metrics=['mse', 'mae'])
     return model
 
 # Build the GRU model
-def build_GRU_model(hp):
-	model = Sequential()
-	# Add LSTM layers based on the hyperparameters
-	for i in range(hp.Int("num_GRU_layers", min_value=1, max_value=3, step=1)):
-		model.add(build_GRU_layer(hp, return_sequences=True))
-	# Add last LSTM
-	model.add(build_GRU_layer(hp, return_sequences=False))
-	# Add Dense layers based on the hyperparameters
-	for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
-		model.add(build_Dense_layer(hp))
-	model.add(Dense(units = 1))
-	model.compile(optimizer=Adam(learning_rate=.001),
-		loss='mean_squared_error', metrics=['accuracy'])
-	return model
+def build_GRU_model(hp, train_X,  n_out=1):
+    model = Sequential()
+    # Add LSTM layers based on the hyperparameters
+    for i in range(hp.Int("num_GRU_layers", min_value=1, max_value=3, step=1)):
+        model.add(build_GRU_layer(hp,  return_sequences=True))
+    # Add last LSTM
+    model.add(build_GRU_layer(hp,  return_sequences=False))
+    # Add Dense layers based on the hyperparameters
+    for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
+        model.add(build_Dense_layer(hp))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
+    model.compile(optimizer=Adam(learning_rate=.001),
+        loss='mean_squared_error', metrics=['mse', 'mae'])
+    return model
 
 # Build the SimpleRNN model
-def build_SimpleRNN_model(hp):
-	model = Sequential()
-	# Add LSTM layers based on the hyperparameters
-	for i in range(hp.Int("num_SimpleRNN_layers", min_value=1, max_value=3, step=1)):
-		model.add(build_SimpleRNN_layer(hp, return_sequences=True))
-	# Add last LSTM
-	model.add(build_SimpleRNN_layer(hp, return_sequences= False ))	
-	# Add Dense layers based on the hyperparameters
-	for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
-		model.add(build_Dense_layer(hp))
-	model.add(Dense(units = 1))
-	model.compile(optimizer=Adam(learning_rate=.001),
-		loss='mean_squared_error', metrics=['accuracy'])
-	return model
+def build_SimpleRNN_model(hp, train_X,  n_out=1):
+    model = Sequential()
+    # Add LSTM layers based on the hyperparameters
+    for i in range(hp.Int("num_SimpleRNN_layers", min_value=1, max_value=3, step=1)):
+        model.add(build_SimpleRNN_layer(hp,  return_sequences=True))
+    # Add last LSTM
+    model.add(build_SimpleRNN_layer(hp,  return_sequences=False))    
+    # Add Dense layers based on the hyperparameters
+    for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
+        model.add(build_Dense_layer(hp))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
+    model.compile(optimizer=Adam(learning_rate=.001),
+        loss='mean_squared_error', metrics=['mse', 'mae'])
+    return model
 
 # Build Conv1D model
-def build_Conv1D_model(hp, data_format='channels_last'):
+def build_Conv1D_model(hp, train_X,  data_format='channels_last', n_out=1):
     model = Sequential()
     num_conv1d_layers = hp.Int("num_conv1d_layers", min_value=1, max_value=3, step=1)
     for i in range(num_conv1d_layers):
-        model.add(build_Conv1D_layer(hp, data_format=data_format)) 
+        model.add(build_Conv1D_layer(hp,  data_format=data_format)) 
     model.add(Flatten())
     num_dense_layers = hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)
     for i in range(num_dense_layers):
         model.add(build_Dense_layer(hp))
-    model.add(Dense(units=1))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss='mean_squared_error',
-        metrics=['accuracy'] 
+        metrics=['mse', 'mae'] 
     )
     
     return model
 
 # Conv1D model
-def build_Conv1DPooling_model(hp, data_format = 'channels_last'):
+def build_Conv1DPooling_model(hp, train_X,  data_format='channels_last', n_out=1):
     model = Sequential()
     # Add Input layer
     # Add Conv1D layers based on the hyperparameters
     for i in range(hp.Int("num_layers", min_value=1, max_value=3, step=1)):
         for i in range(hp.Int("num_conv1d_layers", min_value=1, max_value=3, step=1)):
-            model.add(build_Conv1D_layer(hp, data_format = data_format))
+            model.add(build_Conv1D_layer(hp,  data_format=data_format))
             # MaxPooling layer
-        model.add(build_MaxPooling1D_Layer(hp, data_format = data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
+        model.add(build_MaxPooling1D_layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
     model.add(Flatten()),
     model.add(build_Dropout_layer(hp)),
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
-    model.add(Dense(units = 1))
-    model.compile(optimizer=Adam(learning_rate = .001))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
+    model.compile(optimizer=Adam(learning_rate=.001), 
+        loss='mean_squared_error', metrics=['mse', 'mae'])
     return model
 
 # Conv1D + LSTM model
-def build_Conv1D_LSTM_model(hp, data_format = 'channels_last'):
+def build_Conv1D_LSTM_model(hp, train_X,  data_format='channels_last', n_out=1):
     model = Sequential()
     # Add Input layer
     # Add Conv1D layers based on the hyperparameters
     for i in range(hp.Int("num_layers_layers", min_value=1, max_value=3, step=1)):
         for i in range(hp.Int("num_conv1D_layers", min_value=1, max_value=3, step=1)):
-            model.add(build_Conv1D_layer(hp, data_format = data_format))
-        model.add(build_MaxPooling1D_Layer(hp, data_format = data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
-    if hp.Boolean("Flatten"):
-        model.add(Flatten()),
+            model.add(build_Conv1D_layer(hp,  data_format=data_format))
+        model.add(build_MaxPooling1D_layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
     # Add LSTM layers based on the hyperparameters
     for i in range(hp.Int("num_lstm_layers", min_value=1, max_value=3, step=1)):
-        model.add(build_LSTM_layer(hp, return_sequences=True))
+        model.add(build_LSTM_layer(hp,  return_sequences=True))
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
-    model.add(Dense(units = 1))
-    model.compile(optimizer=Adam(learning_rate = .001))
+    # Add output layer with n_out units
+    model.add(Dense(units=n_out))
+    # If multi-step output, reshape to 3D tensor for compatibility
+    if n_out > 1:
+        model.add(tf.keras.layers.Reshape((n_out, 1)))
+    model.compile(optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-5, max_value=1e-3, sampling="log")),
+        loss='mean_squared_error', metrics=['mse', 'mae'])
     return model
 
-def build_LSTM_CNN_Hybrid_model(hp, data_format='channels_last'):
+def build_LSTM_CNN_Hybrid_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     Hybrid model combining LSTM and CNN for capturing both temporal dependencies and local patterns
     """
@@ -141,20 +174,31 @@ def build_LSTM_CNN_Hybrid_model(hp, data_format='channels_last'):
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=3, step=1)):
         model.add(build_Dense_layer(hp))
         model.add(build_Dropout_layer(hp))
-    model.add(Dense(2))
-    def custom_loss(y_true, y_pred):
-        prediction, confidence = tf.split(y_pred, 2, axis=1)
-        mse = tf.keras.losses.mean_squared_error(y_true, prediction)
-        confidence_penalty = 0.1 * tf.reduce_mean(tf.abs(confidence))
-        return mse + confidence_penalty
+    # Modified to support multi-step forecasting
+    if n_out == 1:
+        model.add(Dense(2))  # Original model outputs 2 units (prediction + confidence)
+        def custom_loss(y_true, y_pred):
+            prediction, confidence = tf.split(y_pred, 2, axis=1)
+            mse = tf.keras.losses.mean_squared_error(y_true, prediction)
+            confidence_penalty = 0.1 * tf.reduce_mean(tf.abs(confidence))
+            return mse + confidence_penalty
+        loss_fn = custom_loss
+    else:
+        # For multi-step, we'll output n_out steps
+        model.add(Dense(n_out))
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
+        loss_fn = 'mean_squared_error'
+    
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
-        loss=custom_loss,
-        metrics=['mse']
+        loss=loss_fn,
+        metrics=['mse', 'mae']
     )
     return model
 
-def build_Attention_LSTM_model(hp):
+def build_Attention_LSTM_model(hp, train_X,  n_out=1):
     """
     LSTM model with attention mechanism for focusing on relevant time steps
     """
@@ -180,22 +224,35 @@ def build_Attention_LSTM_model(hp):
             prev_layer = tf.keras.layers.Add()([prev_layer, dropout])
         else:
             prev_layer = dropout
-    model.add(Dense(2))  # Prediction and confidence interval
-    def attention_guided_loss(y_true, y_pred):
-        prediction, confidence = tf.split(y_pred, 2, axis=1)
-        weighted_mse = tf.reduce_mean(tf.square(y_true - prediction) * tf.exp(-confidence))
-        confidence_regularization = 0.1 * tf.reduce_mean(confidence)
-        return weighted_mse + confidence_regularization
+    
+    # Modified to support multi-step forecasting
+    if n_out == 1:
+        model.add(Dense(2))  # Original model outputs prediction and confidence
+        def attention_guided_loss(y_true, y_pred):
+            prediction, confidence = tf.split(y_pred, 2, axis=1)
+            weighted_mse = tf.reduce_mean(tf.square(y_true - prediction) * tf.exp(-confidence))
+            confidence_regularization = 0.1 * tf.reduce_mean(confidence)
+            return weighted_mse + confidence_regularization
+        loss_fn = attention_guided_loss
+    else:
+        # For multi-step, output n_out steps
+        model.add(Dense(n_out))
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
+        loss_fn = 'mean_squared_error'
+    
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
-        loss=attention_guided_loss,
-        metrics=['mse']
+        loss=loss_fn,
+        metrics=['mse', 'mae']
     )
     return model
 
-def build_RandomForestRegressor_model(hp):
+def build_RandomForestRegressor_model(hp, train_X,  n_out=1):
     """
     Builds an optimal RandomForestRegressor model
+    Note: Tree-based models will need special handling for multi-step forecasting
     """
     model = RandomForestRegressor(
         n_estimators=hp.Int("n_estimators", min_value=50, max_value=300, step=50),
@@ -206,9 +263,11 @@ def build_RandomForestRegressor_model(hp):
         random_state=42,
         n_jobs=-1
     )
+    # Note: For tree models, the multi-step forecasting will need 
+    # to be handled separately in the training loop
     return model
 
-def build_XGBoostRegressor_model(hp):
+def build_XGBoostRegressor_model(hp, train_X,  n_out=1):
     """
     Builds an optimal XGBoost Regressor model
     Does not inherently handle time-series (feature engineering required)
@@ -222,9 +281,11 @@ def build_XGBoostRegressor_model(hp):
         random_state=42,
         n_jobs=-1
     )
+    # Note: For tree models, the multi-step forecasting will need 
+    # to be handled separately in the training loop
     return model
 
-def build_GradientBoostingRegressor_model(hp):
+def build_GradientBoostingRegressor_model(hp, train_X,  n_out=1):
     """
     Builds an optimal Gradient Boosting Regressor model
     """
@@ -236,9 +297,11 @@ def build_GradientBoostingRegressor_model(hp):
         min_samples_leaf=hp.Int("min_samples_leaf", min_value=1, max_value=5, step=1),
         random_state=42
     )
+    # Note: For tree models, the multi-step forecasting will need 
+    # to be handled separately in the training loop
     return model
 
-def build_LightGBMRegressor_model(hp):
+def build_LightGBMRegressor_model(hp, train_X,  n_out=1):
     """
     Builds an optimal LightGBM Regressor model
     """
@@ -252,9 +315,11 @@ def build_LightGBMRegressor_model(hp):
         random_state=42,
         n_jobs=-1
     )
+    # Note: For tree models, the multi-step forecasting will need 
+    # to be handled separately in the training loop
     return model
 
-def build_CatBoostRegressor_model(hp):
+def build_CatBoostRegressor_model(hp, train_X,  n_out=1):
     """
     Builds an optimal CatBoost Regressor model
     """
@@ -266,9 +331,11 @@ def build_CatBoostRegressor_model(hp):
         random_state=42,
         verbose=0
     )
+    # Note: For tree models, the multi-step forecasting will need 
+    # to be handled separately in the training loop
     return model
 
-def build_Transformer_model(hp, data_format='channels_last'):
+def build_Transformer_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     Transformer-inspired architecture with MultiHeadAttention for time-series forecasting
     Captures long-range dependencies in sequence data
@@ -306,18 +373,24 @@ def build_Transformer_model(hp, data_format='channels_last'):
         model.add(build_Dense_layer(hp))
         model.add(build_Dropout_layer(hp))
     
-    model.add(Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1)))
+    # Modified - use n_out instead of hyperparameter
+    model.add(Dense(units=n_out))
+    # Add reshape for multi-step forecasting
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
     
     # Compile the model
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     return model
 
-def build_BiLSTM_Attention_model(hp):
+def build_BiLSTM_Attention_model(hp, train_X,  n_out=1):
     """
     Bidirectional LSTM model with Attention mechanism
     Captures patterns in both forward and backward directions of the sequence
@@ -351,19 +424,24 @@ def build_BiLSTM_Attention_model(hp):
         model.add(build_Dense_layer(hp))
         model.add(build_Dropout_layer(hp))
     
-    # Output layer
-    model.add(Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1)))
+    # Modified - use n_out instead of hyperparameter
+    model.add(Dense(units=n_out))
+    # Add reshape for multi-step forecasting
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
     
     # Compile the model
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     return model
 
-def build_ConvLSTM2D_model(hp, data_format='channels_last'):
+def build_ConvLSTM2D_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     ConvLSTM2D model for capturing spatial-temporal patterns in time-series data
     Treats the time-series as a 2D spatial-temporal structure
@@ -376,7 +454,7 @@ def build_ConvLSTM2D_model(hp, data_format='channels_last'):
     # Add ConvLSTM2D layers
     for i in range(hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1)):
         return_sequences = True if i < hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1) - 1 else False
-        model.add(build_ConvLSTM2D_layer(hp, return_sequences=return_sequences, data_format=data_format))
+        model.add(build_ConvLSTM2D_layer(hp,  return_sequences=return_sequences, data_format=data_format))
         model.add(build_Dropout_layer(hp))
     
     # Flatten the output
@@ -387,14 +465,19 @@ def build_ConvLSTM2D_model(hp, data_format='channels_last'):
         model.add(build_Dense_layer(hp))
         model.add(build_Dropout_layer(hp))
     
-    # Output layer
-    model.add(Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1)))
+    # Modified - use n_out instead of hyperparameter
+    model.add(Dense(units=n_out))
+    # Add reshape for multi-step forecasting
+    if n_out > 1:
+        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+        model.add(Dense(units=n_out * features))
+        model.add(tf.keras.layers.Reshape((n_out, features)))
     
     # Compile the model
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     # Note: Using this model requires reshaping the input to 5D
@@ -402,7 +485,7 @@ def build_ConvLSTM2D_model(hp, data_format='channels_last'):
     
     return model
 
-def build_MultiStream_Hybrid_model(hp, data_format='channels_last'):
+def build_MultiStream_Hybrid_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     Multi-stream hybrid model that processes data through parallel streams
     and then combines them for final prediction
@@ -419,14 +502,14 @@ def build_MultiStream_Hybrid_model(hp, data_format='channels_last'):
     # Stream 1: Convolutional stream
     conv_stream = input_layer
     for i in range(hp.Int("num_conv_layers", min_value=1, max_value=3, step=1)):
-        conv_stream = build_Conv1D_layer(hp, data_format=data_format)(conv_stream)
-        conv_stream = build_MaxPooling1D_Layer(hp, data_format=data_format)(conv_stream)
+        conv_stream = build_Conv1D_layer(hp,  data_format=data_format)(conv_stream)
+        conv_stream = build_MaxPooling1D_layer(hp,  data_format=data_format)(conv_stream)
     
     # Stream 2: LSTM stream
     lstm_stream = input_layer
     for i in range(hp.Int("num_lstm_layers", min_value=1, max_value=3, step=1)):
         return_sequences = True if i < hp.Int("num_lstm_layers", min_value=1, max_value=3, step=1) - 1 else False
-        lstm_stream = build_LSTM_layer(hp, return_sequences=return_sequences)(lstm_stream)
+        lstm_stream = build_LSTM_layer(hp,  return_sequences=return_sequences)(lstm_stream)
     
     # Stream 3: Attention stream
     attention_stream = input_layer
@@ -448,8 +531,12 @@ def build_MultiStream_Hybrid_model(hp, data_format='channels_last'):
         merged = build_Dense_layer(hp)(merged)
         merged = build_Dropout_layer(hp)(merged)
     
-    # Output layer
-    output_layer = Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1))(merged)
+    # Modified - use n_out instead of hyperparameter
+    output_layer = Dense(units=n_out)(merged)
+    
+    # Reshape for multi-step forecasting if needed
+    if n_out > 1:
+        output_layer = Reshape((n_out, 1))(output_layer)
     
     # Create the model
     model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
@@ -458,12 +545,12 @@ def build_MultiStream_Hybrid_model(hp, data_format='channels_last'):
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     return model
 
-def build_ResNet_model(hp, data_format='channels_last'):
+def build_ResNet_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     ResNet-inspired architecture for time-series forecasting
     Uses skip connections to improve gradient flow and enable deeper networks
@@ -475,7 +562,7 @@ def build_ResNet_model(hp, data_format='channels_last'):
     input_layer = tf.keras.layers.Input(shape=(None, None))  # Will be inferred from input
     
     # Initial convolution
-    x = build_Conv1D_layer(hp, data_format=data_format)(input_layer)
+    x = build_Conv1D_layer(hp,  data_format=data_format)(input_layer)
     
     # ResNet blocks
     for i in range(hp.Int("num_res_blocks", min_value=1, max_value=6, step=1)):
@@ -483,12 +570,12 @@ def build_ResNet_model(hp, data_format='channels_last'):
         block_input = x
         
         # First conv layer in block
-        x = build_SeparableConv1D_layer(hp, data_format=data_format)(x)
+        x = build_SeparableConv1D_layer(hp,  data_format=data_format)(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Activation('relu')(x)
         
         # Second conv layer in block
-        x = build_SeparableConv1D_layer(hp, data_format=data_format)(x)
+        x = build_SeparableConv1D_layer(hp,  data_format=data_format)(x)
         x = tf.keras.layers.BatchNormalization()(x)
         
         # Skip connection
@@ -507,7 +594,7 @@ def build_ResNet_model(hp, data_format='channels_last'):
         
         # Optional pooling to reduce dimensions
         if hp.Choice(f"pool_after_block_{i}", values=[True, False]):
-            x = build_MaxPooling1D_Layer(hp, data_format=data_format)(x)
+            x = build_MaxPooling1D_layer(hp,  data_format=data_format)(x)
     
     # Global pooling
     x = tf.keras.layers.GlobalAveragePooling1D()(x)
@@ -517,8 +604,12 @@ def build_ResNet_model(hp, data_format='channels_last'):
         x = build_Dense_layer(hp)(x)
         x = build_Dropout_layer(hp)(x)
     
-    # Output layer
-    output_layer = Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1))(x)
+    # Output layer - use n_out instead of hyperparameter
+    output_layer = Dense(units=n_out)(x)
+    
+    # Reshape for multi-step forecasting if needed
+    if n_out > 1:
+        output_layer = tf.keras.layers.Reshape((n_out, 1))(output_layer)
     
     # Create the model
     model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
@@ -527,12 +618,12 @@ def build_ResNet_model(hp, data_format='channels_last'):
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     return model
 
-def build_TCN_model(hp, data_format='channels_last'):
+def build_TCN_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
     Temporal Convolutional Network (TCN) model
     Uses dilated causal convolutions to capture long-range temporal dependencies
@@ -594,8 +685,12 @@ def build_TCN_model(hp, data_format='channels_last'):
         x = build_Dense_layer(hp)(x)
         x = build_Dropout_layer(hp)(x)
     
-    # Output layer
-    output_layer = Dense(units=hp.Int("output_units", min_value=1, max_value=15, step=1))(x)
+    # Output layer - use n_out instead of hyperparameter
+    output_layer = Dense(units=n_out)(x)
+    
+    # Reshape for multi-step forecasting if needed
+    if n_out > 1:
+        output_layer = tf.keras.layers.Reshape((n_out, 1))(output_layer)
     
     # Create the model
     model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
@@ -604,7 +699,7 @@ def build_TCN_model(hp, data_format='channels_last'):
     model.compile(
         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
         loss='mean_squared_error',
-        metrics=['mse']
+        metrics=['mse', 'mae']
     )
     
     return model
