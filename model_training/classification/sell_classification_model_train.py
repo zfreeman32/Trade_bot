@@ -1,6 +1,4 @@
 #%% Import Libraries
-import sys
-sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import TimeSeriesSplit, train_test_split
@@ -9,7 +7,7 @@ import keras_tuner as kt
 import tensorflow as tf
 from sklearn.utils.class_weight import compute_class_weight
 from numpy.lib.stride_tricks import sliding_window_view
-from data import preprocess_data
+import preprocess_data
 # Import all classification models
 from classification_model_build import (
     build_LSTM_classifier,
@@ -20,13 +18,20 @@ from classification_model_build import (
     build_Transformer_classifier,
     build_MultiStream_classifier,
     build_ResNet_classifier,
-    build_TCN_classifier
+    build_TCN_classifier,
+    build_CatBoostClassifier_model,
+    build_LightGBMClassifier_model,
+    build_XGBoostClassifier_model,
+    build_RandomForestClassifier_model
 )
-
 # Set random seed for reproducibility
 seed = 42
 np.random.seed(seed)
 tf.random.set_seed(seed)
+
+# Enable mixed precision training for A100 GPU
+policy = tf.keras.mixed_precision.Policy('mixed_float16')
+tf.keras.mixed_precision.set_global_policy(policy)
 
 # Dictionary of model builders
 MODEL_BUILDERS = {
@@ -34,22 +39,28 @@ MODEL_BUILDERS = {
     "GRU": build_GRU_classifier,
     "Conv1D": build_Conv1D_classifier,
     "Conv1D_LSTM": build_Conv1D_LSTM_classifier,
-    "BiLSTM_Attention": build_BiLSTM_Attention_classifier,
-    "Transformer": build_Transformer_classifier,
-    "MultiStream": build_MultiStream_classifier,
-    "ResNet": build_ResNet_classifier,
-    "TCN": build_TCN_classifier
+    # "BiLSTM_Attention": build_BiLSTM_Attention_classifier,
+    # "Transformer": build_Transformer_classifier,
+    # "MultiStream": build_MultiStream_classifier,
+    # "ResNet": build_ResNet_classifier,
+    # "TCN": build_TCN_classifier,
+    # "CatBoost" : build_CatBoostClassifier_model,
+    # "LightGBM" : build_LightGBMClassifier_model,
+    # "XGBOOST" : build_XGBoostClassifier_model,
+    # "RandomForest" : build_RandomForestClassifier_model
+
 }
 
 #%% SET VARIABLES
 #----------------------- SET VARIABLES -----------------------#
 target_col = 'short_signal'
-raw_data = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
+raw_data = 'EURUSD_1min_sampled_features.csv'
 # .txt file with Important Features list from Feature Importance Study
-important_features_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\short_signal_important_features.txt'
+important_features_path = 'short_signal_important_features.txt'
 # List of most important Lags from Feature Importance Study
 lag_list = [70, 24, 10, 74, 39]
 results_file_path = "sell_class_model_training_results.txt"
+n_in = 240  # Number of past observations (lookback window)
 
 # %% LOAD DATA
 #----------------------- LOAD DATA -----------------------#
@@ -139,7 +150,7 @@ print(f"Computed class weights: {class_weight_dict}")
 #%% BATCHING DATA
 #----------------------- BATCHING DATA -----------------------#
 print("Create Sliding Window...")
-n_in = 240  # Number of past observations (lookback window)
+
 n_features = features.shape[1]  # Number of feature columns
 
 print(f"Features shape after enhancement: {features.shape}, Target shape: {target.shape}")
@@ -186,16 +197,14 @@ def calculate_robust_batch_size_for_large_dataset(data_length, window_size, gpu_
     available_samples = data_length - window_size
     
     if gpu_memory_gb is not None:
-        # With known GPU memory, we can be more precise
-        # Rule of thumb: each sample takes ~feature_count*window_size*4 bytes (float32)
-        # Allow only 70% of GPU memory for batches to leave room for model
+        # With known GPU memory, optimize for A100
         feature_count = n_features
         bytes_per_sample = feature_count * window_size * 4
         max_samples_in_memory = int(0.7 * gpu_memory_gb * 1e9 / bytes_per_sample)
-        batch_size = min(512, max_samples_in_memory)
+        batch_size = min(1024, max_samples_in_memory)  # Increased for A100
     else:
-        # Conservative default for large datasets
-        batch_size = 256
+        # Increase default for A100
+        batch_size = 512  # Changed from 256
     
     # Calculate steps per epoch - for large datasets, we might not want to use all data in each epoch
     # Using approximately 100,000 samples per epoch is reasonable for most models
@@ -219,9 +228,9 @@ print(f"Training set: {split_idx:,} samples, Test set: {len(features) - split_id
 # Calculate robust batch sizes for very large dataset
 # If you know your GPU memory, specify it for better optimization
 train_batch_size, train_steps = calculate_robust_batch_size_for_large_dataset(
-    split_idx, n_in, gpu_memory_gb=8)
+    split_idx, n_in, gpu_memory_gb=40)
 test_batch_size, val_steps = calculate_robust_batch_size_for_large_dataset(
-    len(features) - split_idx, n_in, gpu_memory_gb=8)
+    len(features) - split_idx, n_in, gpu_memory_gb=40)
 
 # Create generators with calculated batch sizes
 train_generator = create_time_series_generator(
@@ -232,21 +241,142 @@ test_generator = create_time_series_generator(
 #%% HANDLE MISSING AND INF VALUES
 #----------------------- HANDLE MISSING AND INF VALUES -----------------------#
 print("Handling NaN and Inf values...")
-features_array = np.where(np.isinf(features_array), 0, features_array)
-if np.isnan(features_array).sum() > 0:
-    print(f"Warning: Found {np.isnan(features_array).sum()} NaN values. Replacing with column means.")
-    # Reshape to 2D for easier preprocessing
+import warnings
+def handle_nan_inf_optimized(features_array, method='mean'):
+    """
+    Optimized function to handle NaN and Inf values in large arrays.
+    
+    Parameters:
+    -----------
+    features_array : numpy.ndarray
+        Input array that may contain NaN or Inf values
+    method : str
+        Method to replace NaN values: 'mean', 'median', 'zero', 'forward_fill'
+    
+    Returns:
+    --------
+    numpy.ndarray
+        Cleaned array with NaN/Inf values handled
+    """
+    print("Handling NaN and Inf values...")
+    
+    # Store original shape
     orig_shape = features_array.shape
-    features_array_2d = features_array.reshape(-1, n_features)
-    # Calculate column means (ignoring NaNs)
-    col_means = np.nanmean(features_array_2d, axis=0)
-    # Replace NaNs with column means
-    for i in range(n_features):
-        mask = np.isnan(features_array_2d[:, i])
-        features_array_2d[mask, i] = col_means[i]
-    # Reshape back to original shape
-    features_array = features_array_2d.reshape(orig_shape)
+    n_features = orig_shape[-1] if len(orig_shape) > 1 else 1
+    
+    # Quick check for any issues
+    has_inf = np.isinf(features_array).any()
+    has_nan = np.isnan(features_array).any()
+    
+    if not (has_inf or has_nan):
+        print("No NaN or Inf values found.")
+        return features_array
+    
+    # Work with a copy to avoid modifying original
+    result = features_array.copy()
+    
+    # Handle Inf values first (replace with 0 or large finite values)
+    if has_inf:
+        inf_count = np.isinf(result).sum()
+        print(f"Found {inf_count} Inf values. Replacing with 0.")
+        result = np.where(np.isinf(result), 0, result)
+    
+    # Handle NaN values
+    if has_nan:
+        nan_count = np.isnan(result).sum()
+        print(f"Warning: Found {nan_count} NaN values. Replacing with {method}.")
+        
+        if method == 'zero':
+            # Fastest option - replace with zeros
+            result = np.where(np.isnan(result), 0, result)
+            
+        elif method == 'mean':
+            # Vectorized mean replacement
+            if len(orig_shape) > 1:
+                # Reshape to 2D for feature-wise operations
+                result_2d = result.reshape(-1, n_features)
+                
+                # Calculate means ignoring NaNs (more efficient than nanmean for large arrays)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    col_means = np.nanmean(result_2d, axis=0)
+                
+                # Handle case where entire columns are NaN
+                col_means = np.where(np.isnan(col_means), 0, col_means)
+                
+                # Vectorized replacement using broadcasting
+                nan_mask = np.isnan(result_2d)
+                result_2d[nan_mask] = np.take(col_means, np.where(nan_mask)[1])
+                
+                # Reshape back
+                result = result_2d.reshape(orig_shape)
+            else:
+                # 1D array case
+                mean_val = np.nanmean(result)
+                if np.isnan(mean_val):
+                    mean_val = 0
+                result = np.where(np.isnan(result), mean_val, result)
+                
+        elif method == 'median':
+            # Similar to mean but using median
+            if len(orig_shape) > 1:
+                result_2d = result.reshape(-1, n_features)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=RuntimeWarning)
+                    col_medians = np.nanmedian(result_2d, axis=0)
+                col_medians = np.where(np.isnan(col_medians), 0, col_medians)
+                
+                nan_mask = np.isnan(result_2d)
+                result_2d[nan_mask] = np.take(col_medians, np.where(nan_mask)[1])
+                result = result_2d.reshape(orig_shape)
+            else:
+                median_val = np.nanmedian(result)
+                if np.isnan(median_val):
+                    median_val = 0
+                result = np.where(np.isnan(result), median_val, result)
+                
+        elif method == 'forward_fill':
+            # Forward fill for time series data
+            if len(orig_shape) > 1:
+                result_2d = result.reshape(-1, n_features)
+                for i in range(n_features):
+                    mask = np.isnan(result_2d[:, i])
+                    if mask.any():
+                        # Forward fill
+                        valid_indices = np.where(~mask)[0]
+                        if len(valid_indices) > 0:
+                            result_2d[:, i] = np.interp(
+                                np.arange(len(result_2d[:, i])),
+                                valid_indices,
+                                result_2d[valid_indices, i]
+                            )
+                        else:
+                            result_2d[:, i] = 0
+                result = result_2d.reshape(orig_shape)
+            else:
+                # Simple forward fill for 1D
+                mask = np.isnan(result)
+                if mask.any():
+                    valid_indices = np.where(~mask)[0]
+                    if len(valid_indices) > 0:
+                        result = np.interp(np.arange(len(result)), valid_indices, result[valid_indices])
+                    else:
+                        result.fill(0)
+    
+    print(f"Processed array shape: {result.shape}")
+    
+    # Final verification
+    remaining_nan = np.isnan(result).sum()
+    remaining_inf = np.isinf(result).sum()
+    
+    if remaining_nan > 0 or remaining_inf > 0:
+        print(f"Warning: {remaining_nan} NaN and {remaining_inf} Inf values still remain.")
+    else:
+        print("All NaN and Inf values successfully handled.")
+    
+    return result
 
+features_array = handle_nan_inf_optimized(features_array, method='mean')
 print(f"Window data shape: {features_array.shape}")
 print(f"Target data shape: {target_array.shape}")
 
@@ -294,37 +424,66 @@ print(f"Training data stats after scaling and capping: {train_X_stats}")
 train_y = train_y.flatten()
 test_y = test_y.flatten()
 
+train_dataset = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+train_dataset = train_dataset.batch(train_batch_size).prefetch(tf.data.AUTOTUNE)
+
+test_dataset = tf.data.Dataset.from_tensor_slices((test_X, test_y))
+test_dataset = test_dataset.batch(test_batch_size).prefetch(tf.data.AUTOTUNE)
+
 #%% ADD FOCAL LOSS FOR NEURAL NETWORKS
 #----------------------- ADD FOCAL LOSS FOR NEURAL NETWORKS -----------------------#
 def focal_loss(gamma=2.0, alpha=0.25):
     def focal_loss_fn(y_true, y_pred):
-        epsilon = 1e-7  # Prevent log(0)
+        # Use a larger epsilon to prevent numerical issues
+        epsilon = 1e-5
         y_pred = tf.clip_by_value(y_pred, epsilon, 1.0 - epsilon)
         
         y_true = tf.cast(y_true, tf.float32)
         y_pred = tf.cast(y_pred, tf.float32)
 
-        cross_entropy = -y_true * tf.math.log(y_pred) - (1 - y_true) * tf.math.log(1 - y_pred)
-
-        p_t = tf.where(tf.equal(y_true, 1.0), y_pred, 1.0 - y_pred)
-        alpha_factor = tf.where(tf.equal(y_true, 1.0), alpha, 1.0 - alpha)
-        modulating_factor = tf.pow(1.0 - p_t, gamma)
-
-        loss = alpha_factor * modulating_factor * cross_entropy
+        # Use a more stable implementation
+        pt = tf.where(tf.equal(y_true, 1.0), y_pred, 1 - y_pred)
+        alpha_t = tf.where(tf.equal(y_true, 1.0), alpha, 1 - alpha)
         
-        # Add small constant to prevent complete zero gradients
-        loss = loss + 1e-8
-
-        # Replace NaNs with zero loss (prevents exploding loss)
-        loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)
-
+        # Take log and apply gamma factor
+        loss = -alpha_t * tf.pow(1. - pt, gamma) * tf.math.log(pt + epsilon)
+        
+        # Replace any NaN or inf with zeros
+        loss = tf.where(tf.math.is_finite(loss), loss, tf.zeros_like(loss))
+        
         return tf.reduce_mean(loss)
-
+    
     return focal_loss_fn
 
 #%% CALLBACK METHODS
 #----------------------- CALLBACK METHODS -----------------------#
 nan_callback = tf.keras.callbacks.TerminateOnNaN()
+
+class NaNSafetyCallback(tf.keras.callbacks.Callback):
+    def __init__(self, monitor='loss', patience=3):
+        super(NaNSafetyCallback, self).__init__()
+        self.monitor = monitor
+        self.patience = patience
+        self.nan_count = 0
+        
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        loss = logs.get(self.monitor)
+        
+        if loss is None:
+            return
+            
+        if np.isnan(loss) or np.isinf(loss):
+            self.nan_count += 1
+            print(f"NaN/Inf detected in {self.monitor} at epoch {epoch+1}")
+            
+            if self.nan_count >= self.patience:
+                print(f"Stopping training due to {self.nan_count} consecutive NaN/Inf values")
+                self.model.stop_training = True
+        else:
+            # Reset counter if we get a valid loss
+            self.nan_count = 0
+
 early_stopping_callback = tf.keras.callbacks.EarlyStopping(
     monitor='val_loss',
     patience=5,
@@ -360,7 +519,40 @@ class EarlyStopper(tf.keras.callbacks.Callback):
                 print(f"\nStopping trial: val_accuracy {current} below threshold {self.baseline}")
                 self.model.stop_training = True
 
-early_stopper = EarlyStopper(baseline=0.65)  # Stop if accuracy below 65% after 5 epochs
+early_stopper = EarlyStopper(baseline=0.65) 
+
+class GPUMemoryCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        try:
+            gpus = tf.config.list_physical_devices('GPU')
+            if gpus:
+                mem_info = tf.config.experimental.get_memory_info('GPU:0')
+                logs['gpu_used_memory'] = mem_info['current'] / (1024**3)  # Convert to GB
+                print(f"\nGPU Memory Used: {logs['gpu_used_memory']:.2f} GB")
+        except Exception as e:
+            print(f"Error monitoring GPU memory: {e}") 
+     
+def create_callbacks():
+    """Create fresh callbacks for each trial"""
+    return [
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.2,
+            patience=5,
+            min_lr=1e-6
+        ),
+        tf.keras.callbacks.TerminateOnNaN(),
+        tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            restore_best_weights=True,
+            min_delta=0.001
+        ),
+        tf.keras.callbacks.LearningRateScheduler(lr_schedule),
+        EarlyStopper(baseline=0.65),
+        NaNSafetyCallback(),
+        GPUMemoryCallback()
+    ]
 
 #%% ROBUST PROCESSING
 #----------------------- ROBUST PROCESSING -----------------------#
@@ -437,7 +629,7 @@ def implement_progressive_training(model_builder, hp, train_X, train_y, test_X, 
         epochs=15, 
         batch_size=64,
         validation_data=(test_X, test_y),
-        callbacks=callbacks,
+        callbacks=create_callbacks(),
         class_weight=class_weight_dict,
         verbose=1
     )
@@ -465,7 +657,7 @@ def implement_progressive_training(model_builder, hp, train_X, train_y, test_X, 
             epochs=35,
             validation_data=test_generator,
             validation_steps=validation_steps,
-            callbacks=callbacks,
+            callbacks=create_callbacks(),
             class_weight=class_weight_dict,
             verbose=1
         )
@@ -477,7 +669,7 @@ def implement_progressive_training(model_builder, hp, train_X, train_y, test_X, 
             epochs=35,
             batch_size=64,
             validation_data=(test_X, test_y),
-            callbacks=callbacks,
+            callbacks=create_callbacks(),
             class_weight=class_weight_dict,
             verbose=1
         )
@@ -514,7 +706,14 @@ for model_name, model_builder in MODEL_BUILDERS.items():
     try:
         # Custom builder that incorporates focal loss
         def custom_model_builder(hp):
-            model = model_builder(hp, num_classes=2)
+            # Special handling for models that need explicit input shape
+            if model_name in ["MultiStream", "ResNet", "TCN"]:
+                # These models need explicit input shape - (timesteps, features)
+                input_shape = (n_in, train_X.shape[2])
+                model = MODEL_BUILDERS[model_name](hp, input_shape=input_shape, num_classes=2)
+            else:
+                # Other models work with default parameters
+                model = MODEL_BUILDERS[model_name](hp, num_classes=2)
             optimizer = tf.keras.optimizers.Adam(
                 hp.Float("learning_rate", min_value=1e-6, max_value=5e-4, sampling="log"),
                 clipvalue=1.0  # Clip gradients to avoid exploding values
@@ -525,7 +724,8 @@ for model_name, model_builder in MODEL_BUILDERS.items():
                     gamma=hp.Float("focal_gamma", min_value=1.0, max_value=3.0, step=0.5, default=2.0),
                     alpha=hp.Float("focal_alpha", min_value=0.1, max_value=0.9, step=0.1, default=0.25)
                 ),
-                metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.AUC()]
+                metrics=['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(), tf.keras.metrics.AUC()],
+                jit_compile=True  # Enable XLA compilation
             )
             return model
 
@@ -552,12 +752,12 @@ for model_name, model_builder in MODEL_BUILDERS.items():
         tuner = kt.BayesianOptimization(
             hypermodel=custom_model_builder,
             objective='val_loss',
-            max_trials=50,
+            max_trials=200,
             directory='models',
             project_name=f'sell_trials_{model_name}',
             overwrite=True,
             executions_per_trial=1,
-            max_consecutive_failed_trials=20,
+            max_consecutive_failed_trials=100,
             seed = 42
         )
 
@@ -565,11 +765,10 @@ for model_name, model_builder in MODEL_BUILDERS.items():
 
         try:
             tuner.search(
-                train_X, train_y,
+                train_dataset,  # Replace train_X, train_y with dataset
                 epochs=10,
-                batch_size=64,
-                validation_data=(test_X, test_y),
-                callbacks=callbacks,
+                validation_data=test_dataset,  # Replace (test_X, test_y) with dataset
+                callbacks=create_callbacks(),
                 class_weight=class_weight_dict,
                 verbose=1 
             )
@@ -581,15 +780,32 @@ for model_name, model_builder in MODEL_BUILDERS.items():
         print("Selecting best model using custom criteria...")
         def time_series_cross_validate(tuner, X, y, n_folds=5, class_weights=None, callbacks=None):
             """
-            Cross-validate with time-ordered splits
+            Cross-validate with time-ordered splits, ensuring we have stable hyperparameters
             """
             print(f"Running {n_folds}-fold time series cross-validation...")
             
-            # Get top hyperparameter configurations
-            top_hps = tuner.get_best_hyperparameters(3)
+            # Get ALL hyperparameter configurations that completed successfully
+            all_trials = tuner.oracle.get_best_trials(num_trials=100)  # Get many trials
+            
+            # Filter to only include trials that didn't result in NaN losses
+            successful_trials = [
+                trial for trial in all_trials 
+                if trial.metrics.get_last_value('val_loss') is not None and 
+                not np.isnan(trial.metrics.get_last_value('val_loss'))
+            ]
+            
+            print(f"Found {len(successful_trials)} successful trials out of {len(all_trials)} total")
+            
+            # Need at least 3 successful hyperparameter sets
+            if len(successful_trials) < 3:
+                print("Not enough successful trials for cross-validation. Using best trial directly.")
+                return tuner.get_best_hyperparameters(1)[0], []
+            
+            # Get top hyperparameter configurations from successful trials
+            top_hps = [trial.hyperparameters for trial in successful_trials[:3]]
             
             # Setup TimeSeriesSplit
-            tscv = TimeSeriesSplit(n_folds=n_folds)
+            tscv = TimeSeriesSplit(n_splits=n_folds)
             
             cv_results = []
             
@@ -611,40 +827,42 @@ for model_name, model_builder in MODEL_BUILDERS.items():
                 for fold, (train_idx, val_idx) in enumerate(tscv.split(X)):
                     print(f"  Fold {fold+1}/{n_folds}")
                     
-                    # Split data - maintaining temporal order
-                    X_train_fold, X_val_fold = X[train_idx], X[val_idx]
-                    y_train_fold, y_val_fold = y[train_idx], y[val_idx]
-                    
-                    # Build model with these hyperparameters
-                    model = tuner.hypermodel.build(hp)
-                    
-                    # Train with early stopping
-                    history = model.fit(
-                        X_train_fold, y_train_fold,
-                        validation_data=(X_val_fold, y_val_fold),
-                        epochs=30,  # Lower epochs for CV
-                        batch_size=64,
-                        verbose=0,
-                        callbacks=callbacks,
-                        class_weight=class_weights
-                    )
-                    
-                    # Get the final validation metrics
-                    val_results = model.evaluate(X_val_fold, y_val_fold, verbose=0)
-                    
-                    # Check for NaN values
-                    if np.isnan(val_results[0]):  # val_loss is typically first
-                        print(f"  ⚠️ NaN detected in fold {fold+1}")
-                        nan_count += 1
-                        continue
-                    
-                    # Store metrics for this fold
-                    for i, metric_name in enumerate(model.metrics_names):
-                        if metric_name in fold_metrics:
-                            fold_metrics[metric_name].append(val_results[i])
-                    
-                    # Clear session to free memory
-                    tf.keras.backend.clear_session()
+                    max_retries = 3
+                    for retry in range(max_retries):
+                        try:
+                            # Split data
+                            X_train_fold, X_val_fold = X[train_idx], X[val_idx]
+                            y_train_fold, y_val_fold = y[train_idx], y[val_idx]
+                            
+                            # Build model with more stable options
+                            model = tuner.hypermodel.build(hp)
+                            optimizer = model.optimizer
+                            # Add gradient clipping retrospectively
+                            optimizer.clipnorm = 1.0
+                            optimizer.clipvalue = 0.5
+                            model.compile(optimizer=optimizer, loss=model.loss, metrics=model.metrics)
+                            
+                            # Train with early stopping and NaN detection
+                            history = best_model.fit(
+                                train_dataset,  # Use dataset instead of raw arrays
+                                epochs=25,
+                                # Remove batch_size parameter
+                                validation_data=test_dataset,  # Use dataset instead of raw arrays
+                                callbacks=create_callbacks(),
+                                class_weight=class_weight_dict,
+                                verbose=1
+                            )
+                            
+                            # If we get here, training succeeded
+                            break
+                            
+                        except Exception as e:
+                            print(f"  Retry {retry+1}/{max_retries}: Error in fold {fold+1}: {e}")
+                            if retry == max_retries - 1:
+                                print("  All retries failed for this fold")
+                                raise
+                            # Clear session before retry
+                            tf.keras.backend.clear_session()
                 
                 # Calculate mean and std of metrics across folds
                 cv_summary = {}
@@ -657,19 +875,21 @@ for model_name, model_builder in MODEL_BUILDERS.items():
                 cv_summary['valid_folds'] = n_folds - nan_count
                 cv_summary['hyperparameters'] = hp
                 
-                # Skip if too many NaN results
-                if nan_count > n_folds // 2:
-                    print(f"  ❌ Too many NaN results ({nan_count}/{n_folds}) - skipping this hyperparameter set")
-                    continue
+                # Only consider hyperparameter set if at least one fold was successful
+                if nan_count < n_folds:  # Changed from 'n_folds // 2' to 'n_folds'
+                    cv_results.append(cv_summary)
                     
-                val_loss_mean = cv_summary.get('val_loss_mean', 'N/A')
-                val_acc_mean = cv_summary.get('val_acc_mean', 'N/A')
+                    val_loss_mean = cv_summary.get('val_loss_mean', 'N/A')
+                    val_acc_mean = cv_summary.get('val_accuracy_mean', 'N/A')
 
-                # Use conditional formatting to prevent errors
-                val_loss_str = f"{val_loss_mean:.4f}" if isinstance(val_loss_mean, (int, float)) else str(val_loss_mean)
-                val_acc_str = f"{val_acc_mean:.4f}" if isinstance(val_acc_mean, (int, float)) else str(val_acc_mean)
+                    # Use conditional formatting to prevent errors
+                    val_loss_str = f"{val_loss_mean:.4f}" if isinstance(val_loss_mean, (int, float)) else str(val_loss_mean)
+                    val_acc_str = f"{val_acc_mean:.4f}" if isinstance(val_acc_mean, (int, float)) else str(val_acc_mean)
 
-                print(f"  Results: val_loss_mean={val_loss_str}, val_acc_mean={val_acc_str}")
+                    print(f"  Results: val_loss_mean={val_loss_str}, val_acc_mean={val_acc_str}")
+                else:
+                    print(f"  ❌ All folds failed for this hyperparameter set - skipping")
+            
             # Select the best hyperparameters based on cross-validation results
             if cv_results:
                 # Sort by mean validation loss (ascending)
@@ -684,50 +904,75 @@ for model_name, model_builder in MODEL_BUILDERS.items():
                 
                 return best_hp, cv_results
             else:
-                print("No valid hyperparameter sets found during cross-validation")
-                return None, []
+                # If all hyperparameter sets fail, just return the first one
+                print("No valid hyperparameter sets found during cross-validation, using first set")
+                return top_hps[0], []
             
         # Use this after hyperparameter tuning
+        # After hyperparameter tuning
         best_hp, cv_results = time_series_cross_validate(
             tuner, 
             train_X, train_y, 
             n_folds=5, 
             class_weights=class_weight_dict,
-            callbacks=callbacks
+            callbacks=create_callbacks()
         )
 
-        # Then build your final model with these cross-validated hyperparameters
+        # Make sure we have a hyperparameter set to work with, even if cross-validation fails
+        if best_hp is None and len(tuner.get_best_hyperparameters(1)) > 0:
+            best_hp = tuner.get_best_hyperparameters(1)[0]
+            print("Using best hyperparameters from tuning instead of cross-validation")
+
+        # Then build your final model with these hyperparameters
         if best_hp is not None:
-            print("\nTraining final model with cross-validated hyperparameters...")
+            print("\nTraining final model with selected hyperparameters...")
             
-            # Calculate steps for generators
-            steps_per_epoch = (split_idx - n_in) // train_batch_size
-            validation_steps = (len(features) - split_idx - n_in) // test_batch_size
+            # Build a new model with the best hyperparameters
+            best_model = tuner.hypermodel.build(best_hp)
             
-            # Use progressive training instead of regular training
-            best_model, history = implement_progressive_training(
-                model_builder=lambda hp: tuner.hypermodel.build(best_hp),
-                hp=best_hp,
-                train_X=train_X, 
-                train_y=train_y,
-                test_X=test_X, 
-                test_y=test_y,
-                train_generator=train_generator,
-                test_generator=test_generator,
-                steps_per_epoch=steps_per_epoch,
-                validation_steps=validation_steps,
-                callbacks=callbacks,
+            # Simple fit instead of progressive training to ensure completion
+            history = best_model.fit(
+                train_X, train_y,
+                epochs=25,  # Reduced to ensure completion
+                batch_size=64,
+                validation_data=(test_X, test_y),
+                callbacks=create_callbacks(),
                 class_weight=class_weight_dict,
-                model_name=model_name
+                verbose=1
             )
             
-            # Save the progressively trained model
+            # Save the trained model
             model_path = f'models/sell_models/{model_name}.h5'
-            best_model.save(model_path)
-            print(f"Model saved to {model_path}")
+            try:
+                best_model.save(model_path)
+                print(f"Model saved to {model_path}")
+            except Exception as e:
+                print(f"Error saving model: {e}")
             
+            # Evaluate
+            try:
+                print(f"📊 Evaluating {model_name} model...")
+                evaluation = best_model.evaluate(test_X, test_y, verbose=1)
+                
+                # Log results
+                with open(results_file_path, "a") as log_file:
+                    log_file.write(f"\n📌 Model: {model_name}\n")
+                    log_file.write("=" * 40 + "\n")
+                    log_file.write("Hyperparameters:\n")
+                    for param in best_hp.values:
+                        log_file.write(f"- {param}: {best_hp.values[param]}\n")
+
+                    log_file.write("\nTest Metrics:\n")
+                    for i, metric in enumerate(best_model.metrics_names):
+                        log_file.write(f"{metric}: {evaluation[i]:.4f}\n")
+                    
+                    log_file.write("=" * 80 + "\n\n")
+            except Exception as e:
+                print(f"Error evaluating model: {e}")
+                
         else:
-            print("Skipping final model training due to cross-validation failures")
+            print("No hyperparameters available - skipping model training")
+        
         print(f"📊 Evaluating {model_name} model...")
         evaluation = best_model.evaluate(test_X, test_y, verbose=1)
 

@@ -16,3 +16,5 @@ ipykernel
 shap
 lightgbm
 catboost
+numba
+cupy-cuda12x

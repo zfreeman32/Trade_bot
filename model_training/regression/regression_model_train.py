@@ -1,6 +1,4 @@
 # %%
-import sys
-sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 import os
 import pandas as pd
 import numpy as np
@@ -19,6 +17,8 @@ import shap
 SEED = 42
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
+policy = tf.keras.mixed_precision.Policy('mixed_float16')
+tf.keras.mixed_precision.set_global_policy(policy)
 
 # ======================================
 # MODEL BUILDERS IMPORT
@@ -46,8 +46,8 @@ class ConfigManager:
     """
     def __init__(self):
         # Data settings
-        self.data_file = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
-        self.important_features_file = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\Close_important_features.txt'
+        self.data_file = 'EURUSD_1min_sampled_features.csv'
+        self.important_features_file = 'Close_important_features.txt'
         self.results_file = "regression_training_results.txt"
         
         # Model parameters
@@ -57,7 +57,7 @@ class ConfigManager:
         self.random_seed = 42
         
         # Training parameters
-        self.batch_size = 64
+        self.batch_size = 256
         self.max_epochs = 50
         self.early_stopping_patience = 10
         self.initial_learning_rate = 1e-3
@@ -374,6 +374,17 @@ def cosine_annealing_warmup_schedule(epoch, lr, total_epochs=50, warmup_epochs=5
         progress = (epoch - warmup_epochs) / (total_epochs - warmup_epochs)
         return min_lr + (lr - min_lr) * 0.5 * (1 + np.cos(np.pi * progress))
 
+class GPUMemoryCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        try:
+            gpus = tf.config.list_physical_devices('GPU')
+            if gpus:
+                mem_info = tf.config.experimental.get_memory_info('GPU:0')
+                logs['gpu_used_memory'] = mem_info['current'] / (1024**3)  # Convert to GB
+                print(f"\nGPU Memory Used: {logs['gpu_used_memory']:.2f} GB")
+        except Exception as e:
+            print(f"Error monitoring GPU memory: {e}")
+
 def get_training_callbacks():
     """
     Create callbacks for model training
@@ -393,9 +404,11 @@ def get_training_callbacks():
         tf.keras.callbacks.LearningRateScheduler(
             lambda epoch, lr: cosine_annealing_warmup_schedule(epoch, lr)
         ),
-        tf.keras.callbacks.TerminateOnNaN()
+        tf.keras.callbacks.TerminateOnNaN(),
+        GPUMemoryCallback()
     ]
     return callbacks
+
 
 # ======================================
 # MODEL TRAINING UTILITIES
@@ -582,7 +595,8 @@ def get_custom_model_builder(model_name, model_builder, n_out, train_X):
                         clipnorm=1.0  # Prevent exploding gradients
                     ),
                     loss=loss_fn,
-                    metrics=['mse', 'mae']
+                    metrics=['mse', 'mae'],
+                    jit_compile=True  # Enable XLA compilation
                 )
                 return base_model
             except Exception as e:
@@ -959,7 +973,14 @@ def train_regression_models(config):
     train_X, test_X, train_y, test_y, scaler_X, scaler_y = scale_data(
         train_X, test_X, train_y, test_y, n_features
     )
-    
+
+    # Convert to optimized tf.data.Dataset (add this code)
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+    train_dataset = train_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
+
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_X, test_y))
+    test_dataset = test_dataset.batch(config.batch_size).prefetch(tf.data.AUTOTUNE)
+        
     # Get list of models to train
     if config.selected_models:
         model_list = config.selected_models
@@ -1000,10 +1021,9 @@ def train_regression_models(config):
             tuner_success = True
             try:
                 tuner.search(
-                    train_X, train_y,
+                    train_dataset,  # Replace train_X, train_y with train_dataset
                     epochs=10,
-                    batch_size=config.batch_size,
-                    validation_data=(test_X, test_y),
+                    validation_data=test_dataset,  # Replace (test_X, test_y) with test_dataset
                     callbacks=callbacks
                 )
             except Exception as e:
@@ -1045,10 +1065,12 @@ def train_regression_models(config):
                 best_model, history = implement_progressive_training(
                     model_builder=lambda hp: custom_builder(best_hp),
                     hp=best_hp,
-                    train_X=train_X, 
-                    train_y=train_y,
+                    train_X=train_X,  # Keep these parameters
+                    train_y=train_y, 
                     test_X=test_X, 
                     test_y=test_y,
+                    train_dataset=train_dataset,  # Add new parameters
+                    test_dataset=test_dataset,
                     callbacks=callbacks,
                     model_name=model_name
                 )

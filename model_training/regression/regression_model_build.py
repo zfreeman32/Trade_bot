@@ -1,10 +1,9 @@
 # %%
 import sys
-sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Reshape
 from keras.optimizers import Adam
-from model_training.model_layers import build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
+from model_layers import build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
 import tensorflow as tf
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from xgboost import XGBRegressor

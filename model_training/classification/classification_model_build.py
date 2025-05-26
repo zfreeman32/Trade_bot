@@ -1,9 +1,7 @@
-import sys
-sys.path.append(r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot')
 from keras.models import Sequential, Model
 from keras.layers import Flatten, Dense, Input, Concatenate, Add, Activation
 from keras.optimizers import Adam
-from model_training.model_layers import (build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, 
+from model_layers import (build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, 
                          build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, 
                          build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, 
                          build_Dropout_layer, build_MaxPooling1D_Layer)
@@ -349,7 +347,7 @@ def build_Transformer_classifier(hp, num_classes=2, data_format='channels_last')
     
     return model
 
-def build_MultiStream_classifier(hp, num_classes=2, data_format='channels_last'):
+def build_MultiStream_classifier(hp, input_shape = (240, 1), num_classes=2, data_format='channels_last'):
     """
     Multi-stream hybrid classifier combining CNN, LSTM, and Attention
     
@@ -362,7 +360,7 @@ def build_MultiStream_classifier(hp, num_classes=2, data_format='channels_last')
     - Compiled classification model
     """
     # Define the input
-    input_layer = tf.keras.layers.Input(shape=(None, None))
+    input_layer = tf.keras.layers.Input(shape=input_shape)
     
     # Stream 1: Convolutional stream
     conv_stream = input_layer
@@ -416,7 +414,7 @@ def build_MultiStream_classifier(hp, num_classes=2, data_format='channels_last')
     
     return model
 
-def build_ResNet_classifier(hp, num_classes=2, data_format='channels_last'):
+def build_ResNet_classifier(hp, input_shape = (240, 1), num_classes=2, data_format='channels_last'):
     """
     ResNet-inspired classifier for time-series data
     
@@ -429,7 +427,7 @@ def build_ResNet_classifier(hp, num_classes=2, data_format='channels_last'):
     - Compiled classification model
     """
     # Define the input
-    input_layer = tf.keras.layers.Input(shape=(None, None))
+    input_layer = tf.keras.layers.Input(shape=input_shape)
     
     # Initial convolution
     x = build_Conv1D_layer(hp, data_format=data_format)(input_layer)
@@ -493,7 +491,7 @@ def build_ResNet_classifier(hp, num_classes=2, data_format='channels_last'):
     
     return model
 
-def build_TCN_classifier(hp, num_classes=2, data_format='channels_last'):
+def build_TCN_classifier(hp, input_shape = (240, 1), num_classes=2, data_format='channels_last'):
     """
     Temporal Convolutional Network (TCN) classifier for time-series data
     
@@ -506,7 +504,7 @@ def build_TCN_classifier(hp, num_classes=2, data_format='channels_last'):
     - Compiled classification model
     """
     # Define the input
-    input_layer = tf.keras.layers.Input(shape=(None, None))
+    input_layer = tf.keras.layers.Input(shape=input_shape)
     
     x = input_layer
     n_filters = hp.Int("n_filters", min_value=32, max_value=128, step=32)
