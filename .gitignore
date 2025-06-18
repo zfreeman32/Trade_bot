@@ -3,7 +3,6 @@
 __pycache__
 .vscode
 .env
-*.csv
 EURUSD_full_30min.txt
 EURUSD_full_1min.txt
 /models/sell_signal_models/sell_trials_*
@@ -14,3 +13,12 @@ trial.json
 *.joblib
 oracle.json
 tuner0.json
+EURUSD_1min_sampled_signals.csv
+data/currency_data/EURUSD_1min_sampled_features.csv
+data/currency_data/EURUSD_1min_sampled_signals.csv
+data/currency_data/EURUSD_1min_sampled.csv
+data/stock_data/SPY_true_signals.csv
+data/stock_data/SPY.csv
+data/stock_data/VIX.csv
+!models/sell_signal_models/sell_trials_*.csv
+!models/long_signal_models/buy_trials_*.csv
