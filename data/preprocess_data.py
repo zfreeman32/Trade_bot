@@ -7,7 +7,14 @@ from scipy import stats
 def clean_data(data):
     # Generate Signals
     df = pd.DataFrame(data).reset_index(drop=True)
+    df = df.iloc[:10_000]
     print(df.head())
+    if len(df) > 200:
+        df = df.iloc[200:].reset_index(drop=True)
+        print(f"Skipped first 200 rows. New shape: {df.shape}")
+    else:
+        print("Warning: Data has fewer than 200 rows. Skipping not applied.")
+
 
     def find_and_remove_duplicate_columns_efficient(df):
         """
@@ -93,6 +100,7 @@ def clean_data(data):
                 df[col] = df[col].fillna(df[col].median())
             else:
                 df[col] = df[col].fillna(df[col].mean())
+    
     
     print("Data cleaning completed!")
     return df

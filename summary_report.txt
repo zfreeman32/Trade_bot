@@ -1,0 +1,23 @@
+### Hyperparameter Tuning Summary Report ###
+
+Top 5 Trials (sorted by val_loss):
+trial_id    status  score (val_loss)  val_mae   val_mse  learning_rate activation  num_LSTM_layers  units_first  loss_type
+    0000 COMPLETED         38.024078 0.685365  0.579254       0.000015       tanh                1           32 asymmetric
+    0008 COMPLETED         71.167885 0.718199  0.631891       0.000063       tanh                2           64 asymmetric
+    0002 COMPLETED        116.141449 0.747670  0.688975       0.000091       gelu                1           32        mse
+    0006 COMPLETED        264.897644 0.787215  1.450301       0.000019       relu                1           32        mse
+    0004 COMPLETED        552.277344 0.801628 16.050537       0.000018       relu                1           64        mse
+
+--- Summary Statistics ---
+       trial_id     status  score (val_loss)      val_mae       val_mse  learning_rate activation  num_LSTM_layers  units_first   loss_type
+count        11         11      1.000000e+01    10.000000  1.000000e+01      11.000000         11        11.000000    11.000000          11
+unique       11          2               NaN          NaN           NaN            NaN          3              NaN          NaN           3
+top        0000  COMPLETED               NaN          NaN           NaN            NaN       relu              NaN          NaN  asymmetric
+freq          1         10               NaN          NaN           NaN            NaN          6              NaN          NaN           6
+mean        NaN        NaN      7.313373e+05   137.539871  6.295400e+05       0.000101        NaN         1.818182    66.909091         NaN
+std         NaN        NaN      2.091061e+06   335.396891  1.803746e+06       0.000196        NaN         0.873863    39.072892         NaN
+min         NaN        NaN      3.802408e+01     0.685365  5.792539e-01       0.000015        NaN         1.000000    32.000000         NaN
+25%         NaN        NaN      1.533305e+02     0.757556  8.793065e-01       0.000019        NaN         1.000000    32.000000         NaN
+50%         NaN        NaN      8.046013e+02     0.906370  3.057201e+01       0.000022        NaN         2.000000    64.000000         NaN
+75%         NaN        NaN      1.105444e+04     9.357339  1.468657e+03       0.000077        NaN         2.500000    96.000000         NaN
+max         NaN        NaN      6.655125e+06  1053.012939  5.739133e+06       0.000681        NaN         3.000000   128.000000         NaN

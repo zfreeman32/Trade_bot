@@ -1,0 +1,24 @@
+Top 5 Trials for sell_trials_LSTM by Validation Loss:
+
+      model_type trial_id   val_loss  val_accuracy  accuracy  num_LSTM_layers  units_first activation kernel_initializer  forget_bias  dropout  recurrent_dropout  num_dense_layers  units bias_initializer  dropout_rate  learning_rate  focal_gamma  focal_alpha
+sell_trials_LSTM       29  28.597397      0.995078  0.995586                1           32       relu      glorot_normal        False     0.25               0.25                 2     96        he_normal           0.1       0.008290          1.5          0.7
+sell_trials_LSTM       16 150.917038      0.995078  0.995820                3           32       gelu      glorot_normal         True     0.30               0.45                 1     32        he_normal           0.2       0.006351          3.0          0.4
+sell_trials_LSTM       03 175.097702      0.995078  0.995469                3           32       gelu      glorot_normal        False     0.20               0.25                 1     64        he_normal           0.3       0.003314          1.5          0.2
+sell_trials_LSTM       26 234.337006      0.995078  0.995469                2           96       gelu          he_normal        False     0.25               0.25                 2     64        he_normal           0.2       0.007279          1.5          0.6
+sell_trials_LSTM       24 235.004532      0.995078  0.993711                1           32       gelu      glorot_normal        False     0.35               0.35                 2     96    glorot_normal           0.5       0.002177          2.0          0.5
+
+
+Most Common Hyperparameters in Top 5:
+
+  num_LSTM_layers: 1 (shared by 2 models)
+  units_first: 32 (shared by 4 models)
+  activation: gelu (shared by 4 models)
+  kernel_initializer: glorot_normal (shared by 4 models)
+  forget_bias: False (shared by 4 models)
+  dropout: 0.25 (shared by 2 models)
+  recurrent_dropout: 0.25 (shared by 3 models)
+  num_dense_layers: 2 (shared by 3 models)
+  units: 96 (shared by 2 models)
+  bias_initializer: he_normal (shared by 4 models)
+  dropout_rate: 0.2 (shared by 2 models)
+  focal_gamma: 1.5 (shared by 3 models)

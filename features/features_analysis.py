@@ -9,10 +9,22 @@ import tqdm
 import time
 import psutil
 import os
+import pickle
+import joblib
 from datetime import datetime
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing
+
+# Enhanced Feature Selection Imports
+from sklearn.feature_selection import (
+    SelectKBest, SelectPercentile, 
+    RFE, RFECV, SelectFromModel,
+    mutual_info_regression, mutual_info_classif
+)
+from sklearn.linear_model import LassoCV, LogisticRegressionCV
+import warnings
+warnings.filterwarnings('ignore')
 
 # Add GPU support with RAPIDS libraries
 try:
@@ -40,7 +52,7 @@ from sklearn.feature_selection import mutual_info_classif, mutual_info_regressio
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics import make_scorer
-from sklearn.model_selection import TimeSeriesSplit
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 
 # Initialize global variables for timing
 start_time = time.time()
@@ -66,6 +78,308 @@ CURRENT_LOG_LEVEL = LOG_LEVEL_INFO  # Set default log level
 # Default target settings - will be overridden in configurations
 target_col = 'long_signal'
 regression_mode = False
+
+class AdvancedFeatureSelector:
+    """
+    Advanced feature selection combining multiple methods with validation
+    """
+    
+    def __init__(self, regression_mode=True, target_features=75, 
+                 validation_splits=5, random_state=42):
+        self.regression_mode = regression_mode
+        self.target_features = target_features
+        self.validation_splits = validation_splits
+        self.random_state = random_state
+        self.selection_results = {}
+        
+    def prepare_data(self, df, feature_cols, target_col):
+        """Prepare and clean data for feature selection"""
+        X = df[feature_cols].copy()
+        y = df[target_col].copy()
+        
+        # Handle missing values and infinities
+        X.replace([np.inf, -np.inf], np.nan, inplace=True)
+        X.fillna(X.median(), inplace=True)
+        
+        # Remove rows with missing targets
+        valid_idx = ~y.isna()
+        X = X[valid_idx]
+        y = y[valid_idx]
+        
+        return X, y
+    
+    def method_1_statistical_selection(self, X, y):
+        """Method 1: Statistical-based selection (Mutual Information + Percentile)"""
+        print("Method 1: Statistical Selection")
+        
+        if self.regression_mode:
+            selector = SelectPercentile(
+                score_func=mutual_info_regression, 
+                percentile=min(80, (self.target_features * 100) // len(X.columns))
+            )
+        else:
+            selector = SelectPercentile(
+                score_func=mutual_info_classif,
+                percentile=min(80, (self.target_features * 100) // len(X.columns))
+            )
+        
+        selector.fit(X, y)
+        selected_features = X.columns[selector.get_support()].tolist()
+        scores = dict(zip(X.columns, selector.scores_))
+        
+        self.selection_results['statistical'] = {
+            'features': selected_features[:self.target_features],
+            'scores': scores,
+            'method': 'Mutual Information + Percentile'
+        }
+        
+        return selected_features[:self.target_features]
+    
+    def method_2_recursive_elimination(self, X, y):
+        """Method 2: Recursive Feature Elimination with Cross-Validation"""
+        print("Method 2: Recursive Feature Elimination")
+        
+        if self.regression_mode:
+            estimator = RandomForestRegressor(n_estimators=50, random_state=self.random_state, n_jobs=-1)
+        else:
+            estimator = RandomForestClassifier(n_estimators=50, random_state=self.random_state, n_jobs=-1)
+        
+        # Use RFECV for automatic feature number selection, but limit to target
+        cv = TimeSeriesSplit(n_splits=3)  # Faster for initial selection
+        
+        selector = RFECV(
+            estimator=estimator,
+            step=5,  # Remove 5 features at a time for speed
+            cv=cv,
+            scoring='neg_mean_squared_error' if self.regression_mode else 'accuracy',
+            n_jobs=-1,
+            min_features_to_select=min(10, self.target_features // 2)
+        )
+        
+        selector.fit(X, y)
+        selected_features = X.columns[selector.get_support()].tolist()
+        
+        # If we got more than target, take top by ranking
+        if len(selected_features) > self.target_features:
+            feature_ranking = dict(zip(X.columns, selector.ranking_))
+            selected_features = sorted(selected_features, 
+                                     key=lambda x: feature_ranking[x])[:self.target_features]
+        
+        self.selection_results['rfe'] = {
+            'features': selected_features,
+            'scores': dict(zip(X.columns, selector.ranking_)),
+            'method': 'Recursive Feature Elimination CV'
+        }
+        
+        return selected_features
+    
+    def method_3_regularization_based(self, X, y):
+        """Method 3: Regularization-based selection (Lasso/L1)"""
+        print("Method 3: Regularization-based Selection")
+        
+        if self.regression_mode:
+            # Use LassoCV for automatic alpha selection
+            selector = LassoCV(cv=3, random_state=self.random_state, n_jobs=-1)
+        else:
+            # Use L1 Logistic Regression
+            selector = LogisticRegressionCV(
+                cv=3, penalty='l1', solver='liblinear', 
+                random_state=self.random_state, n_jobs=-1
+            )
+        
+        selector.fit(X, y)
+        
+        # Get feature coefficients
+        if hasattr(selector, 'coef_'):
+            if self.regression_mode:
+                coefficients = np.abs(selector.coef_)
+            else:
+                coefficients = np.abs(selector.coef_[0])
+        else:
+            coefficients = np.zeros(len(X.columns))
+        
+        # Select features with non-zero coefficients, then top by magnitude
+        non_zero_idx = coefficients > 1e-6
+        feature_scores = dict(zip(X.columns, coefficients))
+        
+        selected_features = [feat for feat, coef in feature_scores.items() if coef > 1e-6]
+        selected_features = sorted(selected_features, 
+                                 key=lambda x: feature_scores[x], reverse=True)[:self.target_features]
+        
+        self.selection_results['regularization'] = {
+            'features': selected_features,
+            'scores': feature_scores,
+            'method': 'Lasso/L1 Regularization'
+        }
+        
+        return selected_features
+    
+    def method_4_model_based_selection(self, X, y):
+        """Method 4: Model-based selection with multiple algorithms"""
+        print("Method 4: Model-based Selection")
+        
+        if self.regression_mode:
+            estimator = RandomForestRegressor(n_estimators=100, random_state=self.random_state, n_jobs=-1)
+        else:
+            estimator = RandomForestClassifier(n_estimators=100, random_state=self.random_state, n_jobs=-1)
+        
+        estimator.fit(X, y)
+        
+        # Select features based on importance threshold
+        importances = estimator.feature_importances_
+        feature_scores = dict(zip(X.columns, importances))
+        
+        # Take top features by importance
+        selected_features = sorted(X.columns, key=lambda x: feature_scores[x], reverse=True)[:self.target_features]
+        
+        self.selection_results['model_based'] = {
+            'features': selected_features,
+            'scores': feature_scores,
+            'method': 'Random Forest Importance'
+        }
+        
+        return selected_features
+    
+    def method_5_ensemble_ranking(self, X, y):
+        """Method 5: Ensemble ranking combining multiple methods"""
+        print("Method 5: Ensemble Ranking")
+        
+        # Run all individual methods
+        stat_features = self.method_1_statistical_selection(X, y)
+        rfe_features = self.method_2_recursive_elimination(X, y)
+        reg_features = self.method_3_regularization_based(X, y)
+        model_features = self.method_4_model_based_selection(X, y)
+        
+        # Count votes for each feature
+        all_features = set(X.columns)
+        feature_votes = {feat: 0 for feat in all_features}
+        feature_scores_sum = {feat: 0.0 for feat in all_features}
+        
+        # Weight each method equally and normalize scores
+        methods = ['statistical', 'rfe', 'model_based', 'regularization']
+        for method in methods:
+            if method in self.selection_results:
+                selected = self.selection_results[method]['features']
+                scores = self.selection_results[method]['scores']
+                
+                # Normalize scores to 0-1 range
+                score_values = list(scores.values())
+                if len(score_values) > 0:
+                    min_score = min(score_values)
+                    max_score = max(score_values)
+                    score_range = max_score - min_score
+                    
+                    if score_range > 0:
+                        for feat in selected:
+                            feature_votes[feat] += 1
+                            normalized_score = (scores[feat] - min_score) / score_range
+                            feature_scores_sum[feat] += normalized_score
+                    else:
+                        for feat in selected:
+                            feature_votes[feat] += 1
+                            feature_scores_sum[feat] += 1.0
+        
+        # Combine votes and normalized scores
+        ensemble_scores = {}
+        for feat in all_features:
+            # Weighted combination: 60% votes, 40% average score
+            vote_score = feature_votes[feat] / len(methods)
+            avg_score = feature_scores_sum[feat] / max(1, feature_votes[feat])
+            ensemble_scores[feat] = 0.6 * vote_score + 0.4 * avg_score
+        
+        # Select top features
+        selected_features = sorted(all_features, key=lambda x: ensemble_scores[x], reverse=True)[:self.target_features]
+        
+        self.selection_results['ensemble'] = {
+            'features': selected_features,
+            'scores': ensemble_scores,
+            'votes': feature_votes,
+            'method': 'Ensemble Ranking'
+        }
+        
+        return selected_features
+    
+    def validate_selection(self, X, y, selected_features, method_name):
+        """Validate feature selection using cross-validation"""
+        print(f"Validating {method_name} selection...")
+        
+        if len(selected_features) == 0:
+            return {'cv_score': 0.0, 'std_score': 0.0}
+        
+        X_selected = X[selected_features]
+        
+        if self.regression_mode:
+            model = RandomForestRegressor(n_estimators=50, random_state=self.random_state, n_jobs=-1)
+            scoring = 'neg_mean_squared_error'
+        else:
+            model = RandomForestClassifier(n_estimators=50, random_state=self.random_state, n_jobs=-1)
+            scoring = 'accuracy'
+        
+        cv = TimeSeriesSplit(n_splits=self.validation_splits)
+        scores = cross_val_score(model, X_selected, y, cv=cv, scoring=scoring, n_jobs=-1)
+        
+        return {
+            'cv_score': np.mean(scores),
+            'std_score': np.std(scores),
+            'feature_count': len(selected_features)
+        }
+    
+    def select_best_features(self, df, feature_cols, target_col, validate=True):
+        """Main method to select the best features using all methods"""
+        print(f"Starting advanced feature selection for {len(feature_cols)} features -> {self.target_features} target features")
+        
+        X, y = self.prepare_data(df, feature_cols, target_col)
+        print(f"Data prepared: {X.shape[0]} samples, {X.shape[1]} features")
+        
+        # Run all methods
+        results = {}
+        
+        # Method 5 automatically runs 1-4
+        ensemble_features = self.method_5_ensemble_ranking(X, y)
+        
+        # Validate each method if requested
+        if validate:
+            print("\nValidating feature selections...")
+            for method_name, method_data in self.selection_results.items():
+                validation_results = self.validate_selection(X, y, method_data['features'], method_name)
+                self.selection_results[method_name]['validation'] = validation_results
+        
+        # Find best method based on validation score
+        best_method = 'ensemble'  # default
+        best_score = float('-inf')
+        
+        if validate:
+            for method_name, method_data in self.selection_results.items():
+                if 'validation' in method_data:
+                    score = method_data['validation']['cv_score']
+                    if score > best_score:
+                        best_score = score
+                        best_method = method_name
+        
+        print(f"\nBest performing method: {best_method}")
+        
+        return {
+            'best_features': self.selection_results[best_method]['features'],
+            'best_method': best_method,
+            'all_results': self.selection_results,
+            'summary': self.get_selection_summary()
+        }
+    
+    def get_selection_summary(self):
+        """Get a summary of all selection methods"""
+        summary = {}
+        
+        for method_name, method_data in self.selection_results.items():
+            summary[method_name] = {
+                'feature_count': len(method_data['features']),
+                'method_description': method_data['method']
+            }
+            
+            if 'validation' in method_data:
+                summary[method_name]['cv_score'] = method_data['validation']['cv_score']
+                summary[method_name]['score_std'] = method_data['validation']['std_score']
+        
+        return summary
 
 def write_partial_results(results, section_name, file_path=None, mode='a'):
     """
@@ -94,6 +408,50 @@ def write_partial_results(results, section_name, file_path=None, mode='a'):
         if section_name == "Dataset Structure":
             for key, value in results['dataset_structure'].items():
                 f.write(f"{key}: {value}\n")
+        
+        elif section_name == "Feature Filtering":
+            if 'feature_filtering' in results:
+                filtering_info = results['feature_filtering']
+                f.write(f"Original features: {filtering_info['original_count']}\n")
+                f.write(f"Features after constant removal: {filtering_info['after_constant_removal']}\n")
+                f.write(f"Features after collinearity removal: {filtering_info['after_collinearity_removal']}\n")
+                f.write(f"Features after stability filtering: {filtering_info['final_count']}\n\n")
+                
+                f.write("Removed features by category:\n")
+                f.write(f"Constant features ({len(filtering_info['removed_constant'])}): {', '.join(filtering_info['removed_constant'][:10])}\n")
+                if len(filtering_info['removed_constant']) > 10:
+                    f.write(f"... and {len(filtering_info['removed_constant']) - 10} more\n")
+                    
+                f.write(f"High collinearity features ({len(filtering_info['removed_collinear'])}): {', '.join(filtering_info['removed_collinear'][:10])}\n")
+                if len(filtering_info['removed_collinear']) > 10:
+                    f.write(f"... and {len(filtering_info['removed_collinear']) - 10} more\n")
+                    
+                f.write(f"Unstable features ({len(filtering_info['removed_unstable'])}): {', '.join(filtering_info['removed_unstable'][:10])}\n")
+                if len(filtering_info['removed_unstable']) > 10:
+                    f.write(f"... and {len(filtering_info['removed_unstable']) - 10} more\n")
+                    
+                f.write(f"\nFiltered feature set ({len(filtering_info['final_features'])}): {', '.join(filtering_info['final_features'])}\n")
+
+        elif section_name == "Enhanced Feature Selection":
+            if 'enhanced_selection' in results:
+                selection_info = results['enhanced_selection']
+                f.write(f"Enhanced selection method: {selection_info['best_method']}\n")
+                f.write(f"Final selected features: {len(selection_info['best_features'])}\n\n")
+                
+                # Write method comparison
+                f.write("Method Performance Comparison:\n" + "-" * 40 + "\n")
+                for method, summary in selection_info['summary'].items():
+                    f.write(f"{method.upper()}:\n")
+                    f.write(f"  Method: {summary['method_description']}\n")
+                    f.write(f"  Features: {summary['feature_count']}\n")
+                    if 'cv_score' in summary:
+                        f.write(f"  CV Score: {summary['cv_score']:.4f} ± {summary['score_std']:.4f}\n")
+                    f.write("\n")
+                
+                # Write selected features
+                f.write(f"Selected Features ({len(selection_info['best_features'])}):\n")
+                for i, feature in enumerate(selection_info['best_features'], 1):
+                    f.write(f"{i:2d}. {feature}\n")
         
         elif section_name == "Feature Statistics":
             # Sort features by correlation with target
@@ -150,56 +508,73 @@ def write_partial_results(results, section_name, file_path=None, mode='a'):
                 f.write(f"{feature:<30}{metrics['mean_importance']:<15.4f}{metrics['coefficient_of_variation']:<15.4f}{metrics['trend']:<15.4e}\n")
                 
         elif section_name == "Important Features":
-            important_features = set()
-            
-            # Consider features important based on threshold method - similar to write_results_to_file
-            importance_methods = [
-                ('mutual_information', results.get('feature_importance', {})), 
-                ('random_forest_importance', results.get('feature_importance', {})),
-                ('shap_importance', results.get('shap_analysis', {}))
-            ]
-            
-            for method_name, method_dict in importance_methods:
-                if method_name in method_dict:
-                    values = list(method_dict[method_name].values())
-                    # Use mean + 1 std as threshold
-                    if values:
-                        threshold = np.mean(values) + np.std(values)
-                        for feature, score in method_dict[method_name].items():
-                            if score > threshold:
-                                important_features.add(feature)
-                                
-            # Include directional importance if available
-            if 'direction_importance' in results.get('feature_importance', {}):
-                values = list(results['feature_importance']['direction_importance'].values())
-                threshold = np.mean(values) + np.std(values)
-                for feature, score in results['feature_importance']['direction_importance'].items():
-                    if score > threshold:
-                        important_features.add(feature)
-            
-            # Also consider time-series stability
-            stable_features = []
-            if 'time_series_stability' in results:
-                for feature, metrics in results['time_series_stability'].items():
-                    # Features with low coefficient of variation are more stable
-                    if metrics['coefficient_of_variation'] < 0.5:  # Threshold for stability
-                        stable_features.append((feature, metrics['mean_importance']))
-            
-            # Sort stable features by importance
-            stable_features.sort(key=lambda x: x[1], reverse=True)
-            
-            # Add top stable features to important_features
-            for feature, _ in stable_features[:min(20, len(stable_features))]:
-                important_features.add(feature)
+            # Use enhanced selection results if available
+            if 'enhanced_selection' in results:
+                f.write("=== ENHANCED SELECTED FEATURES ===\n\n")
+                f.write(f"Selection method: {results['enhanced_selection']['best_method']}\n")
+                f.write(f"Total features: {len(results['enhanced_selection']['best_features'])}\n\n")
+                
+                f.write("# Top features selected by enhanced method:\n")
+                for i, feature in enumerate(results['enhanced_selection']['best_features'], 1):
+                    f.write(f"{i:2d}. {feature}\n")
+            else:
+                # Fallback to original logic
+                important_features = set()
+                
+                # Consider features important based on threshold method - similar to write_results_to_file
+                importance_methods = [
+                    ('mutual_information', results.get('feature_importance', {})), 
+                    ('random_forest_importance', results.get('feature_importance', {})),
+                    ('shap_importance', results.get('shap_analysis', {}))
+                ]
+                
+                for method_name, method_dict in importance_methods:
+                    if method_name in method_dict:
+                        values = list(method_dict[method_name].values())
+                        # Use mean + 1 std as threshold
+                        if values:
+                            threshold = np.mean(values) + np.std(values)
+                            for feature, score in method_dict[method_name].items():
+                                if score > threshold:
+                                    important_features.add(feature)
+                                    
+                # Include directional importance if available
+                if 'direction_importance' in results.get('feature_importance', {}):
+                    values = list(results['feature_importance']['direction_importance'].values())
+                    threshold = np.mean(values) + np.std(values)
+                    for feature, score in results['feature_importance']['direction_importance'].items():
+                        if score > threshold:
+                            important_features.add(feature)
+                
+                # Also consider time-series stability
+                stable_features = []
+                if 'time_series_stability' in results:
+                    for feature, metrics in results['time_series_stability'].items():
+                        # Features with low coefficient of variation are more stable
+                        if metrics['coefficient_of_variation'] < 0.5:  # Threshold for stability
+                            stable_features.append((feature, metrics['mean_importance']))
+                
+                # Sort stable features by importance
+                stable_features.sort(key=lambda x: x[1], reverse=True)
+                
+                # Add top stable features to important_features
+                for feature, _ in stable_features[:min(20, len(stable_features))]:
+                    important_features.add(feature)
 
-            f.write("=== IMPORTANT FEATURES ===\n\n")
-            f.write("# Features with high importance and stability:\n")
-            for feature in sorted(important_features):
-                f.write(feature + '\n')
-            
-            f.write("\n# Top stable features across time periods:\n")
-            for feature, importance in stable_features[:20]:
-                f.write(f"{feature}: {importance:.4f}\n")
+                f.write("=== IMPORTANT FEATURES (Legacy Method) ===\n\n")
+                f.write("# Features with high importance and stability:\n")
+                for feature in sorted(important_features):
+                    f.write(feature + '\n')
+                
+                f.write("\n# Top stable features across time periods:\n")
+                for feature, importance in stable_features[:20]:
+                    f.write(f"{feature}: {importance:.4f}\n")
+        
+        elif section_name == "Model Information":
+            if 'saved_models' in results:
+                f.write("Saved Models:\n")
+                for model_name, model_path in results['saved_models'].items():
+                    f.write(f"  {model_name}: {model_path}\n")
         
         f.write("\n")  # Add spacing at end of section
 
@@ -232,14 +607,17 @@ def log(message, level=LOG_LEVEL_INFO, *args, **kwargs):
     # Print with timing and memory info
     original_print(f"[{current_time}] (+{elapsed_formatted}) {level_prefix}{section_info}MEM:{memory_usage_mb:.1f}MB - {message}", *args, **kwargs)
     
-    # Add GPU memory tracking if available
+    # Add GPU memory tracking if available - with error handling
     if GPU_AVAILABLE:
         try:
+            # Check if CUDA is properly initialized first
+            cp.cuda.runtime.getDeviceCount()  # This will throw if CUDA not available
             free_memory, total_memory = cp.cuda.runtime.memGetInfo()
             gpu_memory_used = (total_memory - free_memory) / 1024 / 1024
             gpu_utilization = 100 * (1 - free_memory / total_memory)
             original_print(f"    GPU Memory: {gpu_memory_used:.1f}MB ({gpu_utilization:.1f}% used)")
         except:
+            # Silently disable GPU tracking if there's any issue
             pass
 
 def start_section(section_name):
@@ -405,6 +783,109 @@ def create_profit_aware_targets(df, signal_col, profit_window=14, stop_loss_pct=
     
     return df['profitable_signal']
 
+def calculate_feature_correlation_matrix(df, numeric_features, correlation_threshold=0.95):
+    """
+    Calculate correlation matrix and identify highly correlated features to remove
+    """
+    log(f"Calculating correlation matrix for {len(numeric_features)} features")
+    
+    # Calculate correlation matrix in chunks to handle memory
+    chunk_size = 100
+    correlation_matrix = np.eye(len(numeric_features))
+    
+    for i in range(0, len(numeric_features), chunk_size):
+        end_i = min(i + chunk_size, len(numeric_features))
+        for j in range(i, len(numeric_features), chunk_size):
+            end_j = min(j + chunk_size, len(numeric_features))
+            
+            # Calculate correlation for this chunk
+            chunk_data_i = df[numeric_features[i:end_i]]
+            chunk_data_j = df[numeric_features[j:end_j]]
+            
+            chunk_corr = np.corrcoef(chunk_data_i.T, chunk_data_j.T)
+            
+            if i == j:  # Diagonal chunk
+                correlation_matrix[i:end_i, j:end_j] = chunk_corr[:end_i-i, :end_j-j]
+            else:
+                correlation_matrix[i:end_i, j:end_j] = chunk_corr[:end_i-i, end_i-i:end_i-i+end_j-j]
+                correlation_matrix[j:end_j, i:end_i] = chunk_corr[end_i-i:end_i-i+end_j-j, :end_i-i]
+    
+    # Find highly correlated pairs
+    high_corr_pairs = []
+    for i in range(len(numeric_features)):
+        for j in range(i+1, len(numeric_features)):
+            if abs(correlation_matrix[i, j]) > correlation_threshold:
+                high_corr_pairs.append((i, j, correlation_matrix[i, j]))
+    
+    log(f"Found {len(high_corr_pairs)} highly correlated pairs (threshold: {correlation_threshold})")
+    
+    # Decide which features to remove - keep the one with higher variance
+    features_to_remove = set()
+    for i, j, corr in high_corr_pairs:
+        feature_i = numeric_features[i]
+        feature_j = numeric_features[j]
+        
+        var_i = df[feature_i].var()
+        var_j = df[feature_j].var()
+        
+        # Remove the feature with lower variance
+        if var_i < var_j:
+            features_to_remove.add(feature_i)
+        else:
+            features_to_remove.add(feature_j)
+    
+    return list(features_to_remove), high_corr_pairs
+
+def quick_stability_check(df, numeric_features, target_col, n_splits=3, cv_threshold=1.0):
+    """
+    Quick stability check using smaller splits to identify unstable features early
+    """
+    log(f"Quick stability check for {len(numeric_features)} features")
+    
+    # Use only a subset for quick check
+    sample_size = min(50000, len(df))
+    if len(df) > sample_size:
+        sample_indices = np.random.choice(len(df), sample_size, replace=False)
+        df_sample = df.iloc[sample_indices]
+    else:
+        df_sample = df
+    
+    X = df_sample[numeric_features].copy()
+    y = df_sample[target_col]
+    
+    # Handle data issues
+    X.replace([np.inf, -np.inf], np.nan, inplace=True)
+    X.fillna(X.median(), inplace=True)
+    
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    importance_over_time = {feature: [] for feature in numeric_features}
+    
+    for train_idx, test_idx in tscv.split(X):
+        X_train = X.iloc[train_idx]
+        y_train = y.iloc[train_idx]
+        
+        # Use a smaller, faster model for quick check
+        if len(np.unique(y_train)) > 2:  # Regression
+            model = RandomForestRegressor(n_estimators=20, random_state=42, n_jobs=-1)
+        else:  # Classification
+            model = RandomForestClassifier(n_estimators=20, random_state=42, n_jobs=-1)
+            
+        model.fit(X_train, y_train)
+        
+        for feature, importance in zip(numeric_features, model.feature_importances_):
+            importance_over_time[feature].append(importance)
+    
+    # Calculate coefficient of variation for each feature
+    unstable_features = []
+    for feature, importances in importance_over_time.items():
+        if len(importances) > 1:
+            cv = np.std(importances) / (np.mean(importances) + 1e-8)
+            if cv > cv_threshold:
+                unstable_features.append(feature)
+    
+    log(f"Identified {len(unstable_features)} unstable features (CV > {cv_threshold})")
+    return unstable_features
+
 class EnhancedTradingDataAnalyzer:
     def __init__(self, df, target_col=target_col, regression_mode=regression_mode, forecast_periods=14):
         self.df = df.copy()
@@ -412,9 +893,51 @@ class EnhancedTradingDataAnalyzer:
         self.regression_mode = regression_mode
         self.forecast_periods = forecast_periods
         self.feature_stats = {}
+        self.saved_models = {}
         
-        # Use GPU for processing if available
-        self.use_gpu = GPU_AVAILABLE
+        # Create models directory
+        self.models_dir = f"models_{target_col}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        os.makedirs(self.models_dir, exist_ok=True)
+        
+        # 🔥 OPTIMIZED GPU INITIALIZATION
+        self.use_gpu = False
+        self.gpu_df = None
+        
+        if GPU_AVAILABLE:
+            try:
+                # More thorough GPU test
+                log("Testing GPU functionality...")
+                
+                # Test CuPy
+                test_array = cp.array([1, 2, 3, 4, 5])
+                test_result = cp.sum(test_array)
+                
+                # Test cuDF
+                test_df = cudf.DataFrame({'test': [1, 2, 3]})
+                
+                # Test cuML with a tiny model
+                from cuml.ensemble import RandomForestClassifier as cuRF_Test
+                test_X = cp.array([[1, 2], [3, 4], [5, 6]])
+                test_y = cp.array([0, 1, 0])
+                test_model = cuRF_Test(n_estimators=2)
+                test_model.fit(test_X, test_y)
+                
+                # If we get here, GPU is fully functional
+                self.use_gpu = True
+                log("✅ GPU test successful - All RAPIDS libraries working")
+                
+                # Get GPU memory info
+                free_memory, total_memory = cp.cuda.runtime.memGetInfo()
+                gpu_memory_gb = total_memory / (1024**3)
+                free_memory_gb = free_memory / (1024**3)
+                log(f"GPU Memory: {free_memory_gb:.1f}GB free / {gpu_memory_gb:.1f}GB total")
+                
+            except Exception as e:
+                log(f"GPU initialization failed: {e}", LOG_LEVEL_WARNING)
+                log("Falling back to CPU-only mode")
+                self.use_gpu = False
+        else:
+            log("RAPIDS not available - using CPU-only mode")
         
         # Prepare targets based on mode
         if regression_mode:
@@ -435,10 +958,10 @@ class EnhancedTradingDataAnalyzer:
             # Remove NaN rows from the derived targets
             self.df = self.df.dropna(subset=[self.target_col])
         
-        # Remove constant features that cause correlation issues
-        self._remove_constant_features()
+        # Apply feature filtering
+        self.feature_filtering_results = self._filter_features()
         
-        # Convert to GPU dataframe if GPU available
+        # Convert to GPU dataframe if GPU available and enabled
         if self.use_gpu:
             try:
                 log("Converting dataframe to GPU memory")
@@ -449,20 +972,169 @@ class EnhancedTradingDataAnalyzer:
                 self.use_gpu = False
                 self.gpu_df = None
 
-    def _remove_constant_features(self, threshold=1e-10):
-        """Remove features with near-zero standard deviation"""
-        numeric_cols = self.df.select_dtypes(include=[np.number]).columns
+    def run_enhanced_feature_selection(self, target_features=75, validate=True):
+        """
+        Run enhanced feature selection using AdvancedFeatureSelector
         
+        Args:
+            target_features: Number of features to select
+            validate: Whether to validate selections with cross-validation
+        
+        Returns:
+            Dictionary with selection results
+        """
+        start_section("run_enhanced_feature_selection")
+        
+        log(f"Starting enhanced feature selection to select {target_features} features")
+        
+        # Get filtered features from basic filtering
+        filtered_features = self.feature_filtering_results['final_features']
+        log(f"Running enhanced selection on {len(filtered_features)} pre-filtered features")
+        
+        # Initialize the advanced selector
+        selector = AdvancedFeatureSelector(
+            regression_mode=self.regression_mode,
+            target_features=target_features,
+            validation_splits=5,
+            random_state=42
+        )
+        
+        try:
+            # Run the enhanced selection
+            selection_results = selector.select_best_features(
+                df=self.df,
+                feature_cols=filtered_features,
+                target_col=self.target_col,
+                validate=validate
+            )
+            
+            log(f"Enhanced selection completed. Best method: {selection_results['best_method']}")
+            log(f"Selected {len(selection_results['best_features'])} features")
+            
+            # Save detailed results to file
+            detailed_file = f"{self.original_target_col}_enhanced_selection_details.txt"
+            with open(detailed_file, 'w') as f:
+                f.write("=== ENHANCED FEATURE SELECTION DETAILS ===\n\n")
+                f.write(f"Target: {self.original_target_col}\n")
+                f.write(f"Mode: {'Regression' if self.regression_mode else 'Classification'}\n")
+                f.write(f"Target Features: {target_features}\n")
+                f.write(f"Best Method: {selection_results['best_method']}\n\n")
+                
+                f.write("METHOD COMPARISON:\n" + "="*50 + "\n")
+                for method, summary in selection_results['summary'].items():
+                    f.write(f"\n{method.upper()}:\n")
+                    f.write(f"  Description: {summary['method_description']}\n")
+                    f.write(f"  Features Selected: {summary['feature_count']}\n")
+                    if 'cv_score' in summary:
+                        f.write(f"  Cross-validation Score: {summary['cv_score']:.6f} ± {summary['score_std']:.6f}\n")
+                
+                f.write(f"\n\nSELECTED FEATURES ({len(selection_results['best_features'])}):\n")
+                f.write("="*50 + "\n")
+                for i, feature in enumerate(selection_results['best_features'], 1):
+                    f.write(f"{i:2d}. {feature}\n")
+                
+                # Write feature scores for best method
+                if 'all_results' in selection_results:
+                    best_method_data = selection_results['all_results'][selection_results['best_method']]
+                    if 'scores' in best_method_data:
+                        f.write(f"\n\nFEATURE SCORES ({selection_results['best_method'].upper()}):\n")
+                        f.write("="*50 + "\n")
+                        
+                        # Sort scores for selected features
+                        selected_scores = {
+                            feat: best_method_data['scores'][feat] 
+                            for feat in selection_results['best_features']
+                            if feat in best_method_data['scores']
+                        }
+                        
+                        for i, (feature, score) in enumerate(
+                            sorted(selected_scores.items(), key=lambda x: x[1], reverse=True), 1
+                        ):
+                            f.write(f"{i:2d}. {feature}: {score:.6f}\n")
+            
+            log(f"Detailed selection results saved to: {detailed_file}")
+            
+            end_section()
+            return selection_results
+            
+        except Exception as e:
+            log(f"Enhanced feature selection failed: {e}", LOG_LEVEL_ERROR)
+            traceback.print_exc()
+            
+            # Return fallback selection (top features by basic importance)
+            log("Falling back to basic feature selection")
+            fallback_features = filtered_features[:target_features]
+            
+            end_section()
+            return {
+                'best_features': fallback_features,
+                'best_method': 'fallback',
+                'all_results': {},
+                'summary': {'fallback': {'method_description': 'Basic top features fallback', 'feature_count': len(fallback_features)}}
+            }
+
+    def _filter_features(self, correlation_threshold=0.95, cv_threshold=1.0):
+        """
+        Comprehensive feature filtering to remove problematic features
+        """
+        start_section("_filter_features")
+        
+        # Get initial numeric features
+        exclude_columns = {'short_signal', 'long_signal', 'close_position', 'Close', 
+                          'future_close', 'pct_change', 'direction', 'profitable_signal'}
+        numeric_features = [col for col in self.df.select_dtypes(include=[np.number]).columns 
+                           if col not in exclude_columns]
+        
+        original_count = len(numeric_features)
+        log(f"Starting with {original_count} numeric features")
+        
+        # Step 1: Remove constant features
+        log("Step 1: Removing constant features")
+        constant_features = self._remove_constant_features(numeric_features)
+        numeric_features = [f for f in numeric_features if f not in constant_features]
+        after_constant = len(numeric_features)
+        log(f"Removed {len(constant_features)} constant features, {after_constant} remaining")
+        
+        # Step 2: Remove highly correlated features
+        log("Step 2: Removing highly correlated features")
+        correlated_features, corr_pairs = calculate_feature_correlation_matrix(
+            self.df, numeric_features, correlation_threshold)
+        numeric_features = [f for f in numeric_features if f not in correlated_features]
+        after_collinearity = len(numeric_features)
+        log(f"Removed {len(correlated_features)} highly correlated features, {after_collinearity} remaining")
+        
+        # Step 3: Remove unstable features (quick check)
+        log("Step 3: Removing unstable features")
+        unstable_features = quick_stability_check(
+            self.df, numeric_features, self.target_col, n_splits=3, cv_threshold=cv_threshold)
+        numeric_features = [f for f in numeric_features if f not in unstable_features]
+        final_count = len(numeric_features)
+        log(f"Removed {len(unstable_features)} unstable features, {final_count} remaining")
+        
+        # Store filtering results
+        filtering_results = {
+            'original_count': original_count,
+            'after_constant_removal': after_constant,
+            'after_collinearity_removal': after_collinearity,
+            'final_count': final_count,
+            'removed_constant': constant_features,
+            'removed_collinear': correlated_features,
+            'removed_unstable': unstable_features,
+            'final_features': numeric_features
+        }
+        
+        log(f"Feature filtering complete: {original_count} -> {final_count} features")
+        end_section()
+        return filtering_results
+
+    def _remove_constant_features(self, numeric_features, threshold=1e-10):
+        """Remove features with near-zero standard deviation"""
         constant_features = []
-        for col in numeric_cols:
+        for col in numeric_features:
             if self.df[col].std() <= threshold:
                 constant_features.append(col)
         
-        if constant_features:
-            log(f"Removed {len(constant_features)} constant features that would cause correlation issues")
-            log(", ".join(constant_features[:10]) + 
-                (f" and {len(constant_features)-10} more..." if len(constant_features) > 10 else ""))
-            self.df = self.df.drop(columns=constant_features)
+        return constant_features
 
     def analyze_dataset_structure(self):
         start_section("analyze_dataset_structure")
@@ -521,12 +1193,17 @@ class EnhancedTradingDataAnalyzer:
         end_section()
         return analysis
 
-    def analyze_feature_statistics(self):
+    def analyze_feature_statistics(self, selected_features=None):
         start_section("analyze_feature_statistics")
         log("Computing feature statistics")
         
-        # We'll use CPU for this as it's not computationally intensive
-        numeric_features = self.df.select_dtypes(include=[np.number]).columns
+        # Use enhanced selected features if available, otherwise use filtered features
+        if selected_features is not None:
+            numeric_features = selected_features
+            log(f"Using {len(numeric_features)} enhanced selected features for statistics")
+        else:
+            numeric_features = self.feature_filtering_results['final_features']
+            log(f"Using {len(numeric_features)} filtered features for statistics")
         
         # Process features in parallel using ThreadPoolExecutor
         def process_feature(feature):
@@ -630,6 +1307,14 @@ class EnhancedTradingDataAnalyzer:
                     
                 model.fit(X, y)
                 importances = model.feature_importances_
+                
+                # Save GPU model
+                model_path = os.path.join(self.models_dir, f"gpu_random_forest_{self.target_col}.pkl")
+                with open(model_path, 'wb') as f:
+                    pickle.dump(model, f)
+                self.saved_models[f"gpu_random_forest_{self.target_col}"] = model_path
+                log(f"GPU Random Forest model saved to {model_path}")
+                
                 return model, {feature: float(importance) for feature, importance in zip(numeric_features, importances)}
             except Exception as e:
                 log(f"GPU Random Forest training failed, falling back to CPU: {e}", LOG_LEVEL_WARNING)
@@ -642,6 +1327,12 @@ class EnhancedTradingDataAnalyzer:
             
         model.fit(X.to_pandas() if hasattr(X, 'to_pandas') else X, 
                  y.to_numpy() if hasattr(y, 'to_numpy') else y)
+        
+        # Save CPU model using joblib for better sklearn compatibility
+        model_path = os.path.join(self.models_dir, f"cpu_random_forest_{self.target_col}.joblib")
+        joblib.dump(model, model_path)
+        self.saved_models[f"cpu_random_forest_{self.target_col}"] = model_path
+        log(f"CPU Random Forest model saved to {model_path}")
         
         importances = model.feature_importances_
         return model, {feature: float(importance) for feature, importance in zip(numeric_features, importances)}
@@ -680,15 +1371,16 @@ class EnhancedTradingDataAnalyzer:
         
         return direction_importance
 
-    def analyze_feature_importance(self):
+    def analyze_feature_importance(self, selected_features=None):
         start_section("analyze_feature_importance")
         
-        exclude_columns = {'short_signal', 'long_signal', 'close_position', 'Close', 
-                        'future_close', 'pct_change', 'direction', 'profitable_signal'}
-        numeric_features = [col for col in self.df.select_dtypes(include=[np.number]).columns 
-                        if col not in exclude_columns]
-        
-        log(f"Analyzing importance for {len(numeric_features)} numeric features")
+        # Use enhanced selected features if available, otherwise use filtered features
+        if selected_features is not None:
+            numeric_features = selected_features
+            log(f"Analyzing importance for {len(numeric_features)} enhanced selected features")
+        else:
+            numeric_features = self.feature_filtering_results['final_features']
+            log(f"Analyzing importance for {len(numeric_features)} filtered features")
         
         # Prepare data - handle on CPU for consistent preprocessing
         X = self.df[numeric_features].copy()
@@ -758,9 +1450,9 @@ class EnhancedTradingDataAnalyzer:
         end_section()
         return importance_results
         
-    def analyze_shap_values(self, sample_size=100000, max_time_minutes=30, batch_size=500, save_partial=True):
+    def analyze_shap_values(self, sample_size=100000, max_time_minutes=30, batch_size=500, save_partial=True, selected_features=None):
         """
-        Calculate SHAP values for feature importance analysis with GPU acceleration when possible
+        Calculate SHAP values for feature importance analysis with improved error handling
         """
         start_section("analyze_shap_values")
         
@@ -782,13 +1474,13 @@ class EnhancedTradingDataAnalyzer:
                 f.write(f"GPU Acceleration: {'Enabled' if self.use_gpu else 'Disabled'}\n\n")
         
         try:
-            # Define columns to exclude from analysis
-            exclude_columns = {'short_signal', 'long_signal', 'close_position', 'Close',
-                            'future_close', 'pct_change', 'direction', 'profitable_signal'}
-            numeric_features = [col for col in self.df.select_dtypes(include=[np.number]).columns 
-                            if col not in exclude_columns]
-            
-            log(f"SHAP analysis for {len(numeric_features)} features")
+            # Use enhanced selected features if available, otherwise use filtered features
+            if selected_features is not None:
+                numeric_features = selected_features
+                log(f"SHAP analysis for {len(numeric_features)} enhanced selected features")
+            else:
+                numeric_features = self.feature_filtering_results['final_features']
+                log(f"SHAP analysis for {len(numeric_features)} filtered features")
             
             # Prepare data
             X = self.df[numeric_features].copy()
@@ -817,18 +1509,6 @@ class EnhancedTradingDataAnalyzer:
             estimated_memory_per_row = X.memory_usage().sum() / len(X) / 1024 / 1024  # MB per row
             estimated_total_needed = estimated_memory_per_row * sample_size * 10
             
-            # Calculate GPU memory if available
-            if self.use_gpu:
-                try:
-                    free_memory, total_memory = cp.cuda.runtime.memGetInfo()
-                    available_gpu_memory = free_memory / 1024 / 1024
-                    log(f"Available GPU memory: {available_gpu_memory:.1f}MB")
-                    
-                    # Use the minimum of CPU/GPU memory constraint
-                    available_memory = min(available_memory, available_gpu_memory)
-                except:
-                    log("Could not determine GPU memory availability", LOG_LEVEL_WARNING)
-            
             if estimated_total_needed > available_memory * 0.5:  # Use only 50% of available memory
                 adjusted_sample_size = int(available_memory * 0.5 / (estimated_memory_per_row * 10))
                 log(f"Memory constraint: Adjusting sample size from {sample_size} to {adjusted_sample_size}")
@@ -851,72 +1531,28 @@ class EnhancedTradingDataAnalyzer:
                 y_sample = y
                 log(f"Using all {len(X)} rows for SHAP analysis")
             
-            # Create an appropriate model based on regression or classification
-            if self.use_gpu:
-                try:
-                    log("Using GPU-accelerated model for SHAP analysis")
-                    # Convert to GPU format
-                    X_gpu = cudf.DataFrame.from_pandas(X_sample)
-                    y_gpu = cudf.Series(y_sample)
-                    
-                    if self.regression_mode:
-                        model = cuRF_Regressor(n_estimators=100, random_state=42)
-                    else:
-                        model = cuRF_Classifier(n_estimators=100, random_state=42)
-                        
-                    log("Fitting GPU model")
-                    model.fit(X_gpu, y_gpu)
-                    
-                    # Convert back to CPU for SHAP (which may not fully support cuML models)
-                    # Copy model's feature importance for result report purposes
-                    gpu_importances = model.feature_importances_
-                    
-                    # Train equivalent CPU model for SHAP
-                    log("Training CPU model for SHAP calculation")
-                    if self.regression_mode:
-                        cpu_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                    else:
-                        cpu_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                        
-                    cpu_model.fit(X_sample, y_sample)
-                    log("CPU model trained for SHAP analysis")
-                    
-                    # Use CPU model for SHAP
-                    model_for_shap = cpu_model
-                    X_for_shap = X_sample
-                    
-                except Exception as e:
-                    log(f"GPU model training failed, falling back to CPU: {e}", LOG_LEVEL_WARNING)
-                    self.use_gpu = False
-                    
-                    if self.regression_mode:
-                        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                    else:
-                        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                        
-                    log("Fitting CPU model")
-                    model.fit(X_sample, y_sample)
-                    model_for_shap = model
-                    X_for_shap = X_sample
+            # Create CPU model for SHAP (SHAP works better with sklearn models)
+            log("Training CPU model for SHAP analysis")
+            if self.regression_mode:
+                model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
             else:
-                # Use CPU with multithreading
-                log("Using CPU model with multithreading for SHAP analysis")
-                if self.regression_mode:
-                    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                else:
-                    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                    
-                log(f"Fitting model with {len(X_sample)} samples and {len(numeric_features)} features")
-                fit_start = time.time()
+                model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
                 
-                with tqdm(total=1, desc="Training model") as pbar:
-                    model.fit(X_sample, y_sample)
-                    pbar.update(1)
-                    
-                fit_time = time.time() - fit_start
-                log(f"Model training completed in {fit_time:.2f} seconds")
-                model_for_shap = model
-                X_for_shap = X_sample
+            log(f"Fitting model with {len(X_sample)} samples and {len(numeric_features)} features")
+            fit_start = time.time()
+            
+            with tqdm.tqdm(total=1, desc="Training model") as pbar:
+                model.fit(X_sample, y_sample)
+                pbar.update(1)
+                
+            fit_time = time.time() - fit_start
+            log(f"Model training completed in {fit_time:.2f} seconds")
+            
+            # Save the SHAP model too
+            shap_model_path = os.path.join(self.models_dir, f"shap_model_{self.target_col}.joblib")
+            joblib.dump(model, shap_model_path)
+            self.saved_models[f"shap_model_{self.target_col}"] = shap_model_path
+            log(f"SHAP model saved to {shap_model_path}")
             
             # Check memory again before SHAP calculation
             current_memory = process.memory_info().rss / 1024 / 1024
@@ -928,33 +1564,25 @@ class EnhancedTradingDataAnalyzer:
             explainer_start = time.time()
             
             try:
-                explainer = shap.TreeExplainer(model_for_shap)
+                # Use TreeExplainer with safer parameters
+                explainer = shap.TreeExplainer(model, feature_perturbation="interventional")
                 explainer_time = time.time() - explainer_start
                 log(f"SHAP explainer created in {explainer_time:.2f} seconds")
             except Exception as e:
                 log(f"Error creating SHAP explainer: {e}", LOG_LEVEL_ERROR)
-                log("Trying with 'TreeExplainer' parameters adjusted...", LOG_LEVEL_WARNING)
-                
-                try:
-                    # Try with different parameters
-                    explainer = shap.TreeExplainer(model_for_shap, feature_perturbation="interventional", model_output="raw")
-                    explainer_time = time.time() - explainer_start
-                    log(f"Alternative SHAP explainer created in {explainer_time:.2f} seconds")
-                except Exception as e2:
-                    log(f"Still failed to create explainer: {e2}", LOG_LEVEL_ERROR)
-                    raise ValueError("Could not create SHAP explainer with either approach")
+                raise ValueError(f"Could not create SHAP explainer: {str(e)}")
             
             # Further reduce sample size for SHAP calculation if needed
-            shap_sample_size = min(len(X_for_shap), 10000)  # Cap at 10,000 for SHAP calculation
-            if len(X_for_shap) > shap_sample_size:
+            shap_sample_size = min(len(X_sample), 10000)  # Cap at 10,000 for SHAP calculation
+            if len(X_sample) > shap_sample_size:
                 log(f"Further sampling to {shap_sample_size} rows for SHAP calculation")
-                shap_indices = np.random.choice(len(X_for_shap), shap_sample_size, replace=False)
-                X_shap = X_for_shap.iloc[shap_indices].copy()
+                shap_indices = np.random.choice(len(X_sample), shap_sample_size, replace=False)
+                X_shap = X_sample.iloc[shap_indices].copy()
                 # Free memory
-                del X_for_shap
+                del X_sample
                 gc.collect()
             else:
-                X_shap = X_for_shap
+                X_shap = X_sample
             
             # Use larger batch size for faster processing
             batch_size = min(1000, len(X_shap))
@@ -969,7 +1597,7 @@ class EnhancedTradingDataAnalyzer:
             all_shap_values = None
             processed_rows = 0
             
-            with tqdm(total=total_rows, desc="SHAP calculation") as pbar:
+            with tqdm.tqdm(total=total_rows, desc="SHAP calculation") as pbar:
                 for i in range(0, total_rows, batch_size):
                     # Check for timeout
                     elapsed_time = time.time() - start_time
@@ -1066,8 +1694,8 @@ class EnhancedTradingDataAnalyzer:
                                 with open(partial_results_file, 'a') as f:
                                     f.write(f"\n--- Partial SHAP Importance after {processed_rows}/{total_rows} samples "
                                         f"({processed_rows/total_rows:.1%}) - {datetime.now().strftime('%H:%M:%S')} ---\n")
-                                    for i, (feature, score) in enumerate(list(sorted_importance.items())[:30]):
-                                        f.write(f"{i+1}. {feature}: {score:.6f}\n")
+                                    for idx, (feature, score) in enumerate(list(sorted_importance.items())[:30]):
+                                        f.write(f"{idx+1}. {feature}: {score:.6f}\n")
                     
                     except Exception as e:
                         log(f"Error in SHAP batch {i//batch_size + 1}: {str(e)}", LOG_LEVEL_ERROR)
@@ -1192,14 +1820,17 @@ class EnhancedTradingDataAnalyzer:
             end_section()
             return {'shap_importance': {}}
 
-    def analyze_time_series_stability(self, n_splits=5):
+    def analyze_time_series_stability(self, n_splits=5, selected_features=None):
         start_section("analyze_time_series_stability")
         log("Analyzing time series stability with TimeSeriesSplit")
         
-        exclude_columns = {'short_signal', 'long_signal', 'close_position', 'Close',
-                         'future_close', 'pct_change', 'direction', 'profitable_signal'}
-        numeric_features = [col for col in self.df.select_dtypes(include=[np.number]).columns 
-                           if col not in exclude_columns]
+        # Use enhanced selected features if available, otherwise use filtered features
+        if selected_features is not None:
+            numeric_features = selected_features
+            log(f"Using {len(numeric_features)} enhanced selected features for stability analysis")
+        else:
+            numeric_features = self.feature_filtering_results['final_features']
+            log(f"Using {len(numeric_features)} filtered features for stability analysis")
         
         X = self.df[numeric_features].copy()
         y = self.df[self.target_col]
@@ -1227,6 +1858,11 @@ class EnhancedTradingDataAnalyzer:
                 model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
                 
             model.fit(X_train, y_train)
+            
+            # Save model for this time split
+            split_model_path = os.path.join(self.models_dir, f"time_split_{split_index}_{self.target_col}.joblib")
+            joblib.dump(model, split_model_path)
+            self.saved_models[f"time_split_{split_index}_{self.target_col}"] = split_model_path
             
             # Return importances for this time period
             return dict(zip(numeric_features, model.feature_importances_))
@@ -1274,9 +1910,10 @@ class EnhancedTradingDataAnalyzer:
         return sorted_stability
 
 def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=regression_mode, 
-                         forecast_periods=14, run_shap=True, max_shap_time_minutes=30):
+                         forecast_periods=14, run_shap=True, max_shap_time_minutes=30,
+                         run_enhanced_selection=True, target_features=75):
     """
-    Analyze trading dataset with incremental file writing
+    Analyze trading dataset with enhanced feature selection and incremental file writing
     """
     start_section("analyze_trading_dataset")
     
@@ -1294,21 +1931,43 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
     
     # Initialize results dictionary
     results = {}
+    selected_features = None
+    
+    try:
+        # Dataset structure analysis
+        log("Analyzing dataset structure")
+        results['dataset_structure'] = analyzer.analyze_dataset_structure()
+        write_partial_results(results, "Dataset Structure", file_path=output_file)
+        
+        # Feature filtering results
+        log("Writing feature filtering results")
+        results['feature_filtering'] = analyzer.feature_filtering_results
+        write_partial_results(results, "Feature Filtering", file_path=output_file)
+        
+        # Enhanced feature selection
+        if run_enhanced_selection:
+            log("Running enhanced feature selection")
+            results['enhanced_selection'] = analyzer.run_enhanced_feature_selection(
+                target_features=target_features, validate=True)
+            selected_features = results['enhanced_selection']['best_features']
+            write_partial_results(results, "Enhanced Feature Selection", file_path=output_file)
+            log(f"Enhanced selection complete: {len(selected_features)} features selected")
+        else:
+            log("Skipping enhanced feature selection")
+            
+    except Exception as e:
+        log(f"Error during enhanced feature selection: {e}", LOG_LEVEL_ERROR)
+        traceback.print_exc()
     
     try:
         # Run certain analyses in parallel
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            # Submit parallel tasks
-            structure_future = executor.submit(analyzer.analyze_dataset_structure)
-            stats_future = executor.submit(analyzer.analyze_feature_statistics)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit parallel tasks for non-dependent analyses
+            stats_future = executor.submit(analyzer.analyze_feature_statistics, selected_features)
             patterns_future = executor.submit(analyzer.analyze_periodic_patterns)
             
             # Collect results as they complete
             log("Waiting for parallel analyses to complete...")
-            
-            # Dataset structure
-            results['dataset_structure'] = structure_future.result()
-            write_partial_results(results, "Dataset Structure", file_path=output_file)
             
             # Feature statistics
             results['feature_statistics'] = stats_future.result()
@@ -1325,7 +1984,7 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
     try:
         # Analyze feature importance
         log("Analyzing feature importance")
-        results['feature_importance'] = analyzer.analyze_feature_importance()
+        results['feature_importance'] = analyzer.analyze_feature_importance(selected_features)
         write_partial_results(results, "Feature Importance", file_path=output_file)
     except Exception as e:
         log(f"Error during feature importance analysis: {e}", LOG_LEVEL_ERROR)
@@ -1335,7 +1994,8 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
         # Analyze SHAP values
         if run_shap:
             log("Starting SHAP analysis")
-            results['shap_analysis'] = analyzer.analyze_shap_values(max_time_minutes=max_shap_time_minutes)
+            results['shap_analysis'] = analyzer.analyze_shap_values(
+                max_time_minutes=max_shap_time_minutes, selected_features=selected_features)
         else:
             log("Skipping SHAP analysis")
             results['shap_analysis'] = {'shap_importance': {}}
@@ -1350,7 +2010,8 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
     try:
         # Analyze time series stability
         log("Analyzing time series stability")
-        results['time_series_stability'] = analyzer.analyze_time_series_stability(n_splits=5)
+        results['time_series_stability'] = analyzer.analyze_time_series_stability(
+            n_splits=5, selected_features=selected_features)
         write_partial_results(results, "Time Series Stability", file_path=output_file)
     except Exception as e:
         log(f"Error during time series stability analysis: {e}", LOG_LEVEL_ERROR)
@@ -1361,29 +2022,66 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
         log("Writing important features")
         write_partial_results(results, "Important Features", file_path=output_file)
         
-        # Also write to separate file
+        # Write model information
+        results['saved_models'] = analyzer.saved_models
+        write_partial_results(results, "Model Information", file_path=output_file)
+        
+        # Also write to separate files
         with open(f'{target_col}_important_features.txt', 'w') as f:
-            f.write("=== IMPORTANT FEATURES ===\n\n")
-            f.write("# Generated on: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n\n")
+            f.write("=== ENHANCED SELECTED FEATURES ===\n\n")
+            f.write("# Generated on: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            f.write(f"# Target: {target_col}\n")
+            f.write(f"# Mode: {'Regression' if regression_mode else 'Classification'}\n")
+            f.write(f"# Enhanced Selection: {'Enabled' if run_enhanced_selection else 'Disabled'}\n")
             
-            # Calculate important features - simplified version
-            important_features = set()
-            for method_name in ['mutual_information', 'random_forest_importance']:
-                if method_name in results.get('feature_importance', {}):
-                    method_dict = results['feature_importance'][method_name]
-                    top_features = sorted(method_dict.items(), key=lambda x: x[1], reverse=True)[:20]
-                    for feature, _ in top_features:
+            if run_enhanced_selection and 'enhanced_selection' in results:
+                f.write(f"# Selection Method: {results['enhanced_selection']['best_method']}\n")
+                f.write(f"# Total Features: {len(results['enhanced_selection']['best_features'])}\n\n")
+                
+                for i, feature in enumerate(results['enhanced_selection']['best_features'], 1):
+                    f.write(f"{i:2d}. {feature}\n")
+            else:
+                # Fallback to basic important features
+                f.write("# Fallback to basic important features\n\n")
+                important_features = set()
+                for method_name in ['mutual_information', 'random_forest_importance']:
+                    if method_name in results.get('feature_importance', {}):
+                        method_dict = results['feature_importance'][method_name]
+                        top_features = sorted(method_dict.items(), key=lambda x: x[1], reverse=True)[:target_features]
+                        for feature, _ in top_features:
+                            important_features.add(feature)
+                
+                if 'shap_importance' in results.get('shap_analysis', {}):
+                    top_shap = sorted(results['shap_analysis']['shap_importance'].items(), 
+                                     key=lambda x: x[1], reverse=True)[:target_features]
+                    for feature, _ in top_shap:
                         important_features.add(feature)
+                
+                # Write to file
+                for i, feature in enumerate(sorted(list(important_features)[:target_features]), 1):
+                    f.write(f"{i:2d}. {feature}\n")
+        
+        # Write model summary
+        with open(f'{target_col}_model_summary.txt', 'w') as f:
+            f.write("=== SAVED MODELS SUMMARY ===\n\n")
+            f.write("# Generated on: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n\n")
+            f.write(f"Target: {target_col}\n")
+            f.write(f"Mode: {'Regression' if regression_mode else 'Classification'}\n")
+            f.write(f"Enhanced Selection: {'Enabled' if run_enhanced_selection else 'Disabled'}\n")
+            if run_enhanced_selection and 'enhanced_selection' in results:
+                f.write(f"Selection Method: {results['enhanced_selection']['best_method']}\n")
+                f.write(f"Selected Features: {len(results['enhanced_selection']['best_features'])}\n")
+            f.write(f"Models directory: {analyzer.models_dir}\n\n")
             
-            if 'shap_importance' in results.get('shap_analysis', {}):
-                top_shap = sorted(results['shap_analysis']['shap_importance'].items(), 
-                                 key=lambda x: x[1], reverse=True)[:20]
-                for feature, _ in top_shap:
-                    important_features.add(feature)
+            f.write("Saved models:\n")
+            for model_name, model_path in analyzer.saved_models.items():
+                f.write(f"  {model_name}: {model_path}\n")
             
-            # Write to file
-            for feature in sorted(important_features):
-                f.write(feature + '\n')
+            f.write(f"\nTo load a model:\n")
+            f.write(f"import joblib\n")
+            f.write(f"model = joblib.load('path_to_model.joblib')\n")
+            f.write(f"# For pickle files: with open('path_to_model.pkl', 'rb') as f: model = pickle.load(f)\n")
+                
     except Exception as e:
         log(f"Error writing important features: {e}", LOG_LEVEL_ERROR)
         traceback.print_exc()
@@ -1392,26 +2090,42 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
     with open(output_file, 'a') as f:
         f.write(f"\n{'='*30} ANALYSIS COMPLETED {'='*30}\n")
         f.write(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Enhanced Selection: {'Enabled' if run_enhanced_selection else 'Disabled'}\n")
+        if run_enhanced_selection and 'enhanced_selection' in results:
+            f.write(f"Best Selection Method: {results['enhanced_selection']['best_method']}\n")
+            f.write(f"Selected Features: {len(results['enhanced_selection']['best_features'])}\n")
+        f.write(f"Models saved in: {analyzer.models_dir}\n")
+        f.write(f"Total models saved: {len(analyzer.saved_models)}\n")
     
     end_section()
-    return results, df
+    return results, df, analyzer
 
-def run_configuration(config, file_path, run_shap, max_shap_time):
+def run_configuration(config, file_path, run_shap, max_shap_time, run_enhanced_selection, target_features):
     """Function to run a single configuration"""
     target = config["target_col"]
     regression = config["regression_mode"]
     
     log(f"Starting analysis for target_col={target}, regression_mode={regression}")
+    log(f"Enhanced selection: {'Enabled' if run_enhanced_selection else 'Disabled'}, Target features: {target_features}")
     
     try:
-        results, df = analyze_trading_dataset(
+        results, df, analyzer = analyze_trading_dataset(
             file_path, 
             target_col=target,
             regression_mode=regression,
             run_shap=run_shap, 
-            max_shap_time_minutes=max_shap_time
+            max_shap_time_minutes=max_shap_time,
+            run_enhanced_selection=run_enhanced_selection,
+            target_features=target_features
         )
         log(f"Analysis for {target} completed successfully")
+        log(f"Models saved in directory: {analyzer.models_dir}")
+        log(f"Number of models saved: {len(analyzer.saved_models)}")
+        
+        if run_enhanced_selection and 'enhanced_selection' in results:
+            log(f"Enhanced selection method used: {results['enhanced_selection']['best_method']}")
+            log(f"Features selected: {len(results['enhanced_selection']['best_features'])}")
+        
         return True
     except Exception as e:
         log(f"Fatal error during analysis for {target}: {e}", LOG_LEVEL_ERROR)
@@ -1420,33 +2134,55 @@ def run_configuration(config, file_path, run_shap, max_shap_time):
 
 if __name__ == "__main__":
     # File Path should be csv of all features
-    file_path = 'EURUSD_1min_sampled_features.csv'
+    file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
+    
+    # Enhanced Feature Selection Configuration
+    run_enhanced_selection = True  # Set to True to enable enhanced feature selection
+    target_features = 75  # Number of features to select (as requested)
     
     # Set to False to skip SHAP if it's causing issues
     run_shap = True
-    max_shap_time = 30  # minutes
+    max_shap_time = 360  # minutes
     
     start_section("main")
     
+    log(f"=== ENHANCED FEATURE SELECTION CONFIGURATION ===")
+    log(f"Enhanced Selection: {'Enabled' if run_enhanced_selection else 'Disabled'}")
+    log(f"Target Features: {target_features}")
+    log(f"SHAP Analysis: {'Enabled' if run_shap else 'Disabled'}")
+    log(f"Max SHAP Time: {max_shap_time} minutes")
+    
     # Configuration to run
     configurations = [
-        {"target_col": "long_signal", "regression_mode": False},
-        {"target_col": "short_signal", "regression_mode": False},
+        # {"target_col": "long_signal", "regression_mode": False},
+        # {"target_col": "short_signal", "regression_mode": False},
         {"target_col": "Close", "regression_mode": True}
     ]
     
-    # Run all configurations in parallel or sequentially
+    # Check GPU availability and force sequential execution if GPU is available
     cores_available = os.cpu_count()
     log(f"Detected {cores_available} CPU cores")
+    log(f"GPU Available: {GPU_AVAILABLE}")
     
-    if cores_available >= 6:  # Only parallelize with enough cores
-        # Run in parallel with ProcessPoolExecutor
-        log(f"Running {len(configurations)} configurations in parallel")
+    # FORCE SEQUENTIAL EXECUTION WHEN GPU IS AVAILABLE
+    if GPU_AVAILABLE:
+        log("🔥 GPU detected - Running configurations SEQUENTIALLY to avoid CUDA context conflicts")
+        run_parallel = True
+    elif cores_available >= 6:
+        log(f"No GPU detected - Running {len(configurations)} configurations in PARALLEL")
+        run_parallel = True
+    else:
+        log("Limited cores - Running configurations SEQUENTIALLY")
+        run_parallel = False
+    
+    if run_parallel:
+        # Run in parallel with ProcessPoolExecutor (CPU only)
         with ProcessPoolExecutor(max_workers=len(configurations)) as executor:
             futures = []
             for config in configurations:
                 futures.append(executor.submit(
-                    run_configuration, config, file_path, run_shap, max_shap_time
+                    run_configuration, config, file_path, run_shap, max_shap_time, 
+                    run_enhanced_selection, target_features
                 ))
             
             # Wait for all configurations to complete
@@ -1459,13 +2195,35 @@ if __name__ == "__main__":
                 except Exception as e:
                     log(f"Exception in configuration {config['target_col']}: {e}")
     else:
-        # Run sequentially
-        log("Running configurations sequentially")
-        for config in configurations:
-            run_configuration(config, file_path, run_shap, max_shap_time)
+        # Run sequentially (GPU-safe)
+        log("Running configurations sequentially (GPU-safe mode)")
+        for i, config in enumerate(configurations, 1):
+            log(f"🚀 Starting configuration {i}/{len(configurations)}: {config['target_col']}")
+            success = run_configuration(config, file_path, run_shap, max_shap_time, 
+                                      run_enhanced_selection, target_features)
+            status = "✅ SUCCESS" if success else "❌ FAILED"
+            log(f"Configuration {config['target_col']} completed: {status}")
     
     print_timing_summary()
     end_section()
     
     log("All script executions completed")
+    log(f"Execution mode: {'Sequential (GPU-safe)' if not run_parallel else 'Parallel (CPU-only)'}")
+    log(f"Enhanced feature selection was: {'Enabled' if run_enhanced_selection else 'Disabled'}")
+    log(f"Target features per analysis: {target_features}")
+    
+    # Final summary
+    log("=== ANALYSIS SUMMARY ===")
+    log("Files generated per target:")
+    for config in configurations:
+        target = config['target_col']
+        log(f"  {target}:")
+        log(f"    - {target}_analysis_results.txt (main results)")
+        log(f"    - {target}_important_features.txt (selected features)")
+        log(f"    - {target}_model_summary.txt (model information)")
+        if run_enhanced_selection:
+            log(f"    - {target}_enhanced_selection_details.txt (selection details)")
+        if run_shap:
+            log(f"    - {target}_partial_shap_results.txt (SHAP progress/results)")
+        log(f"    - models_{target}_YYYYMMDD_HHMMSS/ (saved models directory)")
 # %%

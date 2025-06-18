@@ -2,7 +2,7 @@ pandas
 numpy
 ta
 scikit-learn
-tensorflow==2.10
+tensorflow
 keras
 keras-tuner
 matplotlib

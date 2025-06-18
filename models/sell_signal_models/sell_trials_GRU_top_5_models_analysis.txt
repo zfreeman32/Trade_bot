@@ -1,0 +1,22 @@
+Top 5 Trials for sell_trials_GRU by Validation Loss:
+
+     model_type trial_id  val_loss  val_accuracy  accuracy  num_GRU_layers  units_first activation kernel_initializer  dropout  recurrent_dropout  num_dense_layers  units bias_initializer  dropout_rate  learning_rate  focal_gamma  focal_alpha
+sell_trials_GRU       39 28.181774      0.995078  0.995625               1           32       relu          he_normal     0.10               0.20                 1    128    glorot_normal           0.1       0.008016          2.0          0.7
+sell_trials_GRU       23 33.068878      0.995078  0.995664               2           32       relu      glorot_normal     0.35               0.25                 1    128    glorot_normal           0.5       0.005199          3.0          0.1
+sell_trials_GRU       48 39.816994      0.995078  0.995742               1           32       relu          he_normal     0.15               0.40                 1     96        he_normal           0.3       0.006997          1.0          0.1
+sell_trials_GRU       42 44.056950      0.995078  0.995703               1           32       relu      glorot_normal     0.30               0.10                 1    128        he_normal           0.3       0.002183          1.0          0.9
+sell_trials_GRU       36 56.309444      0.995078  0.996016               3           32       relu      glorot_normal     0.20               0.15                 2    128        he_normal           0.4       0.009220          1.0          0.1
+
+
+Most Common Hyperparameters in Top 5:
+
+  num_GRU_layers: 1 (shared by 3 models)
+  units_first: 32 (shared by 5 models)
+  activation: relu (shared by 5 models)
+  kernel_initializer: glorot_normal (shared by 3 models)
+  num_dense_layers: 1 (shared by 4 models)
+  units: 128 (shared by 4 models)
+  bias_initializer: he_normal (shared by 3 models)
+  dropout_rate: 0.30000000000000004 (shared by 2 models)
+  focal_gamma: 1.0 (shared by 3 models)
+  focal_alpha: 0.1 (shared by 3 models)

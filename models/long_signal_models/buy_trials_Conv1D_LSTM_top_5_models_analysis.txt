@@ -1,0 +1,31 @@
+Top 5 Trials for buy_trials_Conv1D_LSTM by Validation Loss:
+
+            model_type trial_id  val_loss  val_accuracy  accuracy  num_conv_layers  filters  kernel_size padding activation kernel_initializer  pool_size  strides  num_lstm_layers  units_first  forget_bias  dropout  recurrent_dropout  num_dense_layers  units bias_initializer  dropout_rate  learning_rate  focal_gamma  focal_alpha
+buy_trials_Conv1D_LSTM       18 25.444685      0.994844  0.994531                3       32            3    same       relu          he_normal          3        2                1           32        False     0.40               0.30                 2     64        he_normal           0.2       0.001773          1.0          0.6
+buy_trials_Conv1D_LSTM       20 26.249706      0.994844  0.995039                2      128            3   valid       gelu      glorot_normal          2        1                1           32        False     0.25               0.25                 2     96        he_normal           0.1       0.008290          1.5          0.7
+buy_trials_Conv1D_LSTM       39 35.994125      0.994844  0.993789                3       64            5    same       gelu      glorot_normal          2        1                1           32         True     0.35               0.25                 2     64    glorot_normal           0.3       0.001726          1.5          0.6
+buy_trials_Conv1D_LSTM       26 41.525913      0.987266  0.517344                3       96            7   valid       gelu      glorot_normal          2        2                1           32         True     0.40               0.25                 1    128    glorot_normal           0.4       0.000429          2.0          0.7
+buy_trials_Conv1D_LSTM       16 46.143978      0.994844  0.991484                3      128            7   valid       relu      glorot_normal          3        2                1           64        False     0.20               0.25                 1     96            zeros           0.1       0.000115          3.0          0.5
+
+
+Most Common Hyperparameters in Top 5:
+
+  num_conv_layers: 3 (shared by 4 models)
+  filters: 128 (shared by 2 models)
+  kernel_size: 3 (shared by 2 models)
+  padding: valid (shared by 3 models)
+  activation: gelu (shared by 3 models)
+  kernel_initializer: glorot_normal (shared by 4 models)
+  pool_size: 2 (shared by 3 models)
+  strides: 2 (shared by 3 models)
+  num_lstm_layers: 1 (shared by 5 models)
+  units_first: 32 (shared by 4 models)
+  forget_bias: False (shared by 3 models)
+  dropout: 0.4 (shared by 2 models)
+  recurrent_dropout: 0.25 (shared by 4 models)
+  num_dense_layers: 2 (shared by 3 models)
+  units: 64 (shared by 2 models)
+  bias_initializer: he_normal (shared by 2 models)
+  dropout_rate: 0.1 (shared by 2 models)
+  focal_gamma: 1.5 (shared by 2 models)
+  focal_alpha: 0.6 (shared by 2 models)

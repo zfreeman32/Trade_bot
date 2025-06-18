@@ -1,3 +1,4 @@
+
 .pyc
 __pycache__
 .vscode
@@ -5,7 +6,8 @@ __pycache__
 *.csv
 EURUSD_full_30min.txt
 EURUSD_full_1min.txt
-*.h5
+/models/sell_signal_models/sell_trials_*
+/models/long_signal_models/buy_trials_*
 build_config.json
 trial.json
 /loki

@@ -1,0 +1,24 @@
+=== SAVED MODELS SUMMARY ===
+
+# Generated on: 2025-06-16 23:01:44
+
+Target: short_signal
+Mode: Classification
+Enhanced Selection: Enabled
+Selection Method: regularization
+Selected Features: 3
+Models directory: models_short_signal_20250616_230057
+
+Saved models:
+  cpu_random_forest_profitable_signal: models_short_signal_20250616_230057\cpu_random_forest_profitable_signal.joblib
+  shap_model_profitable_signal: models_short_signal_20250616_230057\shap_model_profitable_signal.joblib
+  time_split_0_profitable_signal: models_short_signal_20250616_230057\time_split_0_profitable_signal.joblib
+  time_split_1_profitable_signal: models_short_signal_20250616_230057\time_split_1_profitable_signal.joblib
+  time_split_2_profitable_signal: models_short_signal_20250616_230057\time_split_2_profitable_signal.joblib
+  time_split_3_profitable_signal: models_short_signal_20250616_230057\time_split_3_profitable_signal.joblib
+  time_split_4_profitable_signal: models_short_signal_20250616_230057\time_split_4_profitable_signal.joblib
+
+To load a model:
+import joblib
+model = joblib.load('path_to_model.joblib')
+# For pickle files: with open('path_to_model.pkl', 'rb') as f: model = pickle.load(f)

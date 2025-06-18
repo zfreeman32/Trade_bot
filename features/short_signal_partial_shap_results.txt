@@ -1,0 +1,18 @@
+SHAP Analysis - Started at 2025-06-16 23:01:40
+
+Target column: profitable_signal
+Mode: Classification
+
+GPU Acceleration: Disabled
+
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-16 23:01:43
+GPU Acceleration: Disabled
+Processed 6000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. OBV: 0.424733
+2. AD: 0.359202
+3. Volume: 0.216065

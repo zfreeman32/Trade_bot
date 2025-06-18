@@ -1,0 +1,29 @@
+Top 5 Trials for buy_trials_Conv1D by Validation Loss:
+
+       model_type trial_id  val_loss  val_accuracy  accuracy  num_conv1d_layers  filters  kernel_size padding activation kernel_initializer  add_pooling_0  pool_size  strides  num_dense_layers  units bias_initializer  dropout_rate  learning_rate  focal_gamma  focal_alpha  add_pooling_1 add_pooling_2
+buy_trials_Conv1D       12  6.884607      0.994844  0.995039                  2       64            7   valid       relu      glorot_normal          False          2        2                 1     32    glorot_normal           0.2       0.003050          2.5          0.8           True         False
+buy_trials_Conv1D       10  6.942480      0.994766  0.994336                  2       32            7   valid       relu          he_normal           True          2        2                 1     32        he_normal           0.3       0.000628          3.0          0.5           True          True
+buy_trials_Conv1D       26  8.053631      0.994687  0.993750                  2       32            5    same       gelu      glorot_normal           True          3        2                 1     32            zeros           0.2       0.000213          3.0          0.8           True          True
+buy_trials_Conv1D       03  9.924383      0.994844  0.994961                  2      128            5   valid       relu      glorot_normal          False          2        1                 2     32        he_normal           0.5       0.005704          2.5          0.3          False           NaN
+buy_trials_Conv1D       20 10.592151      0.994844  0.995234                  3       64            3    same       gelu      glorot_normal          False          2        2                 1     32            zeros           0.3       0.002073          2.5          0.8          False         False
+
+
+Most Common Hyperparameters in Top 5:
+
+  num_conv1d_layers: 2 (shared by 4 models)
+  filters: 64 (shared by 2 models)
+  kernel_size: 7 (shared by 2 models)
+  padding: valid (shared by 3 models)
+  activation: relu (shared by 3 models)
+  kernel_initializer: glorot_normal (shared by 4 models)
+  add_pooling_0: False (shared by 3 models)
+  pool_size: 2 (shared by 4 models)
+  strides: 2 (shared by 4 models)
+  num_dense_layers: 1 (shared by 4 models)
+  units: 32 (shared by 5 models)
+  bias_initializer: he_normal (shared by 2 models)
+  dropout_rate: 0.2 (shared by 2 models)
+  focal_gamma: 2.5 (shared by 3 models)
+  focal_alpha: 0.8 (shared by 3 models)
+  add_pooling_1: True (shared by 3 models)
+  add_pooling_2: False (shared by 2 models)
