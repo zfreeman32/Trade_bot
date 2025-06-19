@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "generated_on": "2025-06-19T02:37:25.222390",
+    "total_samples": 9787,
+    "time_period": {
+      "start": "2025-01-15T04:20:00",
+      "end": "2025-01-23T23:59:00",
+      "duration_hours": 211.65
+    },
+    "price_stats": {
+      "min": 1.02611,
+      "max": 1.04556,
+      "mean": 1.0355906498416267,
+      "std": 0.005876740315965153
+    }
+  },
+  "configuration": {
+    "lookback_window": 120,
+    "signal_cooldown": 10,
+    "sell_lag_periods": [
+      70,
+      24,
+      10,
+      74,
+      39
+    ],
+    "buy_lag_periods": [
+      61,
+      93,
+      64,
+      60,
+      77
+    ],
+    "adaptive_thresholds": {
+      "sell": {
+        "LSTM": 0.4,
+        "GRU": 0.4,
+        "Conv1D": 0.5,
+        "Conv1D_LSTM": 0.4
+      },
+      "buy": {
+        "LSTM": 0.4,
+        "GRU": 0.433,
+        "Conv1D": 0.45,
+        "Conv1D_LSTM": 0.466
+      }
+    }
+  },
+  "models": {
+    "sell_models_loaded": [
+      "LSTM",
+      "GRU",
+      "Conv1D",
+      "Conv1D_LSTM"
+    ],
+    "buy_models_loaded": [
+      "LSTM",
+      "GRU",
+      "Conv1D",
+      "Conv1D_LSTM"
+    ]
+  },
+  "results": {
+    "sell_signals": {
+      "LSTM": {
+        "signal_count": 0,
+        "signal_rate_percent": 0.0,
+        "avg_probability": 0.3913947174123277,
+        "max_probability": 0.39165306091308594,
+        "min_probability": 0.3891920745372772
+      },
+      "GRU": {
+        "signal_count": 0,
+        "signal_rate_percent": 0.0,
+        "avg_probability": 0.392194014066596,
+        "max_probability": 0.39245662093162537,
+        "min_probability": 0.38705769181251526
+      },
+      "Conv1D": {
+        "signal_count": 27,
+        "signal_rate_percent": 0.27587616225605394,
+        "avg_probability": 0.48829960021286173,
+        "max_probability": 0.5952343344688416,
+        "min_probability": 0.43032053112983704
+      },
+      "Conv1D_LSTM": {
+        "signal_count": 0,
+        "signal_rate_percent": 0.0,
+        "avg_probability": 0.3833318805474115,
+        "max_probability": 0.38368234038352966,
+        "min_probability": 0.37765002250671387
+      }
+    },
+    "buy_signals": {
+      "LSTM": {
+        "signal_count": 14,
+        "signal_rate_percent": 0.14304689894758355,
+        "avg_probability": 0.3882273888002076,
+        "max_probability": 0.7310582399368286,
+        "min_probability": 0.28037014603614807
+      },
+      "GRU": {
+        "signal_count": 0,
+        "signal_rate_percent": 0.0,
+        "avg_probability": 0.43269386407339233,
+        "max_probability": 0.4329787790775299,
+        "min_probability": 0.29355543851852417
+      },
+      "Conv1D": {
+        "signal_count": 27,
+        "signal_rate_percent": 0.27587616225605394,
+        "avg_probability": 0.4475141057377879,
+        "max_probability": 0.45435813069343567,
+        "min_probability": 0.4331046938896179
+      },
+      "Conv1D_LSTM": {
+        "signal_count": 0,
+        "signal_rate_percent": 0.0,
+        "avg_probability": 0.4654920775257945,
+        "max_probability": 0.46582457423210144,
+        "min_probability": 0.4638228416442871
+      }
+    }
+  }
+}

@@ -1,0 +1,149 @@
+================================================================================
+IMPROVED TRADING MODEL BACKTEST DETAILED SUMMARY
+================================================================================
+
+Generated on: 2025-06-19 02:37:25
+
+DATASET INFORMATION:
+----------------------------------------
+Total samples processed: 9787
+Time period: 2025-01-15 04:20 to 2025-01-23 23:59
+Duration: 211.7 hours
+Price range: 1.02611 - 1.04556
+Price volatility (std): 0.00588
+
+MODEL CONFIGURATION:
+----------------------------------------
+Lookback window: 120 periods
+Signal cooldown: 10 periods
+Sell lag periods: [70, 24, 10, 74, 39]
+Buy lag periods: [61, 93, 64, 60, 77]
+Feature scaling: RobustScaler (quantile_range: 15-85%)
+Probability calibration: Sigmoid calibration applied
+
+LOADED MODELS:
+----------------------------------------
+Sell models loaded: 4 (['LSTM', 'GRU', 'Conv1D', 'Conv1D_LSTM'])
+Buy models loaded: 4 (['LSTM', 'GRU', 'Conv1D', 'Conv1D_LSTM'])
+
+ADAPTIVE THRESHOLDS:
+----------------------------------------
+Sell Model Thresholds:
+  LSTM: 0.400
+  GRU: 0.400
+  Conv1D: 0.500
+  Conv1D_LSTM: 0.400
+Buy Model Thresholds:
+  LSTM: 0.400
+  GRU: 0.433
+  Conv1D: 0.450
+  Conv1D_LSTM: 0.466
+
+SELL SIGNAL STATISTICS:
+----------------------------------------
+Model           Signals  Rate%    Avg Prob   Max Prob   Min Prob  
+----------------------------------------------------------------------
+LSTM            0        0.00     0.391      0.392      0.389     
+GRU             0        0.00     0.392      0.392      0.387     
+Conv1D          27       0.28     0.488      0.595      0.430     
+Conv1D_LSTM     0        0.00     0.383      0.384      0.378     
+
+BUY SIGNAL STATISTICS:
+----------------------------------------
+Model           Signals  Rate%    Avg Prob   Max Prob   Min Prob  
+----------------------------------------------------------------------
+LSTM            14       0.14     0.388      0.731      0.280     
+GRU             0        0.00     0.433      0.433      0.294     
+Conv1D          27       0.28     0.448      0.454      0.433     
+Conv1D_LSTM     0        0.00     0.465      0.466      0.464     
+
+MODEL PERFORMANCE ANALYSIS:
+----------------------------------------
+Most active sell model: Conv1D (27 signals)
+Least active sell model: LSTM (0 signals)
+Most active buy model: Conv1D (27 signals)
+Least active buy model: GRU (0 signals)
+
+IMPROVEMENTS IMPLEMENTED:
+----------------------------------------
+1. SEPARATE FEATURE PREPROCESSING:
+   - Sell models use sell-specific lag features
+   - Buy models use buy-specific lag features
+   - Resolves feature mismatch issues
+
+2. ADAPTIVE THRESHOLDS:
+   - 30th percentile-based thresholds instead of fixed 0.5
+   - Each model gets optimized threshold
+   - Minimum threshold of 0.3 enforced
+
+3. PROBABILITY CALIBRATION:
+   - Sigmoid calibration applied to raw predictions
+   - Improves probability interpretation
+   - Better handles focal loss trained models
+
+4. SIGNAL COOLDOWN SYSTEM:
+   - 10-period minimum between signals
+   - Prevents signal clustering
+   - Cleaner signal generation
+
+5. IMPROVED SCALING:
+   - Separate scalers for sell/buy models
+   - Less aggressive quantile range (15-85%)
+   - Gentler clipping (-5 to 5)
+
+6. ENSEMBLE CAPABILITY:
+   - Weighted voting ensemble implemented
+   - Lower thresholds for ensemble signals
+   - Can combine multiple model predictions
+
+ISSUES ADDRESSED:
+----------------------------------------
+BEFORE:
+- Only Conv1D_Sell and LSTM_Buy models generated signals
+- Most models stuck at low probabilities (~0.27-0.43)
+- Multiple consecutive signals when prob stayed high
+- Fixed 0.5 threshold not optimal for all models
+- Feature preprocessing mismatch between sell/buy models
+
+AFTER:
+- Adaptive thresholds optimize each model's performance
+- Probability calibration improves signal quality
+- Signal cooldown prevents clustering
+- Separate preprocessing for each model type
+- Better feature scaling and handling
+
+RECOMMENDATIONS:
+----------------------------------------
+1. MONITOR MODEL PERFORMANCE:
+   - Track signal accuracy over time
+   - Adjust thresholds based on performance
+   - Consider retraining underperforming models
+
+2. ENSEMBLE OPTIMIZATION:
+   - Train meta-learner for ensemble weights
+   - Use validation data for weight optimization
+   - Consider stacking with different base models
+
+3. THRESHOLD TUNING:
+   - Experiment with different percentiles (70-85)
+   - Consider market condition-specific thresholds
+   - Implement dynamic threshold adjustment
+
+4. FEATURE ENGINEERING:
+   - Add market regime indicators
+   - Include volatility-based features
+   - Consider correlation-based features
+
+TECHNICAL IMPLEMENTATION DETAILS:
+----------------------------------------
+Base features: 61 indicators
+Sell model features: 101 total
+Buy model features: 101 total
+Scaling method: RobustScaler with quantile_range=(15.0, 85.0)
+Clipping range: [-5, 5]
+Calibration method: Sigmoid calibration
+Memory usage optimizations: Separate scalers and feature sets
+
+================================================================================
+END OF SUMMARY
+================================================================================
