@@ -1,80 +1,160 @@
-# Deep Learning Classification Pipeline for Financial Signals
+# Deep Learning Classification Pipeline for Financial Trading Signals
 
-This project builds a scalable, feature-rich deep learning pipeline for binary classification on financial time series data. It is specifically designed for predicting trading signals (e.g., short/long entries) using technical indicators and custom-engineered features.
-
----
-
-## 📈 Problem Overview
-
-The task is to classify each timestep into a binary decision (e.g., `short_signal` = 0 or 1) based on a wide range of engineered features derived from market data (EUR/USD 1-min). The pipeline supports large-scale model experimentation with multiple neural architectures.
+A production-ready, memory-optimized deep learning pipeline for binary classification of financial trading signals. This system predicts long/short entry signals on EUR/USD 1-minute data using a comprehensive suite of neural architectures and advanced training methodologies.
 
 ---
 
-## 🛠️ Key Features & Workflow
+## 🎯 Problem Statement & Approach
 
-### 1. **Feature Engineering**
-- Raw data is cleaned using domain-specific preprocessing
-- Volume-based features undergo log transformation, winsorization, and percentile ranking
-- Lag features are generated for both the target and indicators like RSI, CCI, EFI, etc.
-- Adds rolling statistics (mean, std) over lagged targets
+### Financial Signal Classification
+The pipeline addresses the challenge of predicting binary trading decisions (`long_signal` and `short_signal`) from high-frequency financial time series data. Each timestep requires classification into buy (1) or hold (0) decisions based on technical indicators and engineered features derived from market microstructure.
 
-### 2. **Feature Selection**
-- Important features loaded from a prior feature importance study
-- Only selected features and signal columns are retained
-
-### 3. **Sliding Window View**
-- Converts tabular data into supervised format for sequential models
-- Input = [n_timesteps x n_features], Target = [signal at t+1]
-
-### 4. **Data Scaling**
-- Uses `RobustScaler` with clipping to handle outliers and stabilize learning
-- Prevents NaNs, infinities, and constant features through robust preprocessing
-
-### 5. **Class Imbalance Handling**
-- Class weights computed dynamically from training set
-- Focal loss is introduced to address imbalance during model training
+### Multi-Architecture Ensemble Strategy
+Rather than relying on a single model type, the system implements a comprehensive model zoo approach, training and evaluating multiple architectures simultaneously to identify the most robust performers for each signal type.
 
 ---
 
-## 🧠 Supported Architectures
-The pipeline supports multiple deep learning models via modular builders:
+## 🏗️ Architecture & Model Zoo
 
-- LSTM / GRU / Conv1D / Conv1D+LSTM
-- BiLSTM with Attention
-- Transformer
-- MultiStream Hybrid
-- Temporal Convolution Network (TCN)
-- ResNet-based classifier
+### Neural Network Architectures
+- **Recurrent Models**: LSTM, GRU, Bidirectional LSTM with Attention
+- **Convolutional Models**: Conv1D, Conv1D+LSTM hybrid, ResNet-inspired temporal networks
+- **Advanced Architectures**: Transformer, Temporal Convolutional Networks (TCN), MultiStream hybrid
+- **Traditional ML**: CatBoost, LightGBM, XGBoost, Random Forest
 
-> Builders are passed as dictionary objects, allowing dynamic looping and tuning.
-
----
-
-## 🧪 Training Methodology
-
-### Progressive Training
-- **Phase 1**: Train on 20% of training data (subset) to warm up weights
-- **Phase 2**: Fine-tune on full training set using lower LR
-- Reduces overfitting and stabilizes convergence
-
-### Hyperparameter Tuning
-- Uses `keras-tuner` with **Bayesian Optimization**
-- Explores learning rate, focal loss parameters (alpha/gamma), etc.
-
-### Cross-Validation
-- Uses `TimeSeriesSplit` for **ordered folds**
-- Evaluates on val_loss, val_accuracy, val_auc, etc.
-- Skips models with too many NaN validation results
+### Modular Design Philosophy
+Models are implemented as parameterized builders, enabling dynamic hyperparameter tuning across architectures. Each builder accepts hyperparameter objects and constructs models with variable depth, width, and architectural components.
 
 ---
 
+## 🧠 Advanced Training Methodology
+
+### Progressive Training Strategy
+**Phase 1 - Warmup**: Models train on 20% of data to establish stable weight initialization and prevent early convergence to poor local minima.
+
+**Phase 2 - Fine-tuning**: Full dataset training with reduced learning rates, leveraging the stable foundation from Phase 1 to achieve better generalization.
+
+### Hyperparameter Optimization
+- **Bayesian Optimization**: Uses Keras Tuner's Bayesian search for efficient exploration of hyperparameter space
+- **Comprehensive Parameter Coverage**: Every layer parameter is tunable including activation functions, initializers, regularization strategies, constraints, dropout rates, and architecture-specific parameters
+- **Stability-First Design**: Built-in regularization (L1/L2), constraints (max_norm, unit_norm), and multiple initialization strategies for robust training
+- **Early Termination**: Implements baseline performance thresholds and NaN detection to skip underperforming configurations
+- **Resource Management**: Limits trial counts and consecutive failures to prevent resource exhaustion
+
+### Time Series Cross-Validation
+- **Temporal Integrity**: Uses TimeSeriesSplit to respect chronological order and prevent data leakage
+- **Robustness Testing**: Evaluates top hyperparameter sets across multiple folds to identify consistently performing models
+- **Stability Filtering**: Excludes hyperparameter sets with excessive NaN validation results
+
 ---
 
-## 📊 Evaluation Metrics
+## 📊 Feature Engineering & Data Pipeline
 
-- `accuracy`, `precision`, `recall`, `AUC`
-- Per-fold and final test set metrics
-- Handles instability (NaNs, exploding gradients) with:
-  - Gradient clipping
-  - Learning rate warmup
-  - Termination on NaN
+### Advanced Feature Transformation
+**Volume Processing**: Applies log transformation, winsorization (1st/99th percentiles), and percentile ranking to handle volume's extreme skewness and outliers.
+
+**Temporal Lag Features**: Creates lagged versions of target signals and key technical indicators (RSI, CCI, EFI, CMO, ROC, ROCR) using optimized lag periods derived from prior analysis.
+
+**Rolling Statistics**: Computes rolling means and standard deviations across lagged target features to capture medium-term signal persistence patterns.
+
+### Sliding Window Architecture
+Converts tabular financial data into supervised learning format using sliding windows:
+- **Input**: [timesteps × features] arrays capturing historical context
+- **Target**: Binary signal at current timestep
+- **Memory Optimization**: Chunked processing prevents memory overflow on large datasets
+
+### Robust Preprocessing Pipeline
+- **NaN Handling**: Multi-stage NaN detection and replacement using column means
+- **Scaling**: RobustScaler with 10th/90th percentile bounds to handle outliers
+- **Stability Checks**: Constant feature detection and noise injection
+- **Value Clipping**: Prevents extreme values that cause training instability
+
+---
+
+## ⚖️ Class Imbalance & Loss Functions
+
+### Dynamic Class Weighting
+Computes balanced class weights from training distributions to address natural imbalance in trading signals where hold positions typically dominate.
+
+### Focal Loss Implementation
+Implements focal loss with tunable gamma (focusing parameter) and alpha (class weighting) to:
+- **Down-weight Easy Examples**: Reduces loss contribution from confident predictions
+- **Focus on Hard Examples**: Increases gradient signal from misclassified samples
+- **Handle Imbalance**: Provides class-specific weighting beyond simple rebalancing
+
+---
+
+## 🚀 Memory Optimization & Scalability
+
+### Production-Scale Memory Management
+**Chunked Processing**: All major operations (windowing, scaling, training) process data in configurable chunks to handle datasets exceeding available RAM.
+
+**Streaming Datasets**: Uses tf.data pipelines with prefetching and batching to minimize memory footprint during training.
+
+**Limited Step Training**: Caps steps per epoch to reduce training time while maintaining convergence, enabling faster hyperparameter exploration.
+
+### Resource Configuration
+- **GPU Auto-Detection**: Automatically configures GPU memory growth and mixed precision training
+- **CPU Optimization**: Falls back to optimized CPU threading when GPUs unavailable
+- **Memory Monitoring**: Tracks RAM and GPU memory usage throughout pipeline execution
+
+---
+
+## 📈 Training Stability & Robustness
+
+### Comprehensive Callback System
+- **Learning Rate Scheduling**: Cosine annealing with warmup for stable convergence
+- **Early Stopping**: Multiple criteria including validation loss, accuracy thresholds, and NaN detection
+- **Gradient Clipping**: Prevents exploding gradients through value-based clipping
+- **Memory Monitoring**: Real-time GPU memory tracking
+
+### Error Recovery & Fault Tolerance
+- **Retry Logic**: Multiple attempts for failed training runs with session clearing
+- **NaN Safety**: Immediate termination and retry when NaN losses detected
+- **Model Validation**: Comprehensive testing of model builders before training begins
+
+---
+
+## 🔄 Dual Signal Processing
+
+### Separate Pipelines for Long/Short Signals
+The system maintains independent training pipelines for buy (`long_signal`) and sell (`short_signal`) decisions:
+
+**Buy Pipeline** (`buy_classification_model_train.py`):
+- Optimized lag periods: [61, 93, 64, 60, 77]
+- Focus on long entry signal prediction
+- Results saved to buy-specific models directory
+
+**Sell Pipeline** (`sell_classification_model_train.py`):
+- Optimized lag periods: [70, 24, 10, 74, 39]  
+- Focus on short entry signal prediction
+- Results saved to sell-specific models directory
+
+This separation allows for signal-specific feature engineering and hyperparameter optimization, acknowledging that long and short market dynamics may require different modeling approaches.
+
+---
+
+## 📋 Configuration Management
+
+### Centralized Configuration System
+The `ClassificationConfigManager` provides centralized control over:
+- **Data Parameters**: File paths, target columns, window sizes
+- **Memory Settings**: Sample limits, chunk sizes, streaming configurations
+- **Training Parameters**: Batch sizes, epochs, learning rates
+- **Model Selection**: Architecture subsets for training
+- **Hyperparameter Bounds**: Trial limits and failure thresholds
+
+### Environment Adaptability
+Configurations automatically adapt to available computational resources, scaling memory usage and training intensity based on detected hardware capabilities.
+
+---
+
+## 🎯 Evaluation & Model Selection
+
+### Comprehensive Metrics Suite
+- **Standard Classification**: Accuracy, Precision, Recall, AUC
+- **Financial-Specific**: Directional accuracy for trading signal evaluation
+- **Stability Metrics**: Cross-validation variance and convergence behavior
+
+### Model Persistence & Deployment
+Trained models are saved in architecture-specific directories with comprehensive hyperparameter logging, enabling easy model comparison and production deployment.

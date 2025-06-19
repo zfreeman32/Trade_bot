@@ -3,7 +3,18 @@ import sys
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Reshape
 from keras.optimizers import Adam
-from model_layers import build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, build_Dropout_layer, build_MaxPooling1D_Layer
+from model_layers import (
+build_Attention_layer, 
+build_SeparableConv1D_layer, 
+build_MultiHeadAttention_layer, 
+build_Dense_layer, 
+build_LSTM_layer, 
+build_GRU_layer, 
+build_SimpleRNN_layer, 
+build_Conv1D_layer, 
+build_Dropout_layer, 
+build_MaxPooling1D_Layer
+)
 import tensorflow as tf
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from xgboost import XGBRegressor
@@ -15,27 +26,30 @@ seed = 42
 #%%
 # Build the LSTM model
 def build_LSTM_model(hp, train_X,  n_out=1):
-    # input_shape = Input(shape=(train_X.shape[1], train_X.shape[2]))
-    model = Sequential()
-    # Add LSTM layers based on the hyperparameters
-    for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
-        model.add(build_LSTM_layer(hp,  return_sequences=True))
-    # Add last LSTM
-    model.add(build_LSTM_layer(hp,  return_sequences=False))
-    # Add Dense layers based on the hyperparameters
-    for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
-        model.add(build_Dense_layer(hp))
-    # Add output layer with n_out units
-    model.add(Dense(units=n_out))
-    # If multi-step output, reshape to 3D tensor for compatibility
-    if n_out > 1:
-        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
-        model.add(Dense(units=n_out * features))
-        model.add(tf.keras.layers.Reshape((n_out, features)))
-    # Compile the model
-    model.compile(optimizer=Adam(learning_rate=.0001),
-        loss='mean_squared_error', metrics=['mse', 'mae'])
-    return model
+    try:# input_shape = Input(shape=(train_X.shape[1], train_X.shape[2]))
+        model = Sequential()
+        # Add LSTM layers based on the hyperparameters
+        for i in range(hp.Int("num_LSTM_layers", min_value=1, max_value=3, step=1)):
+            model.add(build_LSTM_layer(hp,  return_sequences=True))
+        # Add last LSTM
+        model.add(build_LSTM_layer(hp,  return_sequences=False))
+        # Add Dense layers based on the hyperparameters
+        for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
+            model.add(build_Dense_layer(hp))
+        # Add output layer with n_out units
+        if n_out > 1:
+            model.add(Dense(units=n_out))
+            model.add(Reshape((1, n_out)))
+        else:
+            # Single-step forecasting
+            model.add(Dense(units=1))
+        # Compile the model
+        model.compile(optimizer=Adam(learning_rate=.0001),
+            loss='mean_squared_error', metrics=['mse', 'mae'])
+        return model
+    except Exception as e:
+        print("Error building model:", e)
+        return None
 
 # Build the GRU model
 def build_GRU_model(hp, train_X,  n_out=1):
@@ -48,13 +62,11 @@ def build_GRU_model(hp, train_X,  n_out=1):
     # Add Dense layers based on the hyperparameters
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
         model.add(build_Dense_layer(hp))
-    # Add output layer with n_out units
-    model.add(Dense(units=n_out))
-    # If multi-step output, reshape to 3D tensor for compatibility
     if n_out > 1:
-        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
-        model.add(Dense(units=n_out * features))
-        model.add(tf.keras.layers.Reshape((n_out, features)))
+        model.add(Dense(units=n_out))
+        model.add(Reshape((1, n_out)))
+    else:
+        model.add(Dense(units=1))
     model.compile(optimizer=Adam(learning_rate=.001),
         loss='mean_squared_error', metrics=['mse', 'mae'])
     return model
@@ -74,9 +86,10 @@ def build_SimpleRNN_model(hp, train_X,  n_out=1):
     model.add(Dense(units=n_out))
     # If multi-step output, reshape to 3D tensor for compatibility
     if n_out > 1:
-        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
-        model.add(Dense(units=n_out * features))
-        model.add(tf.keras.layers.Reshape((n_out, features)))
+        model.add(Dense(units=n_out))
+        model.add(Reshape((1, n_out)))
+    else:
+        model.add(Dense(units=1))
     model.compile(optimizer=Adam(learning_rate=.001),
         loss='mean_squared_error', metrics=['mse', 'mae'])
     return model
@@ -95,9 +108,10 @@ def build_Conv1D_model(hp, train_X,  data_format='channels_last', n_out=1):
     model.add(Dense(units=n_out))
     # If multi-step output, reshape to 3D tensor for compatibility
     if n_out > 1:
-        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
-        model.add(Dense(units=n_out * features))
-        model.add(tf.keras.layers.Reshape((n_out, features)))
+        model.add(Dense(units=n_out))
+        model.add(Reshape((1, n_out)))
+    else:
+        model.add(Dense(units=1))
     model.compile(
         optimizer=Adam(learning_rate=0.001),
         loss='mean_squared_error',
@@ -115,7 +129,7 @@ def build_Conv1DPooling_model(hp, train_X,  data_format='channels_last', n_out=1
         for i in range(hp.Int("num_conv1d_layers", min_value=1, max_value=3, step=1)):
             model.add(build_Conv1D_layer(hp,  data_format=data_format))
             # MaxPooling layer
-        model.add(build_MaxPooling1D_layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
+        model.add(build_MaxPooling1D_Layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
     model.add(Flatten()),
     model.add(build_Dropout_layer(hp)),
     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=2, step=1)):
@@ -139,7 +153,7 @@ def build_Conv1D_LSTM_model(hp, train_X,  data_format='channels_last', n_out=1):
     for i in range(hp.Int("num_layers_layers", min_value=1, max_value=3, step=1)):
         for i in range(hp.Int("num_conv1D_layers", min_value=1, max_value=3, step=1)):
             model.add(build_Conv1D_layer(hp,  data_format=data_format))
-        model.add(build_MaxPooling1D_layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
+        model.add(build_MaxPooling1D_Layer(hp,  data_format=data_format)) # channels_last: (batch_size, steps, features), 'channels_first': (batch_size, features, steps)
     # Add LSTM layers based on the hyperparameters
     for i in range(hp.Int("num_lstm_layers", min_value=1, max_value=3, step=1)):
         model.add(build_LSTM_layer(hp,  return_sequences=True))
@@ -440,49 +454,49 @@ def build_BiLSTM_Attention_model(hp, train_X,  n_out=1):
     
     return model
 
-def build_ConvLSTM2D_model(hp, train_X,  data_format='channels_last', n_out=1):
-    """
-    ConvLSTM2D model for capturing spatial-temporal patterns in time-series data
-    Treats the time-series as a 2D spatial-temporal structure
+# def build_ConvLSTM2D_model(hp, train_X,  data_format='channels_last', n_out=1):
+#     """
+#     ConvLSTM2D model for capturing spatial-temporal patterns in time-series data
+#     Treats the time-series as a 2D spatial-temporal structure
     
-    Input shape: Requires reshaping to (batch_size, time_steps, rows, cols, features)
-    Output shape: (batch_size, n_out)
-    """
-    model = Sequential()
+#     Input shape: Requires reshaping to (batch_size, time_steps, rows, cols, features)
+#     Output shape: (batch_size, n_out)
+#     """
+#     model = Sequential()
     
-    # Add ConvLSTM2D layers
-    for i in range(hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1)):
-        return_sequences = True if i < hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1) - 1 else False
-        model.add(build_ConvLSTM2D_layer(hp,  return_sequences=return_sequences, data_format=data_format))
-        model.add(build_Dropout_layer(hp))
+#     # Add ConvLSTM2D layers
+#     for i in range(hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1)):
+#         return_sequences = True if i < hp.Int("num_convlstm_layers", min_value=1, max_value=3, step=1) - 1 else False
+#         model.add(build_ConvLSTM2D_layer(hp,  return_sequences=return_sequences, data_format=data_format))
+#         model.add(build_Dropout_layer(hp))
     
-    # Flatten the output
-    model.add(Flatten())
+#     # Flatten the output
+#     model.add(Flatten())
     
-    # Add dense layers
-    for i in range(hp.Int("num_dense_layers", min_value=1, max_value=3, step=1)):
-        model.add(build_Dense_layer(hp))
-        model.add(build_Dropout_layer(hp))
+#     # Add dense layers
+#     for i in range(hp.Int("num_dense_layers", min_value=1, max_value=3, step=1)):
+#         model.add(build_Dense_layer(hp))
+#         model.add(build_Dropout_layer(hp))
     
-    # Modified - use n_out instead of hyperparameter
-    model.add(Dense(units=n_out))
-    # Add reshape for multi-step forecasting
-    if n_out > 1:
-        features = train_X.shape[2] if len(train_X.shape) > 2 else 1
-        model.add(Dense(units=n_out * features))
-        model.add(tf.keras.layers.Reshape((n_out, features)))
+#     # Modified - use n_out instead of hyperparameter
+#     model.add(Dense(units=n_out))
+#     # Add reshape for multi-step forecasting
+#     if n_out > 1:
+#         features = train_X.shape[2] if len(train_X.shape) > 2 else 1
+#         model.add(Dense(units=n_out * features))
+#         model.add(tf.keras.layers.Reshape((n_out, features)))
     
-    # Compile the model
-    model.compile(
-        optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
-        loss='mean_squared_error',
-        metrics=['mse', 'mae']
-    )
+#     # Compile the model
+#     model.compile(
+#         optimizer=Adam(learning_rate=hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")),
+#         loss='mean_squared_error',
+#         metrics=['mse', 'mae']
+#     )
     
-    # Note: Using this model requires reshaping the input to 5D
-    # e.g., (batch_size, timesteps, 1, n_features, 1) or another appropriate shape
+#     # Note: Using this model requires reshaping the input to 5D
+#     # e.g., (batch_size, timesteps, 1, n_features, 1) or another appropriate shape
     
-    return model
+#     return model
 
 def build_MultiStream_Hybrid_model(hp, train_X,  data_format='channels_last', n_out=1):
     """
@@ -502,7 +516,7 @@ def build_MultiStream_Hybrid_model(hp, train_X,  data_format='channels_last', n_
     conv_stream = input_layer
     for i in range(hp.Int("num_conv_layers", min_value=1, max_value=3, step=1)):
         conv_stream = build_Conv1D_layer(hp,  data_format=data_format)(conv_stream)
-        conv_stream = build_MaxPooling1D_layer(hp,  data_format=data_format)(conv_stream)
+        conv_stream = build_MaxPooling1D_Layer(hp,  data_format=data_format)(conv_stream)
     
     # Stream 2: LSTM stream
     lstm_stream = input_layer
@@ -593,7 +607,7 @@ def build_ResNet_model(hp, train_X,  data_format='channels_last', n_out=1):
         
         # Optional pooling to reduce dimensions
         if hp.Choice(f"pool_after_block_{i}", values=[True, False]):
-            x = build_MaxPooling1D_layer(hp,  data_format=data_format)(x)
+            x = build_MaxPooling1D_Layer(hp,  data_format=data_format)(x)
     
     # Global pooling
     x = tf.keras.layers.GlobalAveragePooling1D()(x)

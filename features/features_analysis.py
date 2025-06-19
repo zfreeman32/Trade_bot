@@ -2134,7 +2134,7 @@ def run_configuration(config, file_path, run_shap, max_shap_time, run_enhanced_s
 
 if __name__ == "__main__":
     # File Path should be csv of all features
-    file_path = r'C:\Users\zebfr\Documents\All_Files\TRADING\Trading_Bot\data\currency_data\EURUSD_1min_sampled_features.csv'
+    file_path = 'EURUSD_1min_sampled_features.csv'
     
     # Enhanced Feature Selection Configuration
     run_enhanced_selection = True  # Set to True to enable enhanced feature selection
@@ -2155,8 +2155,8 @@ if __name__ == "__main__":
     # Configuration to run
     configurations = [
         # {"target_col": "long_signal", "regression_mode": False},
-        # {"target_col": "short_signal", "regression_mode": False},
-        {"target_col": "Close", "regression_mode": True}
+        {"target_col": "short_signal", "regression_mode": False},
+        # {"target_col": "Close", "regression_mode": True}
     ]
     
     # Check GPU availability and force sequential execution if GPU is available

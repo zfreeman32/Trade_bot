@@ -1,7 +1,7 @@
 from keras.models import Sequential, Model
 from keras.layers import Flatten, Dense, Input, Concatenate, Add, Activation
 from keras.optimizers import Adam
-from model_layers import (build_Attention_layer, build_SeparableConv1D_layer, build_ConvLSTM2D_layer, 
+from model_layers import (build_Attention_layer, build_SeparableConv1D_layer, 
                          build_MultiHeadAttention_layer, build_Dense_layer, build_LSTM_layer, 
                          build_GRU_layer, build_SimpleRNN_layer, build_Conv1D_layer, 
                          build_Dropout_layer, build_MaxPooling1D_Layer)
