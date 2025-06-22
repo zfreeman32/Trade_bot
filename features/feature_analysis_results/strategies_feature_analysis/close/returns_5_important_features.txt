@@ -1,0 +1,83 @@
+=== ENHANCED SELECTED FEATURES ===
+
+# Generated on: 2025-06-22 22:05:24
+# Target: returns_5
+# Mode: Regression
+# Enhanced Selection: Enabled
+# Fallback to basic important features
+
+ 1. 5_8_13_buy_signal
+ 2. 5_8_13_sell_signal
+ 3. Ao_buy_signal
+ 4. ConsBarsDownSE_sell_signal
+ 5. Date
+ 6. EMA_bullish_signal
+ 7. EMA_buy_signal
+ 8. EMA_sell_signal
+ 9. Low
+10. Mass_Index
+11. RSI
+12. STC
+13. atr_se_sell_signal
+14. average_candle_height
+15. camarilla_buy_signal
+16. cci_bearish_signal
+17. cci_sell_signal
+18. cmf_buy_signal
+19. cmf_sell_signal
+20. cons_bars_up_le_buy_signal
+21. direction_1
+22. direction_10
+23. direction_14
+24. direction_3class_1
+25. direction_3class_10
+26. direction_3class_14
+27. direction_5
+28. dpo_sell_signal
+29. ehlers_stoch_buy_signal
+30. eight_month_avg_buy_signal
+31. eom_buy_signal
+32. eom_sell_signal
+33. gap_momentum_buy_signal
+34. gap_momentum_sell_signal
+35. gap_up_le_buy_signal
+36. hacolt
+37. ichi_buy_signal
+38. ichi_sell_signal
+39. ift_stoch_buy_signal
+40. ironbot_buy_signal
+41. ironbot_sell_signal
+42. key_rev_buy_signal
+43. key_rev_sell_signals
+44. kst_buy_signal
+45. ma_buy_signal
+46. mass_buy_signal
+47. mfi_buy_signal
+48. momentumle_buy_signal
+49. moving_average_buy_signal
+50. pmo_buy_signal
+51. price_swing_buy_signal
+52. price_swing_sell_signal
+53. profit_target_sell_signal
+54. pzo_buy_signal
+55. pzo_lx_sell_signal
+56. returns_1
+57. returns_14
+58. returns_3
+59. returns_5
+60. stc_overbought_signal
+61. stoch_sell_signal
+62. stochastic_strat_buy_signal
+63. stochrsi_overbought_signal
+64. stochrsi_oversold_signal
+65. sve_zl_rb_perc_buy_signal
+66. sve_zl_rb_perc_sell_signal
+67. three_bar_inside_bar_sell_signal
+68. tsi_buy_signal
+69. tsi_sell_signal
+70. vhf_sell_signal
+71. volatility_band_buy_signal
+72. w5_8_13_sell_signal
+73. williams_buy_signal
+74. williams_sell_signal
+75. wma_sell_signal

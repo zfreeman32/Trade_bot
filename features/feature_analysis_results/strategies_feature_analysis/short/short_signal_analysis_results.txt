@@ -1,0 +1,586 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-06-21 07:51:07
+
+
+==================== Analysis Started - 2025-06-21 07:51:07 ====================
+
+
+
+==================== Dataset Structure - 2025-06-21 07:51:28 ====================
+
+total_samples: 1000000
+feature_count: 181
+memory_usage_MB: 1367.569091796875
+missing_values: 327208
+datatypes: {dtype('int64'): 163, dtype('float64'): 13, dtype('O'): 3, dtype('bool'): 2}
+gpu_acceleration: Enabled
+signal_distribution: {'original_signals': 5129, 'profitable_signals': 4805, 'no_original_signals': 994871, 'no_profitable_signals': 995195, 'original_signal_ratio': np.float64(0.005129), 'profitable_signal_ratio': np.float64(0.004805), 'profit_rate': np.float64(0.9368297913823357), 'imbalance_warning': np.True_}
+
+
+==================== Feature Filtering - 2025-06-21 07:51:28 ====================
+
+Original features: 171
+Features after constant removal: 144
+Features after collinearity removal: 127
+Features after stability filtering: 112
+
+Removed features by category:
+Constant features (27): BB_Divergence_Strat_buy_signal, BB_Divergence_Strat_sell_signal, stiffness_strat_sell_signal, stiffness_strat_buy_signal, adx_breakout_buy_signal, atr_trailing_stop_le_buy_signal, day_of_week, dc_buy_signal, dc_sell_signal, donchian_buy_signals
+... and 17 more
+High collinearity features (17): vwma_breakouts_sell_signal, moving_average_sell_signal, volatility_band_sell_signal, macd_conv_sell_signal, stochastic_strat_sell_signal, High, golden_cross_sell_signal, PPO_Signal, EMA_bearish_signal, AO
+... and 7 more
+Unstable features (15): ConsBarsDownSE_sell_signal, acc_dist_sell_signal, atr_se_sell_signal, eight_month_avg_sell_signal, gap_up_le_buy_signal, ma_buy_signal, ma_sell_signal, wma_sell_signal, ichi_sell_signal, ift_stoch_buy_signal
+... and 5 more
+
+Filtered feature set (112): Date, Low, Volume, adx_trend_buy_signal, adx_trend_sell_signal, Ao_buy_signal, Ao_sell_signal, pzosx_buy_signal, acc_dist_buy_signal, aroon_buy_signal, aroon_sell_signal, current_candle_height, average_candle_height, atr_high_sma_breakouts_le_buy_signal, bb_short_entry_signal, camarilla_buy_signal, camarilla_sell_signal, cci_bullish_signal, cci_bearish_signal, cci_buy_signal, cci_sell_signal, cmf_buy_signal, cmf_sell_signal, cons_bars_up_le_buy_signal, dpo_overbought_signal, dpo_buy_signal, dpo_sell_signal, ehlers_stoch_buy_signal, eight_month_avg_buy_signal, EMA_bullish_signal, EMA_buy_signal, EMA_sell_signal, eom_buy_signal, eom_sell_signal, gap_down_se_sell_signals, gap_momentum_buy_signal, gap_momentum_sell_signal, golden_cross_buy_signal, wma_buy_signal, hacolt, ichi_buy_signal, ift_stoch_sell_signal, inside_bar_sell_signal, ironbot_buy_signal, ironbot_sell_signal, kama_cross_buy_signal, kc_buy_signal, kc_sell_signal, key_rev_buy_signal, key_rev_sell_signals, kst_buy_signal, kst_sell_signal, macd_conv_buy_signal, Mass_Index, mass_buy_signal, mass_sell_signal, mfi_buy_signal, mfi_sell_signal, momentumle_buy_signal, mov_avg_two_lines_buy_signal, mov_avg_two_lines_sell_signal, moving_average_buy_signal, pmo_buy_signal, pmo_sell_signal, PPO, price_swing_buy_signal, price_swing_sell_signal, profit_target_sell_signal, psar_buy_signal, psar_sell_signal, pzo_lx_sell_signal, pzo_buy_signal, pzo_sell_signal.1, rocwb_buy_signal, rsi_overbought_signal, RSI, wma_buy_signal.1, wma_sell_signal.1, spectrum_bars_buy_signal, STC, stc_overbought_signal, stc_oversold_signal, stoch_buy_signal, stoch_sell_signal, stochastic_strat_buy_signal, stochrsi_overbought_signal, stop_loss_sell_signal, stop_loss_buy_signal, 5_8_13_buy_signal, 5_8_13_sell_signal, w5_8_13_buy_signal, w5_8_13_sell_signal, sve_ha_typ_cross_buy_signal, sve_zl_rb_perc_buy_signal, sve_zl_rb_perc_sell_signal, svesc_buy_signal, svesc_sell_signal, three_bar_inside_bar_sell_signal, tsi_buy_signal, tsi_sell_signal, vhf_buy_signal, vhf_sell_signal, volatility_band_buy_signal, vols_switch_buy_signal, vols_switch_sell_signal, volty_expan_close_lx_sell_signal, vortex_buy_signal, vortex_sell_signal, vpn_sell_signal, vwma_breakouts_buy_signal, williams_buy_signal, williams_sell_signal
+
+
+==================== Enhanced Feature Selection - 2025-06-21 08:20:07 ====================
+
+Enhanced selection method: model_based
+Final selected features: 75
+
+Method Performance Comparison:
+----------------------------------------
+STATISTICAL:
+  Method: Mutual Information + Percentile
+  Features: 74
+  CV Score: 0.9959 ± 0.0014
+
+RFE:
+  Method: Recursive Feature Elimination CV
+  Features: 17
+  CV Score: 0.9958 ± 0.0015
+
+REGULARIZATION:
+  Method: Lasso/L1 Regularization
+  Features: 3
+  CV Score: 0.9958 ± 0.0014
+
+MODEL_BASED:
+  Method: Random Forest Importance
+  Features: 75
+  CV Score: 0.9959 ± 0.0014
+
+ENSEMBLE:
+  Method: Ensemble Ranking
+  Features: 75
+  CV Score: 0.9959 ± 0.0014
+
+Selected Features (75):
+ 1. Volume
+ 2. RSI
+ 3. hacolt
+ 4. PPO
+ 5. Low
+ 6. Mass_Index
+ 7. average_candle_height
+ 8. Date
+ 9. STC
+10. current_candle_height
+11. gap_momentum_buy_signal
+12. gap_momentum_sell_signal
+13. golden_cross_buy_signal
+14. adx_trend_buy_signal
+15. stoch_buy_signal
+16. cmf_buy_signal
+17. dpo_overbought_signal
+18. vwma_breakouts_buy_signal
+19. sve_zl_rb_perc_buy_signal
+20. ehlers_stoch_buy_signal
+21. dpo_sell_signal
+22. pzo_lx_sell_signal
+23. camarilla_buy_signal
+24. cons_bars_up_le_buy_signal
+25. bb_short_entry_signal
+26. stochastic_strat_buy_signal
+27. dpo_buy_signal
+28. kama_cross_buy_signal
+29. stoch_sell_signal
+30. vols_switch_buy_signal
+31. mfi_buy_signal
+32. stochrsi_overbought_signal
+33. cci_buy_signal
+34. atr_high_sma_breakouts_le_buy_signal
+35. psar_buy_signal
+36. sve_zl_rb_perc_sell_signal
+37. stc_overbought_signal
+38. 5_8_13_buy_signal
+39. williams_sell_signal
+40. rsi_overbought_signal
+41. eom_buy_signal
+42. kst_buy_signal
+43. cmf_sell_signal
+44. inside_bar_sell_signal
+45. cci_bearish_signal
+46. pmo_buy_signal
+47. eom_sell_signal
+48. eight_month_avg_buy_signal
+49. ironbot_buy_signal
+50. price_swing_sell_signal
+51. aroon_buy_signal
+52. pzosx_buy_signal
+53. ichi_buy_signal
+54. macd_conv_buy_signal
+55. acc_dist_buy_signal
+56. vortex_buy_signal
+57. key_rev_buy_signal
+58. momentumle_buy_signal
+59. camarilla_sell_signal
+60. vols_switch_sell_signal
+61. wma_buy_signal.1
+62. stc_oversold_signal
+63. w5_8_13_buy_signal
+64. 5_8_13_sell_signal
+65. sve_ha_typ_cross_buy_signal
+66. Ao_buy_signal
+67. kc_buy_signal
+68. svesc_buy_signal
+69. pzo_buy_signal
+70. key_rev_sell_signals
+71. mov_avg_two_lines_buy_signal
+72. rocwb_buy_signal
+73. ironbot_sell_signal
+74. vhf_buy_signal
+75. EMA_bullish_signal
+
+
+==================== Feature Statistics - 2025-06-21 08:20:08 ====================
+
+Top 20 Features by Target Correlation:
+--------------------------------------------------
+Volume:
+  mean: 181.2484
+  median: 134.0000
+  std: 184.9611
+  skew: 3.9611
+  kurtosis: 32.7211
+  unique_values: 2428.0000
+  iqr: 157.0000
+  outlier_percentage: 5.9607
+  corr_with_target: 0.1022
+  corr_with_original_signal: 0.1121
+current_candle_height:
+  mean: 0.0002
+  median: 0.0001
+  std: 0.0002
+  skew: 6.6278
+  kurtosis: 159.5963
+  unique_values: 815.0000
+  iqr: 0.0001
+  outlier_percentage: 4.7650
+  corr_with_target: 0.0989
+  corr_with_original_signal: 0.1090
+bb_short_entry_signal:
+  mean: 0.9418
+  median: 1.0000
+  std: 0.2342
+  skew: -3.7727
+  kurtosis: 12.2336
+  unique_values: 2.0000
+  iqr: 0.0000
+  outlier_percentage: 5.8235
+  corr_with_target: -0.0883
+  corr_with_original_signal: -0.0917
+rsi_overbought_signal:
+  mean: 0.0452
+  median: 0.0000
+  std: 0.2076
+  skew: 4.3813
+  kurtosis: 17.1957
+  unique_values: 2.0000
+  iqr: 0.0000
+  outlier_percentage: 4.5150
+  corr_with_target: 0.0807
+  corr_with_original_signal: 0.0840
+cci_bearish_signal:
+  mean: 0.7901
+  median: 1.0000
+  std: 0.4072
+  skew: -1.4247
+  kurtosis: 0.0298
+  unique_values: 2.0000
+  iqr: 0.0000
+  outlier_percentage: 20.9904
+  corr_with_target: -0.0791
+  corr_with_original_signal: -0.0816
+williams_sell_signal:
+  mean: 0.2391
+  median: 0.0000
+  std: 0.4266
+  skew: 1.2230
+  kurtosis: -0.5042
+  unique_values: 2.0000
+  iqr: 0.0000
+  outlier_percentage: 23.9147
+  corr_with_target: 0.0791
+  corr_with_original_signal: 0.0814
+average_candle_height:
+  mean: 0.0002
+  median: 0.0001
+  std: 0.0001
+  skew: 2.6685
+  kurtosis: 15.5193
+  unique_values: 5433.0000
+  iqr: 0.0001
+  outlier_percentage: 4.3034
+  corr_with_target: 0.0751
+  corr_with_original_signal: 0.0820
+RSI:
+  mean: 50.1437
+  median: 50.2326
+  std: 11.8069
+  skew: -0.0266
+  kurtosis: -0.1334
+  unique_values: 929706.0000
+  iqr: 16.1885
+  outlier_percentage: 0.4796
+  corr_with_target: 0.0712
+  corr_with_original_signal: 0.0734
+kc_buy_signal:
+  mean: 0.2888
+  median: 0.0000
+  std: 0.4532
+  skew: 0.9319
+  kurtosis: -1.1317
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0710
+  corr_with_original_signal: 0.0729
+stochrsi_overbought_signal:
+  mean: 0.2841
+  median: 0.0000
+  std: 0.4510
+  skew: 0.9576
+  kurtosis: -1.0831
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0688
+  corr_with_original_signal: 0.0711
+price_swing_sell_signal:
+  mean: 0.0209
+  median: 0.0000
+  std: 0.1430
+  skew: 6.7009
+  kurtosis: 42.9026
+  unique_values: 2.0000
+  iqr: 0.0000
+  outlier_percentage: 2.0885
+  corr_with_target: 0.0661
+  corr_with_original_signal: 0.0693
+ironbot_buy_signal:
+  mean: 0.2674
+  median: 0.0000
+  std: 0.4426
+  skew: 1.0510
+  kurtosis: -0.8954
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0621
+  corr_with_original_signal: 0.0639
+svesc_buy_signal:
+  mean: 0.3790
+  median: 0.0000
+  std: 0.4851
+  skew: 0.4988
+  kurtosis: -1.7512
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0579
+  corr_with_original_signal: 0.0596
+camarilla_buy_signal:
+  mean: 0.3695
+  median: 0.0000
+  std: 0.4827
+  skew: 0.5409
+  kurtosis: -1.7074
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0558
+  corr_with_original_signal: 0.0582
+w5_8_13_buy_signal:
+  mean: 0.4028
+  median: 0.0000
+  std: 0.4905
+  skew: 0.3965
+  kurtosis: -1.8428
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0554
+  corr_with_original_signal: 0.0568
+hacolt:
+  mean: 100.0000
+  median: 100.0001
+  std: 0.0192
+  skew: -0.0769
+  kurtosis: 27.5201
+  unique_values: 999999.0000
+  iqr: 0.0155
+  outlier_percentage: 7.8438
+  corr_with_target: 0.0544
+  corr_with_original_signal: 0.0561
+eom_buy_signal:
+  mean: 0.4833
+  median: 0.0000
+  std: 0.4997
+  skew: 0.0668
+  kurtosis: -1.9955
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0526
+  corr_with_original_signal: 0.0543
+rocwb_buy_signal:
+  mean: 0.4962
+  median: 0.0000
+  std: 0.5000
+  skew: 0.0153
+  kurtosis: -1.9998
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0521
+  corr_with_original_signal: 0.0537
+eom_sell_signal:
+  mean: 0.4788
+  median: 0.0000
+  std: 0.4996
+  skew: 0.0847
+  kurtosis: -1.9928
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0485
+  corr_with_original_signal: -0.0500
+5_8_13_buy_signal:
+  mean: 0.3590
+  median: 0.0000
+  std: 0.4797
+  skew: 0.5880
+  kurtosis: -1.6542
+  unique_values: 2.0000
+  iqr: 1.0000
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0483
+  corr_with_original_signal: 0.0493
+
+
+==================== Periodic Patterns - 2025-06-21 08:20:08 ====================
+
+lag_60: 0.0083
+lag_74: 0.0077
+lag_29: 0.0063
+lag_56: 0.0063
+lag_38: 0.0060
+
+
+==================== Feature Importance - 2025-06-21 08:26:27 ====================
+
+
+Mutual Information Scores (Top 20):
+1. bb_short_entry_signal: 0.161728
+2. cci_bearish_signal: 0.118358
+3. vwma_breakouts_buy_signal: 0.093266
+4. golden_cross_buy_signal: 0.093241
+5. EMA_bullish_signal: 0.092600
+6. dpo_overbought_signal: 0.091792
+7. stochastic_strat_buy_signal: 0.091388
+8. rocwb_buy_signal: 0.091240
+9. ehlers_stoch_buy_signal: 0.091073
+10. eom_buy_signal: 0.086200
+11. eom_sell_signal: 0.085735
+12. stc_oversold_signal: 0.067930
+13. stc_overbought_signal: 0.067520
+14. pzosx_buy_signal: 0.061818
+15. w5_8_13_buy_signal: 0.058982
+16. svesc_buy_signal: 0.051927
+17. camarilla_buy_signal: 0.049581
+18. camarilla_sell_signal: 0.048726
+19. pzo_lx_sell_signal: 0.047168
+20. gap_momentum_buy_signal: 0.046719
+
+Random Forest Feature Importance (Top 20):
+1. RSI: 0.074957
+2. Volume: 0.074837
+3. Low: 0.073190
+4. PPO: 0.072694
+5. hacolt: 0.072438
+6. Mass_Index: 0.070767
+7. average_candle_height: 0.067555
+8. STC: 0.065940
+9. Date: 0.065267
+10. current_candle_height: 0.059534
+11. gap_momentum_buy_signal: 0.011395
+12. gap_momentum_sell_signal: 0.011232
+13. golden_cross_buy_signal: 0.010372
+14. adx_trend_buy_signal: 0.009155
+15. cmf_buy_signal: 0.008717
+16. vwma_breakouts_buy_signal: 0.008696
+17. dpo_overbought_signal: 0.008635
+18. stoch_buy_signal: 0.008586
+19. sve_zl_rb_perc_buy_signal: 0.008143
+20. ehlers_stoch_buy_signal: 0.007584
+
+
+==================== SHAP Analysis - 2025-06-21 08:30:51 ====================
+
+
+SHAP Feature Importance (Top 20):
+1. Volume: 0.097561
+2. RSI: 0.056850
+3. hacolt: 0.050469
+4. current_candle_height: 0.049097
+5. stochrsi_overbought_signal: 0.040480
+6. PPO: 0.038600
+7. williams_sell_signal: 0.036469
+8. cci_bearish_signal: 0.035589
+9. average_candle_height: 0.034634
+10. bb_short_entry_signal: 0.032489
+11. STC: 0.031659
+12. Low: 0.028526
+13. Date: 0.025604
+14. kc_buy_signal: 0.024561
+15. camarilla_buy_signal: 0.023646
+16. Mass_Index: 0.023375
+17. rsi_overbought_signal: 0.018595
+18. camarilla_sell_signal: 0.018216
+19. ironbot_buy_signal: 0.017855
+20. svesc_buy_signal: 0.014074
+
+
+==================== Time Series Stability - 2025-06-21 08:31:34 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+Volume                        0.0754         0.0084         2.6555e-04     
+RSI                           0.0740         0.0116         5.4848e-04     
+hacolt                        0.0715         0.0119         5.2581e-04     
+PPO                           0.0710         0.0090         4.0305e-04     
+Low                           0.0708         0.0185         9.2365e-04     
+Mass_Index                    0.0698         0.0145         4.1929e-04     
+average_candle_height         0.0666         0.0149         5.3817e-05     
+STC                           0.0648         0.0146         5.2859e-04     
+current_candle_height         0.0607         0.0168         -6.2593e-04    
+Date                          0.0603         0.0675         2.6743e-03     
+gap_momentum_buy_signal       0.0113         0.0119         4.4901e-05     
+golden_cross_buy_signal       0.0109         0.0136         -9.1283e-05    
+gap_momentum_sell_signal      0.0108         0.0091         -3.1922e-07    
+vwma_breakouts_buy_signal     0.0093         0.0370         -2.3890e-04    
+adx_trend_buy_signal          0.0093         0.0275         -1.3345e-04    
+stoch_buy_signal              0.0088         0.0365         -1.1508e-04    
+dpo_overbought_signal         0.0087         0.0273         -6.4742e-05    
+cmf_buy_signal                0.0084         0.0161         1.6566e-05     
+sve_zl_rb_perc_buy_signal     0.0083         0.0319         -1.7663e-04    
+ehlers_stoch_buy_signal       0.0079         0.0416         -1.8010e-04    
+
+
+==================== Important Features - 2025-06-21 08:31:34 ====================
+
+=== ENHANCED SELECTED FEATURES ===
+
+Selection method: model_based
+Total features: 75
+
+# Top features selected by enhanced method:
+ 1. Volume
+ 2. RSI
+ 3. hacolt
+ 4. PPO
+ 5. Low
+ 6. Mass_Index
+ 7. average_candle_height
+ 8. Date
+ 9. STC
+10. current_candle_height
+11. gap_momentum_buy_signal
+12. gap_momentum_sell_signal
+13. golden_cross_buy_signal
+14. adx_trend_buy_signal
+15. stoch_buy_signal
+16. cmf_buy_signal
+17. dpo_overbought_signal
+18. vwma_breakouts_buy_signal
+19. sve_zl_rb_perc_buy_signal
+20. ehlers_stoch_buy_signal
+21. dpo_sell_signal
+22. pzo_lx_sell_signal
+23. camarilla_buy_signal
+24. cons_bars_up_le_buy_signal
+25. bb_short_entry_signal
+26. stochastic_strat_buy_signal
+27. dpo_buy_signal
+28. kama_cross_buy_signal
+29. stoch_sell_signal
+30. vols_switch_buy_signal
+31. mfi_buy_signal
+32. stochrsi_overbought_signal
+33. cci_buy_signal
+34. atr_high_sma_breakouts_le_buy_signal
+35. psar_buy_signal
+36. sve_zl_rb_perc_sell_signal
+37. stc_overbought_signal
+38. 5_8_13_buy_signal
+39. williams_sell_signal
+40. rsi_overbought_signal
+41. eom_buy_signal
+42. kst_buy_signal
+43. cmf_sell_signal
+44. inside_bar_sell_signal
+45. cci_bearish_signal
+46. pmo_buy_signal
+47. eom_sell_signal
+48. eight_month_avg_buy_signal
+49. ironbot_buy_signal
+50. price_swing_sell_signal
+51. aroon_buy_signal
+52. pzosx_buy_signal
+53. ichi_buy_signal
+54. macd_conv_buy_signal
+55. acc_dist_buy_signal
+56. vortex_buy_signal
+57. key_rev_buy_signal
+58. momentumle_buy_signal
+59. camarilla_sell_signal
+60. vols_switch_sell_signal
+61. wma_buy_signal.1
+62. stc_oversold_signal
+63. w5_8_13_buy_signal
+64. 5_8_13_sell_signal
+65. sve_ha_typ_cross_buy_signal
+66. Ao_buy_signal
+67. kc_buy_signal
+68. svesc_buy_signal
+69. pzo_buy_signal
+70. key_rev_sell_signals
+71. mov_avg_two_lines_buy_signal
+72. rocwb_buy_signal
+73. ironbot_sell_signal
+74. vhf_buy_signal
+75. EMA_bullish_signal
+
+
+==================== Model Information - 2025-06-21 08:31:34 ====================
+
+Saved Models:
+  cpu_random_forest_profitable_signal: models_short_signal_20250621_075112/cpu_random_forest_profitable_signal.joblib
+  shap_model_profitable_signal: models_short_signal_20250621_075112/shap_model_profitable_signal.joblib
+  time_split_0_profitable_signal: models_short_signal_20250621_075112/time_split_0_profitable_signal.joblib
+  time_split_1_profitable_signal: models_short_signal_20250621_075112/time_split_1_profitable_signal.joblib
+  time_split_2_profitable_signal: models_short_signal_20250621_075112/time_split_2_profitable_signal.joblib
+  time_split_3_profitable_signal: models_short_signal_20250621_075112/time_split_3_profitable_signal.joblib
+  time_split_4_profitable_signal: models_short_signal_20250621_075112/time_split_4_profitable_signal.joblib
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-06-21 08:31:34
+Enhanced Selection: Enabled
+Best Selection Method: model_based
+Selected Features: 75
+Models saved in: models_short_signal_20250621_075112
+Total models saved: 7

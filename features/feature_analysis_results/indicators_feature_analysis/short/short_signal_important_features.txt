@@ -1,0 +1,19 @@
+=== ENHANCED SELECTED FEATURES ===
+
+# Generated on: 2025-06-21 13:06:31
+# Target: short_signal
+# Mode: Classification
+# Enhanced Selection: Enabled
+# Selection Method: rfe
+# Total Features: 10
+
+ 1. CCI
+ 2. CMO
+ 3. MINUS_DI
+ 4. PLUS_DM
+ 5. ROCR100
+ 6. STOCH_D
+ 7. TRIX
+ 8. HT_DCPHASE
+ 9. z_score
+10. EFI

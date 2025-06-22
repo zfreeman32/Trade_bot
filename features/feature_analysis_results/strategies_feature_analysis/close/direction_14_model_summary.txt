@@ -1,0 +1,24 @@
+=== SAVED MODELS SUMMARY ===
+
+# Generated on: 2025-06-22 18:53:24
+
+Target: direction_14
+Mode: Classification
+Enhanced Selection: Enabled
+Selection Method: statistical
+Selected Features: 74
+Models directory: models_direction_14_20250622_173200
+
+Saved models:
+  cpu_random_forest_direction_14: models_direction_14_20250622_173200/cpu_random_forest_direction_14.joblib
+  shap_model_direction_14: models_direction_14_20250622_173200/shap_model_direction_14.joblib
+  time_split_0_direction_14: models_direction_14_20250622_173200/time_split_0_direction_14.joblib
+  time_split_1_direction_14: models_direction_14_20250622_173200/time_split_1_direction_14.joblib
+  time_split_2_direction_14: models_direction_14_20250622_173200/time_split_2_direction_14.joblib
+  time_split_3_direction_14: models_direction_14_20250622_173200/time_split_3_direction_14.joblib
+  time_split_4_direction_14: models_direction_14_20250622_173200/time_split_4_direction_14.joblib
+
+To load a model:
+import joblib
+model = joblib.load('path_to_model.joblib')
+# For pickle files: with open('path_to_model.pkl', 'rb') as f: model = pickle.load(f)

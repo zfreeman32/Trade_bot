@@ -1,0 +1,65 @@
+SHAP Analysis - Started at 2025-06-22 17:28:06
+
+Target column: direction_5
+Mode: Classification
+
+GPU Acceleration: Enabled
+
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-22 17:31:28
+GPU Acceleration: Enabled
+Processed 6000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. direction_5: 0.394354
+2. returns_5: 0.333221
+3. returns_3: 0.056367
+4. direction_3: 0.048977
+5. returns_10: 0.036306
+6. direction_10: 0.032640
+7. returns_14: 0.022713
+8. direction_14: 0.020545
+9. direction_1: 0.013819
+10. returns_1: 0.012328
+11. direction_3class_10: 0.004080
+12. direction_3class_5: 0.003450
+13. direction_3class_14: 0.002817
+14. direction_3class_3: 0.001196
+15. RSI: 0.001078
+16. current_candle_height: 0.000936
+17. rocwb_buy_signal: 0.000602
+18. svesc_buy_signal: 0.000572
+19. kc_buy_signal: 0.000511
+20. williams_sell_signal: 0.000461
+21. ironbot_sell_signal: 0.000443
+22. stochastic_strat_buy_signal: 0.000419
+23. pzosx_buy_signal: 0.000412
+24. w5_8_13_buy_signal: 0.000403
+25. svesc_sell_signal: 0.000380
+26. ehlers_stoch_buy_signal: 0.000367
+27. stc_oversold_signal: 0.000355
+28. ironbot_buy_signal: 0.000333
+29. dpo_overbought_signal: 0.000331
+30. adx_trend_buy_signal: 0.000330
+31. williams_buy_signal: 0.000328
+32. vwma_breakouts_buy_signal: 0.000327
+33. eom_buy_signal: 0.000326
+34. camarilla_sell_signal: 0.000314
+35. spectrum_bars_buy_signal: 0.000293
+36. gap_momentum_sell_signal: 0.000285
+37. volatility_band_buy_signal: 0.000270
+38. cmf_buy_signal: 0.000266
+39. 5_8_13_sell_signal: 0.000264
+40. sve_zl_rb_perc_buy_signal: 0.000259
+41. golden_cross_buy_signal: 0.000250
+42. EMA_bullish_signal: 0.000247
+43. eom_sell_signal: 0.000241
+44. cmf_sell_signal: 0.000239
+45. stochrsi_overbought_signal: 0.000224
+46. stoch_sell_signal: 0.000222
+47. stoch_buy_signal: 0.000218
+48. adx_trend_sell_signal: 0.000215
+49. pzo_lx_sell_signal: 0.000215
+50. sve_zl_rb_perc_sell_signal: 0.000214

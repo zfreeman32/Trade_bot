@@ -1,0 +1,26 @@
+SHAP Analysis - Started at 2025-06-22 14:13:56
+
+Target column: profitable_signal
+Mode: Classification
+
+GPU Acceleration: Enabled
+
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-22 14:15:27
+GPU Acceleration: Enabled
+Processed 6000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. z_score: 0.215307
+2. EFI: 0.206067
+3. ATR: 0.084610
+4. ROCP: 0.083074
+5. TRIX: 0.081945
+6. CCI: 0.078439
+7. HT_DCPHASE: 0.064923
+8. HT_PHASOR_INPHASE: 0.055415
+9. SMA: 0.046769
+10. AD: 0.045527
+11. HT_DCPERIOD: 0.037925

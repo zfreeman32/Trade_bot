@@ -1,0 +1,84 @@
+=== ENHANCED SELECTED FEATURES ===
+
+# Generated on: 2025-06-22 17:31:51
+# Target: direction_5
+# Mode: Classification
+# Enhanced Selection: Enabled
+# Selection Method: statistical
+# Total Features: 75
+
+ 1. adx_trend_buy_signal
+ 2. adx_trend_sell_signal
+ 3. pzosx_buy_signal
+ 4. acc_dist_sell_signal
+ 5. current_candle_height
+ 6. bb_short_entry_signal
+ 7. camarilla_buy_signal
+ 8. camarilla_sell_signal
+ 9. cci_bullish_signal
+10. cci_bearish_signal
+11. cci_sell_signal
+12. cmf_buy_signal
+13. cmf_sell_signal
+14. dpo_overbought_signal
+15. dpo_buy_signal
+16. dpo_sell_signal
+17. ehlers_stoch_buy_signal
+18. eight_month_avg_buy_signal
+19. eight_month_avg_sell_signal
+20. EMA_bullish_signal
+21. eom_buy_signal
+22. eom_sell_signal
+23. gap_momentum_buy_signal
+24. gap_momentum_sell_signal
+25. golden_cross_buy_signal
+26. ironbot_buy_signal
+27. ironbot_sell_signal
+28. kama_cross_buy_signal
+29. kama_cross_sell_signal
+30. kc_buy_signal
+31. kc_sell_signal
+32. moving_average_buy_signal
+33. pzo_lx_sell_signal
+34. rocwb_buy_signal
+35. rsi_overbought_signal
+36. RSI
+37. spectrum_bars_buy_signal
+38. stc_overbought_signal
+39. stc_oversold_signal
+40. stoch_buy_signal
+41. stoch_sell_signal
+42. stochastic_strat_buy_signal
+43. stochrsi_overbought_signal
+44. stochrsi_oversold_signal
+45. 5_8_13_buy_signal
+46. 5_8_13_sell_signal
+47. w5_8_13_buy_signal
+48. w5_8_13_sell_signal
+49. sve_ha_typ_cross_sell_signal
+50. sve_zl_rb_perc_buy_signal
+51. sve_zl_rb_perc_sell_signal
+52. svesc_buy_signal
+53. svesc_sell_signal
+54. volatility_band_buy_signal
+55. vols_switch_buy_signal
+56. vols_switch_sell_signal
+57. vpn_sell_signal
+58. vwma_breakouts_buy_signal
+59. williams_buy_signal
+60. williams_sell_signal
+61. direction_1
+62. direction_3class_1
+63. returns_1
+64. direction_3
+65. direction_3class_3
+66. returns_3
+67. direction_5
+68. direction_3class_5
+69. returns_5
+70. direction_10
+71. direction_3class_10
+72. returns_10
+73. direction_14
+74. direction_3class_14
+75. returns_14

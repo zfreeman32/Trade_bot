@@ -1,0 +1,488 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-06-21 07:25:33
+
+
+==================== Analysis Started - 2025-06-21 07:25:33 ====================
+
+
+
+==================== Dataset Structure - 2025-06-21 07:26:54 ====================
+
+total_samples: 1000000
+feature_count: 143
+memory_usage_MB: 1091.0035400390625
+missing_values: 33
+datatypes: {dtype('float64'): 87, dtype('int64'): 54, dtype('O'): 2}
+gpu_acceleration: Enabled
+signal_distribution: {'original_signals': 5178, 'profitable_signals': 4830, 'no_original_signals': 994822, 'no_profitable_signals': 995170, 'original_signal_ratio': np.float64(0.005178), 'profitable_signal_ratio': np.float64(0.00483), 'profit_rate': np.float64(0.93279258400927), 'imbalance_warning': np.True_}
+
+
+==================== Feature Filtering - 2025-06-21 07:26:54 ====================
+
+Original features: 136
+Features after constant removal: 136
+Features after collinearity removal: 91
+Features after stability filtering: 87
+
+Removed features by category:
+Constant features (0): 
+High collinearity features (45): CDLTAKURI, High, HMA, HT_TRENDLINE, MA_50, DONCHIAN_LOW, DEMA, TEMA, EMA_20, AVGPRICE
+... and 35 more
+Unstable features (4): CDL3INSIDE, CDLDOJISTAR, CDLINVERTEDHAMMER, CDLTHRUSTING
+
+Filtered feature set (87): Date, Volume, LOWERBAND, SAREXT, ADX, ADXR, AROON_DOWN, AROON_UP, AROONOSC, BOP, CCI, CMO, DX, MACD, MACDHIST, MFI, MINUS_DI, MINUS_DM, PLUS_DI, PLUS_DM, PPO, ROCR100, STOCH_K, STOCH_D, STOCHF_K, STOCHRSI_K, STOCHRSI_D, TRIX, ULTOSC, WILLR, AD, ADOSC, OBV, NATR, TRANGE, HT_DCPERIOD, HT_DCPHASE, HT_PHASOR_INPHASE, HT_PHASOR_QUADRATURE, HT_SINE, HT_LEADSINE, HT_TRENDMODE, rolling_std, z_score, VWAP, EFI, CDL3BLACKCROWS, CDL3LINESTRIKE, CDL3WHITESOLDIERS, CDLADVANCEBLOCK, CDLBELTHOLD, CDLCLOSINGMARUBOZU, CDLCOUNTERATTACK, CDLDARKCLOUDCOVER, CDLDOJI, CDLDRAGONFLYDOJI, CDLENGULFING, CDLEVENINGDOJISTAR, CDLEVENINGSTAR, CDLGAPSIDESIDEWHITE, CDLGRAVESTONEDOJI, CDLHAMMER, CDLHANGINGMAN, CDLHARAMI, CDLHARAMICROSS, CDLHIGHWAVE, CDLHIKKAKE, CDLHIKKAKEMOD, CDLHOMINGPIGEON, CDLIDENTICAL3CROWS, CDLINNECK, CDLLONGLINE, CDLMARUBOZU, CDLMATCHINGLOW, CDLMORNINGDOJISTAR, CDLMORNINGSTAR, CDLPIERCING, CDLRICKSHAWMAN, CDLRISEFALL3METHODS, CDLSEPARATINGLINES, CDLSHOOTINGSTAR, CDLSHORTLINE, CDLSPINNINGTOP, CDLSTALLEDPATTERN, CDLSTICKSANDWICH, CDLTRISTAR, CDLXSIDEGAP3METHODS
+
+
+==================== Enhanced Feature Selection - 2025-06-21 09:47:36 ====================
+
+Enhanced selection method: regularization
+Final selected features: 27
+
+Method Performance Comparison:
+----------------------------------------
+STATISTICAL:
+  Method: Mutual Information + Percentile
+  Features: 69
+  CV Score: 0.9957 ± 0.0016
+
+RFE:
+  Method: Recursive Feature Elimination CV
+  Features: 32
+  CV Score: 0.9957 ± 0.0016
+
+REGULARIZATION:
+  Method: Lasso/L1 Regularization
+  Features: 27
+  CV Score: 0.9957 ± 0.0016
+
+MODEL_BASED:
+  Method: Random Forest Importance
+  Features: 75
+  CV Score: 0.9957 ± 0.0016
+
+ENSEMBLE:
+  Method: Ensemble Ranking
+  Features: 75
+  CV Score: 0.9957 ± 0.0016
+
+Selected Features (27):
+ 1. STOCHRSI_K
+ 2. WILLR
+ 3. ADX
+ 4. DX
+ 5. PLUS_DI
+ 6. STOCHF_K
+ 7. AROON_DOWN
+ 8. STOCH_D
+ 9. CDLMARUBOZU
+10. CDLSPINNINGTOP
+11. CDLBELTHOLD
+12. CDLHARAMI
+13. Volume
+14. STOCHRSI_D
+15. CDLGRAVESTONEDOJI
+16. CDLCLOSINGMARUBOZU
+17. CDLDOJI
+18. MINUS_DI
+19. CDLHIGHWAVE
+20. HT_DCPHASE
+21. CDLENGULFING
+22. CDLDRAGONFLYDOJI
+23. CCI
+24. CDLLONGLINE
+25. ADOSC
+26. CDLHIKKAKE
+27. AROON_UP
+
+
+==================== Feature Statistics - 2025-06-21 09:47:37 ====================
+
+Top 20 Features by Target Correlation:
+--------------------------------------------------
+Volume:
+  mean: 181.2484
+  median: 134.0000
+  std: 184.9611
+  skew: 3.9611
+  kurtosis: 32.7211
+  unique_values: 2428.0000
+  iqr: 157.0000
+  outlier_percentage: 5.9607
+  corr_with_target: 0.1031
+  corr_with_original_signal: 0.1129
+ADOSC:
+  mean: 1.0014
+  median: 1.3881
+  std: 163.2774
+  skew: 0.0403
+  kurtosis: 21.6231
+  unique_values: 995160.0000
+  iqr: 112.1326
+  outlier_percentage: 10.2587
+  corr_with_target: -0.0778
+  corr_with_original_signal: -0.0791
+CCI:
+  mean: 1.0110
+  median: 2.4251
+  std: 109.2377
+  skew: -0.0258
+  kurtosis: -0.5405
+  unique_values: 987367.0000
+  iqr: 172.7310
+  outlier_percentage: 0.1076
+  corr_with_target: -0.0745
+  corr_with_original_signal: -0.0771
+WILLR:
+  mean: -49.4023
+  median: -49.0433
+  std: 31.0251
+  skew: -0.0240
+  kurtosis: -1.3119
+  unique_values: 71615.0000
+  iqr: 56.3938
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0730
+  corr_with_original_signal: -0.0751
+STOCHF_K:
+  mean: 50.4204
+  median: 50.0199
+  std: 31.8262
+  skew: -0.0162
+  kurtosis: -1.3349
+  unique_values: 38234.0000
+  iqr: 58.7695
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0717
+  corr_with_original_signal: -0.0739
+STOCHRSI_K:
+  mean: 50.2345
+  median: 50.5581
+  std: 41.9118
+  skew: -0.0093
+  kurtosis: -1.6945
+  unique_values: 418104.0000
+  iqr: 100.0000
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0655
+  corr_with_original_signal: -0.0679
+MINUS_DI:
+  mean: 23.2209
+  median: 22.5335
+  std: 8.0453
+  skew: 0.5924
+  kurtosis: 0.7734
+  unique_values: 960953.0000
+  iqr: 10.6611
+  outlier_percentage: 1.2621
+  corr_with_target: 0.0619
+  corr_with_original_signal: 0.0648
+STOCHRSI_D:
+  mean: 50.2344
+  median: 50.3649
+  std: 32.9290
+  skew: -0.0086
+  kurtosis: -1.2909
+  unique_values: 699691.0000
+  iqr: 58.8959
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0566
+  corr_with_original_signal: -0.0585
+AROON_DOWN:
+  mean: 49.8777
+  median: 50.0000
+  std: 36.7252
+  skew: 0.0115
+  kurtosis: -1.5023
+  unique_values: 15.0000
+  iqr: 71.4286
+  outlier_percentage: 0.0000
+  corr_with_target: 0.0544
+  corr_with_original_signal: 0.0563
+STOCH_D:
+  mean: 50.4203
+  median: 50.5775
+  std: 24.6195
+  skew: -0.0149
+  kurtosis: -1.1357
+  unique_values: 961805.0000
+  iqr: 42.1168
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0526
+  corr_with_original_signal: -0.0539
+PLUS_DI:
+  mean: 23.1439
+  median: 22.5190
+  std: 7.9703
+  skew: 0.5245
+  kurtosis: 0.5474
+  unique_values: 961034.0000
+  iqr: 10.6590
+  outlier_percentage: 1.0834
+  corr_with_target: -0.0507
+  corr_with_original_signal: -0.0522
+DX:
+  mean: 24.5776
+  median: 21.4899
+  std: 17.5310
+  skew: 0.7395
+  kurtosis: -0.0261
+  unique_values: 777090.0000
+  iqr: 25.6074
+  outlier_percentage: 0.7168
+  corr_with_target: 0.0501
+  corr_with_original_signal: 0.0532
+CDLBELTHOLD:
+  mean: 0.1221
+  median: 0.0000
+  std: 46.2778
+  skew: 0.0044
+  kurtosis: 1.6693
+  unique_values: 3.0000
+  iqr: 0.0000
+  outlier_percentage: 21.4165
+  corr_with_target: -0.0400
+  corr_with_original_signal: -0.0418
+CDLLONGLINE:
+  mean: 0.2183
+  median: 0.0000
+  std: 45.1015
+  skew: 0.0093
+  kurtosis: 1.9159
+  unique_values: 3.0000
+  iqr: 0.0000
+  outlier_percentage: 20.3419
+  corr_with_target: -0.0340
+  corr_with_original_signal: -0.0353
+AROON_UP:
+  mean: 50.6767
+  median: 50.0000
+  std: 36.7688
+  skew: -0.0210
+  kurtosis: -1.5043
+  unique_values: 15.0000
+  iqr: 71.4286
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0315
+  corr_with_original_signal: -0.0318
+CDLCLOSINGMARUBOZU:
+  mean: 0.1837
+  median: 0.0000
+  std: 41.3811
+  skew: 0.0126
+  kurtosis: 2.8395
+  unique_values: 3.0000
+  iqr: 0.0000
+  outlier_percentage: 17.1243
+  corr_with_target: -0.0314
+  corr_with_original_signal: -0.0324
+ADX:
+  mean: 24.5778
+  median: 22.5485
+  std: 9.8379
+  skew: 1.0409
+  kurtosis: 1.1489
+  unique_values: 969880.0000
+  iqr: 12.6254
+  outlier_percentage: 2.4606
+  corr_with_target: 0.0294
+  corr_with_original_signal: 0.0313
+CDLMARUBOZU:
+  mean: 0.1342
+  median: 0.0000
+  std: 28.9210
+  skew: 0.0416
+  kurtosis: 8.9550
+  unique_values: 3.0000
+  iqr: 0.0000
+  outlier_percentage: 8.3644
+  corr_with_target: -0.0195
+  corr_with_original_signal: -0.0203
+HT_DCPHASE:
+  mean: 121.9860
+  median: 138.2077
+  std: 101.0126
+  skew: 0.0296
+  kurtosis: -1.2807
+  unique_values: 984051.0000
+  iqr: 179.8720
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0174
+  corr_with_original_signal: -0.0178
+CDLSPINNINGTOP:
+  mean: 5.2233
+  median: 0.0000
+  std: 38.2692
+  skew: 0.5200
+  kurtosis: 3.5594
+  unique_values: 3.0000
+  iqr: 0.0000
+  outlier_percentage: 14.9181
+  corr_with_target: -0.0173
+  corr_with_original_signal: -0.0183
+
+
+==================== Periodic Patterns - 2025-06-21 09:47:39 ====================
+
+lag_97: 0.0064
+lag_47: 0.0058
+lag_94: 0.0058
+lag_69: 0.0055
+lag_72: 0.0055
+
+
+==================== Feature Importance - 2025-06-21 09:50:26 ====================
+
+
+Mutual Information Scores (Top 20):
+1. STOCHRSI_K: 0.025948
+2. AROON_DOWN: 0.012852
+3. AROON_UP: 0.011278
+4. CDLBELTHOLD: 0.008266
+5. CDLLONGLINE: 0.007177
+6. CDLDOJI: 0.007169
+7. CDLCLOSINGMARUBOZU: 0.005233
+8. STOCHF_K: 0.004609
+9. WILLR: 0.004187
+10. CDLSPINNINGTOP: 0.004153
+11. Volume: 0.003640
+12. ADOSC: 0.003456
+13. STOCHRSI_D: 0.003427
+14. CCI: 0.003158
+15. CDLHIGHWAVE: 0.001889
+16. PLUS_DI: 0.001869
+17. MINUS_DI: 0.001845
+18. STOCH_D: 0.001503
+19. CDLMARUBOZU: 0.001282
+20. DX: 0.001159
+
+Random Forest Feature Importance (Top 20):
+1. Volume: 0.085570
+2. ADOSC: 0.079551
+3. CCI: 0.075141
+4. PLUS_DI: 0.073275
+5. HT_DCPHASE: 0.072627
+6. STOCHRSI_D: 0.072446
+7. MINUS_DI: 0.072418
+8. STOCH_D: 0.071952
+9. ADX: 0.071702
+10. DX: 0.069794
+11. WILLR: 0.067056
+12. STOCHF_K: 0.063964
+13. AROON_UP: 0.030582
+14. STOCHRSI_K: 0.024897
+15. AROON_DOWN: 0.015575
+16. CDLHIKKAKE: 0.008231
+17. CDLBELTHOLD: 0.007703
+18. CDLLONGLINE: 0.006434
+19. CDLSPINNINGTOP: 0.006038
+20. CDLCLOSINGMARUBOZU: 0.005506
+
+
+==================== SHAP Analysis - 2025-06-21 09:53:36 ====================
+
+
+SHAP Feature Importance (Top 20):
+1. Volume: 0.152600
+2. WILLR: 0.114488
+3. STOCHRSI_K: 0.107811
+4. ADOSC: 0.087372
+5. AROON_DOWN: 0.070231
+6. STOCHRSI_D: 0.069811
+7. STOCH_D: 0.061409
+8. STOCHF_K: 0.045014
+9. CCI: 0.040988
+10. MINUS_DI: 0.037007
+11. DX: 0.036351
+12. PLUS_DI: 0.034488
+13. ADX: 0.029768
+14. HT_DCPHASE: 0.028896
+15. AROON_UP: 0.019586
+16. CDLBELTHOLD: 0.012244
+17. CDLENGULFING: 0.008224
+18. CDLHIGHWAVE: 0.007719
+19. CDLLONGLINE: 0.007337
+20. CDLHIKKAKE: 0.006903
+
+
+==================== Time Series Stability - 2025-06-21 09:55:31 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+Volume                        0.0872         0.0162         -9.4253e-04    
+ADOSC                         0.0787         0.0201         8.3698e-04     
+CCI                           0.0753         0.0096         -3.5486e-04    
+PLUS_DI                       0.0719         0.0092         4.4702e-04     
+HT_DCPHASE                    0.0717         0.0064         2.2164e-04     
+MINUS_DI                      0.0715         0.0084         2.9243e-04     
+ADX                           0.0714         0.0062         1.9562e-04     
+STOCH_D                       0.0707         0.0079         3.3758e-04     
+STOCHRSI_D                    0.0702         0.0168         7.8268e-04     
+DX                            0.0702         0.0071         1.4031e-04     
+WILLR                         0.0684         0.0075         -2.4607e-04    
+STOCHF_K                      0.0644         0.0080         -3.6191e-04    
+AROON_UP                      0.0312         0.0118         3.6731e-05     
+STOCHRSI_K                    0.0254         0.0191         -3.0538e-04    
+AROON_DOWN                    0.0168         0.0496         -5.3268e-04    
+CDLHIKKAKE                    0.0084         0.0233         -2.7689e-05    
+CDLBELTHOLD                   0.0080         0.0538         -2.4428e-04    
+CDLSPINNINGTOP                0.0065         0.0331         -9.9163e-05    
+CDLLONGLINE                   0.0064         0.0215         -2.6307e-05    
+CDLCLOSINGMARUBOZU            0.0055         0.0341         -7.2102e-05    
+
+
+==================== Important Features - 2025-06-21 09:55:31 ====================
+
+=== ENHANCED SELECTED FEATURES ===
+
+Selection method: regularization
+Total features: 27
+
+# Top features selected by enhanced method:
+ 1. STOCHRSI_K
+ 2. WILLR
+ 3. ADX
+ 4. DX
+ 5. PLUS_DI
+ 6. STOCHF_K
+ 7. AROON_DOWN
+ 8. STOCH_D
+ 9. CDLMARUBOZU
+10. CDLSPINNINGTOP
+11. CDLBELTHOLD
+12. CDLHARAMI
+13. Volume
+14. STOCHRSI_D
+15. CDLGRAVESTONEDOJI
+16. CDLCLOSINGMARUBOZU
+17. CDLDOJI
+18. MINUS_DI
+19. CDLHIGHWAVE
+20. HT_DCPHASE
+21. CDLENGULFING
+22. CDLDRAGONFLYDOJI
+23. CCI
+24. CDLLONGLINE
+25. ADOSC
+26. CDLHIKKAKE
+27. AROON_UP
+
+
+==================== Model Information - 2025-06-21 09:55:31 ====================
+
+Saved Models:
+  cpu_random_forest_profitable_signal: models_long_signal_20250621_072546/cpu_random_forest_profitable_signal.joblib
+  shap_model_profitable_signal: models_long_signal_20250621_072546/shap_model_profitable_signal.joblib
+  time_split_0_profitable_signal: models_long_signal_20250621_072546/time_split_0_profitable_signal.joblib
+  time_split_1_profitable_signal: models_long_signal_20250621_072546/time_split_1_profitable_signal.joblib
+  time_split_2_profitable_signal: models_long_signal_20250621_072546/time_split_2_profitable_signal.joblib
+  time_split_3_profitable_signal: models_long_signal_20250621_072546/time_split_3_profitable_signal.joblib
+  time_split_4_profitable_signal: models_long_signal_20250621_072546/time_split_4_profitable_signal.joblib
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-06-21 09:55:31
+Enhanced Selection: Enabled
+Best Selection Method: regularization
+Selected Features: 27
+Models saved in: models_long_signal_20250621_072546
+Total models saved: 7

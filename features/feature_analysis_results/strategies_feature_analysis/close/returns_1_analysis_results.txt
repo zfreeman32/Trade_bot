@@ -1,0 +1,120 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-06-22 21:04:05
+
+
+==================== Analysis Started - 2025-06-22 21:04:05 ====================
+
+
+
+==================== Feature Importance - 2025-06-22 21:13:33 ====================
+
+
+Random Forest Feature Importance (Top 20):
+
+
+==================== SHAP Analysis - 2025-06-22 21:23:15 ====================
+
+
+SHAP Feature Importance (Top 20):
+1. returns_1: 0.982244
+2. direction_1: 0.015635
+3. returns_5: 0.000512
+4. returns_3: 0.000370
+5. returns_10: 0.000291
+6. returns_14: 0.000191
+7. Mass_Index: 0.000141
+8. Volume: 0.000056
+9. Date: 0.000051
+10. current_candle_height: 0.000047
+11. RSI: 0.000033
+12. hacolt: 0.000032
+13. STC: 0.000031
+14. spectrum_bars_buy_signal: 0.000028
+15. pmo_sell_signal: 0.000027
+16. average_candle_height: 0.000021
+17. stc_oversold_signal: 0.000021
+18. macd_conv_sell_signal: 0.000020
+19. eom_sell_signal: 0.000017
+20. moving_average_buy_signal: 0.000017
+
+
+==================== Time Series Stability - 2025-06-22 21:29:15 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+returns_1                     0.9941         0.0018         7.5073e-04     
+returns_14                    0.0013         0.4344         -3.7907e-04    
+direction_1                   0.0009         1.4914         6.1212e-04     
+returns_10                    0.0009         0.5431         -3.0030e-04    
+returns_5                     0.0009         0.6432         -3.6555e-04    
+returns_3                     0.0008         0.3405         -1.2833e-04    
+STC                           0.0001         0.4692         8.8489e-06     
+RSI                           0.0001         0.4535         3.2733e-06     
+profit_target_sell_signal     0.0001         0.9012         5.9925e-05     
+Volume                        0.0001         0.5829         -2.3340e-05    
+Mass_Index                    0.0001         0.1851         -1.3102e-06    
+pmo_sell_signal               0.0001         0.6934         -2.1545e-05    
+current_candle_height         0.0001         0.2657         -9.1236e-06    
+average_candle_height         0.0000         1.1942         -2.9025e-05    
+macd_conv_sell_signal         0.0000         0.2444         -1.2785e-06    
+hacolt                        0.0000         0.2131         1.8718e-06     
+eom_buy_signal                0.0000         1.5794         -2.7939e-05    
+Date                          0.0000         1.0296         -1.3475e-05    
+Ao_sell_signal                0.0000         1.8628         -2.8424e-05    
+adx_trend_buy_signal          0.0000         0.7370         1.3177e-05     
+
+
+==================== Important Features - 2025-06-22 21:29:15 ====================
+
+=== IMPORTANT FEATURES (Legacy Method) ===
+
+# Features with high importance and stability:
+Mass_Index
+RSI
+STC
+current_candle_height
+direction_14
+hacolt
+ichi_sell_signal
+key_rev_sell_signals
+macd_conv_sell_signal
+mass_sell_signal
+returns_1
+returns_14
+returns_3
+rocwb_buy_signal
+
+# Top stable features across time periods:
+returns_1: 0.9941
+returns_14: 0.0013
+returns_3: 0.0008
+STC: 0.0001
+RSI: 0.0001
+Mass_Index: 0.0001
+current_candle_height: 0.0001
+macd_conv_sell_signal: 0.0000
+hacolt: 0.0000
+key_rev_sell_signals: 0.0000
+rocwb_buy_signal: 0.0000
+direction_14: 0.0000
+ichi_sell_signal: 0.0000
+mass_sell_signal: 0.0000
+
+
+==================== Model Information - 2025-06-22 21:29:15 ====================
+
+Saved Models:
+  cpu_random_forest_returns_1: models_returns_1_20250622_210415/cpu_random_forest_returns_1.joblib
+  shap_model_returns_1: models_returns_1_20250622_210415/shap_model_returns_1.joblib
+  time_split_0_returns_1: models_returns_1_20250622_210415/time_split_0_returns_1.joblib
+  time_split_1_returns_1: models_returns_1_20250622_210415/time_split_1_returns_1.joblib
+  time_split_2_returns_1: models_returns_1_20250622_210415/time_split_2_returns_1.joblib
+  time_split_3_returns_1: models_returns_1_20250622_210415/time_split_3_returns_1.joblib
+  time_split_4_returns_1: models_returns_1_20250622_210415/time_split_4_returns_1.joblib
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-06-22 21:29:15
+Enhanced Selection: Enabled
+Models saved in: models_returns_1_20250622_210415
+Total models saved: 7

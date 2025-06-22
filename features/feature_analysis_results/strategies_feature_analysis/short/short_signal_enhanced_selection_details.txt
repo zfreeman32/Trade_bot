@@ -1,0 +1,192 @@
+=== ENHANCED FEATURE SELECTION DETAILS ===
+
+Target: short_signal
+Mode: Classification
+Target Features: 75
+Best Method: model_based
+
+METHOD COMPARISON:
+==================================================
+
+STATISTICAL:
+  Description: Mutual Information + Percentile
+  Features Selected: 74
+  Cross-validation Score: 0.995866 ± 0.001366
+
+RFE:
+  Description: Recursive Feature Elimination CV
+  Features Selected: 17
+  Cross-validation Score: 0.995783 ± 0.001492
+
+REGULARIZATION:
+  Description: Lasso/L1 Regularization
+  Features Selected: 3
+  Cross-validation Score: 0.995842 ± 0.001384
+
+MODEL_BASED:
+  Description: Random Forest Importance
+  Features Selected: 75
+  Cross-validation Score: 0.995867 ± 0.001366
+
+ENSEMBLE:
+  Description: Ensemble Ranking
+  Features Selected: 75
+  Cross-validation Score: 0.995866 ± 0.001366
+
+
+SELECTED FEATURES (75):
+==================================================
+ 1. Volume
+ 2. RSI
+ 3. hacolt
+ 4. PPO
+ 5. Low
+ 6. Mass_Index
+ 7. average_candle_height
+ 8. Date
+ 9. STC
+10. current_candle_height
+11. gap_momentum_buy_signal
+12. gap_momentum_sell_signal
+13. golden_cross_buy_signal
+14. adx_trend_buy_signal
+15. stoch_buy_signal
+16. cmf_buy_signal
+17. dpo_overbought_signal
+18. vwma_breakouts_buy_signal
+19. sve_zl_rb_perc_buy_signal
+20. ehlers_stoch_buy_signal
+21. dpo_sell_signal
+22. pzo_lx_sell_signal
+23. camarilla_buy_signal
+24. cons_bars_up_le_buy_signal
+25. bb_short_entry_signal
+26. stochastic_strat_buy_signal
+27. dpo_buy_signal
+28. kama_cross_buy_signal
+29. stoch_sell_signal
+30. vols_switch_buy_signal
+31. mfi_buy_signal
+32. stochrsi_overbought_signal
+33. cci_buy_signal
+34. atr_high_sma_breakouts_le_buy_signal
+35. psar_buy_signal
+36. sve_zl_rb_perc_sell_signal
+37. stc_overbought_signal
+38. 5_8_13_buy_signal
+39. williams_sell_signal
+40. rsi_overbought_signal
+41. eom_buy_signal
+42. kst_buy_signal
+43. cmf_sell_signal
+44. inside_bar_sell_signal
+45. cci_bearish_signal
+46. pmo_buy_signal
+47. eom_sell_signal
+48. eight_month_avg_buy_signal
+49. ironbot_buy_signal
+50. price_swing_sell_signal
+51. aroon_buy_signal
+52. pzosx_buy_signal
+53. ichi_buy_signal
+54. macd_conv_buy_signal
+55. acc_dist_buy_signal
+56. vortex_buy_signal
+57. key_rev_buy_signal
+58. momentumle_buy_signal
+59. camarilla_sell_signal
+60. vols_switch_sell_signal
+61. wma_buy_signal.1
+62. stc_oversold_signal
+63. w5_8_13_buy_signal
+64. 5_8_13_sell_signal
+65. sve_ha_typ_cross_buy_signal
+66. Ao_buy_signal
+67. kc_buy_signal
+68. svesc_buy_signal
+69. pzo_buy_signal
+70. key_rev_sell_signals
+71. mov_avg_two_lines_buy_signal
+72. rocwb_buy_signal
+73. ironbot_sell_signal
+74. vhf_buy_signal
+75. EMA_bullish_signal
+
+
+FEATURE SCORES (MODEL_BASED):
+==================================================
+ 1. Volume: 0.072528
+ 2. RSI: 0.070913
+ 3. hacolt: 0.069910
+ 4. PPO: 0.069677
+ 5. Low: 0.069473
+ 6. Mass_Index: 0.067682
+ 7. average_candle_height: 0.065058
+ 8. Date: 0.063330
+ 9. STC: 0.063089
+10. current_candle_height: 0.059223
+11. gap_momentum_buy_signal: 0.011511
+12. gap_momentum_sell_signal: 0.011119
+13. golden_cross_buy_signal: 0.010350
+14. adx_trend_buy_signal: 0.009025
+15. stoch_buy_signal: 0.008896
+16. cmf_buy_signal: 0.008785
+17. dpo_overbought_signal: 0.008770
+18. vwma_breakouts_buy_signal: 0.008760
+19. sve_zl_rb_perc_buy_signal: 0.008110
+20. ehlers_stoch_buy_signal: 0.007914
+21. dpo_sell_signal: 0.007682
+22. pzo_lx_sell_signal: 0.006894
+23. camarilla_buy_signal: 0.006684
+24. cons_bars_up_le_buy_signal: 0.006573
+25. bb_short_entry_signal: 0.006277
+26. stochastic_strat_buy_signal: 0.006144
+27. dpo_buy_signal: 0.006061
+28. kama_cross_buy_signal: 0.005827
+29. stoch_sell_signal: 0.005741
+30. vols_switch_buy_signal: 0.005602
+31. mfi_buy_signal: 0.005461
+32. stochrsi_overbought_signal: 0.005425
+33. cci_buy_signal: 0.005060
+34. atr_high_sma_breakouts_le_buy_signal: 0.004537
+35. psar_buy_signal: 0.004486
+36. sve_zl_rb_perc_sell_signal: 0.004427
+37. stc_overbought_signal: 0.004423
+38. 5_8_13_buy_signal: 0.004205
+39. williams_sell_signal: 0.004154
+40. rsi_overbought_signal: 0.004013
+41. eom_buy_signal: 0.003997
+42. kst_buy_signal: 0.003983
+43. cmf_sell_signal: 0.003913
+44. inside_bar_sell_signal: 0.003837
+45. cci_bearish_signal: 0.003799
+46. pmo_buy_signal: 0.003798
+47. eom_sell_signal: 0.003736
+48. eight_month_avg_buy_signal: 0.003717
+49. ironbot_buy_signal: 0.003459
+50. price_swing_sell_signal: 0.003349
+51. aroon_buy_signal: 0.003331
+52. pzosx_buy_signal: 0.003319
+53. ichi_buy_signal: 0.003299
+54. macd_conv_buy_signal: 0.003272
+55. acc_dist_buy_signal: 0.003226
+56. vortex_buy_signal: 0.003215
+57. key_rev_buy_signal: 0.003104
+58. momentumle_buy_signal: 0.002980
+59. camarilla_sell_signal: 0.002667
+60. vols_switch_sell_signal: 0.002658
+61. wma_buy_signal.1: 0.002592
+62. stc_oversold_signal: 0.002587
+63. w5_8_13_buy_signal: 0.002543
+64. 5_8_13_sell_signal: 0.002456
+65. sve_ha_typ_cross_buy_signal: 0.002400
+66. Ao_buy_signal: 0.002332
+67. kc_buy_signal: 0.002200
+68. svesc_buy_signal: 0.002103
+69. pzo_buy_signal: 0.002001
+70. key_rev_sell_signals: 0.001975
+71. mov_avg_two_lines_buy_signal: 0.001944
+72. rocwb_buy_signal: 0.001892
+73. ironbot_sell_signal: 0.001857
+74. vhf_buy_signal: 0.001849
+75. EMA_bullish_signal: 0.001836

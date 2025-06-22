@@ -2134,7 +2134,7 @@ def run_configuration(config, file_path, run_shap, max_shap_time, run_enhanced_s
 
 if __name__ == "__main__":
     # File Path should be csv of all features
-    file_path = 'EURUSD_1min_sampled_features.csv'
+    file_path = r'./EURUSD_1min_sampled_with_strategies.csv'
     
     # Enhanced Feature Selection Configuration
     run_enhanced_selection = True  # Set to True to enable enhanced feature selection
@@ -2142,7 +2142,7 @@ if __name__ == "__main__":
     
     # Set to False to skip SHAP if it's causing issues
     run_shap = True
-    max_shap_time = 360  # minutes
+    max_shap_time = 700  # minutes
     
     start_section("main")
     
@@ -2154,9 +2154,9 @@ if __name__ == "__main__":
     
     # Configuration to run
     configurations = [
-        # {"target_col": "long_signal", "regression_mode": False},
+        {"target_col": "long_signal", "regression_mode": False},
         {"target_col": "short_signal", "regression_mode": False},
-        # {"target_col": "Close", "regression_mode": True}
+        {"target_col": "Close", "regression_mode": True}
     ]
     
     # Check GPU availability and force sequential execution if GPU is available
@@ -2167,7 +2167,7 @@ if __name__ == "__main__":
     # FORCE SEQUENTIAL EXECUTION WHEN GPU IS AVAILABLE
     if GPU_AVAILABLE:
         log("🔥 GPU detected - Running configurations SEQUENTIALLY to avoid CUDA context conflicts")
-        run_parallel = True
+        run_parallel = False
     elif cores_available >= 6:
         log(f"No GPU detected - Running {len(configurations)} configurations in PARALLEL")
         run_parallel = True

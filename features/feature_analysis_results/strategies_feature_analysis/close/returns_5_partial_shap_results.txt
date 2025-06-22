@@ -1,0 +1,97 @@
+SHAP Analysis - Started at 2025-06-22 21:39:33
+
+Target column: returns_5
+Mode: Regression
+
+GPU Acceleration: Enabled
+
+
+--- Partial SHAP Importance after 6000/10000 samples (60.0%) - 21:51:28 ---
+1. returns_5: 0.996984
+2. direction_5: 0.001842
+3. returns_14: 0.000250
+4. Low: 0.000195
+5. returns_3: 0.000107
+6. average_candle_height: 0.000059
+7. profit_target_sell_signal: 0.000058
+8. returns_1: 0.000054
+9. Date: 0.000049
+10. dpo_sell_signal: 0.000029
+11. RSI: 0.000027
+12. STC: 0.000026
+13. Mass_Index: 0.000024
+14. ift_stoch_buy_signal: 0.000021
+15. hacolt: 0.000021
+16. gap_momentum_sell_signal: 0.000015
+17. gap_momentum_buy_signal: 0.000014
+18. moving_average_buy_signal: 0.000012
+19. sve_zl_rb_perc_sell_signal: 0.000012
+20. eom_sell_signal: 0.000011
+21. cci_sell_signal: 0.000011
+22. eom_buy_signal: 0.000011
+23. stochrsi_oversold_signal: 0.000010
+24. cmf_buy_signal: 0.000009
+25. 5_8_13_buy_signal: 0.000009
+26. ironbot_buy_signal: 0.000008
+27. sve_zl_rb_perc_buy_signal: 0.000008
+28. direction_1: 0.000008
+29. cmf_sell_signal: 0.000008
+30. w5_8_13_sell_signal: 0.000007
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-22 21:59:15
+GPU Acceleration: Enabled
+Processed 10000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. returns_5: 0.997181
+2. direction_5: 0.001847
+3. returns_14: 0.000197
+4. Low: 0.000195
+5. returns_3: 0.000080
+6. profit_target_sell_signal: 0.000055
+7. average_candle_height: 0.000049
+8. Date: 0.000047
+9. returns_1: 0.000038
+10. STC: 0.000022
+11. RSI: 0.000019
+12. dpo_sell_signal: 0.000018
+13. Mass_Index: 0.000018
+14. hacolt: 0.000018
+15. ift_stoch_buy_signal: 0.000017
+16. gap_momentum_buy_signal: 0.000012
+17. gap_momentum_sell_signal: 0.000011
+18. sve_zl_rb_perc_sell_signal: 0.000009
+19. moving_average_buy_signal: 0.000008
+20. eom_sell_signal: 0.000008
+21. sve_zl_rb_perc_buy_signal: 0.000007
+22. stochrsi_oversold_signal: 0.000007
+23. eom_buy_signal: 0.000007
+24. cci_sell_signal: 0.000007
+25. camarilla_buy_signal: 0.000007
+26. cmf_sell_signal: 0.000007
+27. cmf_buy_signal: 0.000007
+28. ironbot_buy_signal: 0.000006
+29. 5_8_13_buy_signal: 0.000006
+30. direction_1: 0.000006
+31. w5_8_13_sell_signal: 0.000005
+32. stochastic_strat_buy_signal: 0.000005
+33. ehlers_stoch_buy_signal: 0.000005
+34. volatility_band_buy_signal: 0.000005
+35. stoch_sell_signal: 0.000005
+36. pzo_lx_sell_signal: 0.000004
+37. cci_bearish_signal: 0.000004
+38. stc_overbought_signal: 0.000004
+39. williams_sell_signal: 0.000004
+40. stochrsi_overbought_signal: 0.000004
+41. EMA_bullish_signal: 0.000004
+42. direction_3class_1: 0.000003
+43. price_swing_buy_signal: 0.000003
+44. atr_se_sell_signal: 0.000003
+45. ironbot_sell_signal: 0.000003
+46. 5_8_13_sell_signal: 0.000002
+47. pzo_buy_signal: 0.000002
+48. eight_month_avg_buy_signal: 0.000002
+49. williams_buy_signal: 0.000002
+50. direction_3class_14: 0.000002

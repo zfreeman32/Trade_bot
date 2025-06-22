@@ -1,0 +1,452 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-05-22 23:41:27
+
+
+==================== Analysis Started - 2025-05-22 23:41:27 ====================
+
+
+
+==================== Dataset Structure - 2025-05-22 23:42:25 ====================
+
+total_samples: 2500000
+feature_count: 157
+memory_usage_MB: 2994.5374755859375
+missing_values: 2200
+datatypes: {dtype('float64'): 88, dtype('int64'): 67, dtype('O'): 2}
+gpu_acceleration: Disabled
+signal_distribution: {'original_signals': 12085, 'profitable_signals': 11269, 'no_original_signals': 2487915, 'no_profitable_signals': 2488731, 'original_signal_ratio': 0.004834, 'profitable_signal_ratio': 0.0045076, 'profit_rate': 0.9324782788580885, 'imbalance_warning': True}
+
+
+==================== Feature Filtering - 2025-05-22 23:42:25 ====================
+
+Original features: 150
+Features after constant removal: 150
+Features after collinearity removal: 143
+Features after stability filtering: 138
+
+Removed features by category:
+Constant features (0): 
+High collinearity features (7): MEDPRICE, AVGPRICE, TYPPRICE, CDLTAKURI, WCLPRICE, High, Open
+Unstable features (5): CDLDOJISTAR, CDLGRAVESTONEDOJI, CDLINVERTEDHAMMER, CDLSEPARATINGLINES, CDLSHOOTINGSTAR
+
+Filtered feature set (138): Date, Low, Volume, UPPERBAND, MIDDLEBAND, LOWERBAND, DEMA, EMA_10, EMA_20, EMA_50, EMA_200, HT_TRENDLINE, KAMA, MA_10, MA_20, MA_50, MA_200, MAMA, FAMA, SAR, SAREXT, SMA, T3, TEMA, TRIMA, WMA, ADX, ADXR, APO, AROON_DOWN, AROON_UP, AROONOSC, BOP, CCI, CMO, DX, MACD, MACDSIGNAL, MACDHIST, MFI, MINUS_DI, MINUS_DM, MOM, PLUS_DI, PLUS_DM, PPO, ROC, ROCP, ROCR, ROCR100, RSI, STOCH_K, STOCH_D, STOCHF_K, STOCHF_D, STOCHRSI_K, STOCHRSI_D, TRIX, ULTOSC, WILLR, AD, ADOSC, OBV, ATR, NATR, TRANGE, HT_DCPERIOD, HT_DCPHASE, HT_PHASOR_INPHASE, HT_PHASOR_QUADRATURE, HT_SINE, HT_LEADSINE, HT_TRENDMODE, rolling_mean, rolling_std, z_score, VWAP, HMA, KELTNER_UPPER, KELTNER_LOWER, DONCHIAN_HIGH, DONCHIAN_LOW, EFI, SUPER_TREND, CDL2CROWS, CDL3BLACKCROWS, CDL3INSIDE, CDL3LINESTRIKE, CDL3STARSINSOUTH, CDL3WHITESOLDIERS, CDLABANDONEDBABY, CDLADVANCEBLOCK, CDLBELTHOLD, CDLBREAKAWAY, CDLCLOSINGMARUBOZU, CDLCONCEALBABYSWALL, CDLCOUNTERATTACK, CDLDARKCLOUDCOVER, CDLDOJI, CDLDRAGONFLYDOJI, CDLENGULFING, CDLEVENINGDOJISTAR, CDLEVENINGSTAR, CDLGAPSIDESIDEWHITE, CDLHAMMER, CDLHANGINGMAN, CDLHARAMI, CDLHARAMICROSS, CDLHIGHWAVE, CDLHIKKAKE, CDLHIKKAKEMOD, CDLHOMINGPIGEON, CDLIDENTICAL3CROWS, CDLINNECK, CDLKICKING, CDLKICKINGBYLENGTH, CDLLADDERBOTTOM, CDLLONGLEGGEDDOJI, CDLLONGLINE, CDLMARUBOZU, CDLMATCHINGLOW, CDLMATHOLD, CDLMORNINGDOJISTAR, CDLMORNINGSTAR, CDLONNECK, CDLPIERCING, CDLRICKSHAWMAN, CDLRISEFALL3METHODS, CDLSHORTLINE, CDLSPINNINGTOP, CDLSTALLEDPATTERN, CDLSTICKSANDWICH, CDLTASUKIGAP, CDLTHRUSTING, CDLTRISTAR, CDLUNIQUE3RIVER, CDLUPSIDEGAP2CROWS, CDLXSIDEGAP3METHODS
+
+
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-05-21 01:27:54
+
+
+==================== Analysis Started - 2025-05-21 01:27:54 ====================
+
+
+
+==================== Dataset Structure - 2025-05-21 01:28:38 ====================
+
+total_samples: 2500000
+feature_count: 157
+memory_usage_MB: 2994.5374755859375
+missing_values: 2200
+datatypes: {dtype('float64'): 88, dtype('int64'): 67, dtype('O'): 2}
+gpu_acceleration: Disabled
+signal_distribution: {'original_signals': 12085, 'profitable_signals': 11269, 'no_original_signals': 2487915, 'no_profitable_signals': 2488731, 'original_signal_ratio': 0.004834, 'profitable_signal_ratio': 0.0045076, 'profit_rate': 0.9324782788580885, 'imbalance_warning': True}
+
+
+==================== Feature Statistics - 2025-05-21 01:29:23 ====================
+
+Top 20 Features by Target Correlation:
+--------------------------------------------------
+MINUS_DM:
+  mean: 0.0005
+  median: 0.0004
+  std: 0.0004
+  skew: 3.1502
+  kurtosis: 24.1155
+  unique_values: 2499987.0000
+  iqr: 0.0004
+  outlier_percentage: 4.8785
+  corr_with_target: 0.1074
+  corr_with_original_signal: 0.1153
+Volume:
+  mean: 180.9876
+  median: 127.0000
+  std: 202.6329
+  skew: 4.7418
+  kurtosis: 52.4180
+  unique_values: 3308.0000
+  iqr: 171.0000
+  outlier_percentage: 5.7478
+  corr_with_target: 0.1031
+  corr_with_original_signal: 0.1126
+TRANGE:
+  mean: 0.0002
+  median: 0.0001
+  std: 0.0001
+  skew: 6.0082
+  kurtosis: 158.0071
+  unique_values: 923.0000
+  iqr: 0.0001
+  outlier_percentage: 5.1649
+  corr_with_target: 0.1004
+  corr_with_original_signal: 0.1097
+rolling_std:
+  mean: 0.0002
+  median: 0.0001
+  std: 0.0001
+  skew: 5.0042
+  kurtosis: 72.2276
+  unique_values: 2456333.0000
+  iqr: 0.0001
+  outlier_percentage: 5.6231
+  corr_with_target: 0.0853
+  corr_with_original_signal: 0.0933
+MOM:
+  mean: -0.0000
+  median: 0.0000
+  std: 0.0004
+  skew: -0.1230
+  kurtosis: 27.2611
+  unique_values: 2862.0000
+  iqr: 0.0004
+  outlier_percentage: 7.3601
+  corr_with_target: -0.0804
+  corr_with_original_signal: -0.0839
+ROCR100:
+  mean: 99.9999
+  median: 100.0000
+  std: 0.0392
+  skew: -0.0903
+  kurtosis: 31.0404
+  unique_values: 1452914.0000
+  iqr: 0.0318
+  outlier_percentage: 7.7136
+  corr_with_target: -0.0800
+  corr_with_original_signal: -0.0834
+ROC:
+  mean: -0.0001
+  median: 0.0000
+  std: 0.0392
+  skew: -0.0903
+  kurtosis: 31.0404
+  unique_values: 1452914.0000
+  iqr: 0.0318
+  outlier_percentage: 7.7136
+  corr_with_target: -0.0800
+  corr_with_original_signal: -0.0834
+ROCR:
+  mean: 1.0000
+  median: 1.0000
+  std: 0.0004
+  skew: -0.0903
+  kurtosis: 31.0404
+  unique_values: 1452914.0000
+  iqr: 0.0003
+  outlier_percentage: 7.7136
+  corr_with_target: -0.0800
+  corr_with_original_signal: -0.0834
+ROCP:
+  mean: -0.0000
+  median: 0.0000
+  std: 0.0004
+  skew: -0.0903
+  kurtosis: 31.0404
+  unique_values: 1452914.0000
+  iqr: 0.0003
+  outlier_percentage: 7.7136
+  corr_with_target: -0.0800
+  corr_with_original_signal: -0.0834
+z_score:
+  mean: 0.0074
+  median: 0.0183
+  std: 1.2440
+  skew: -0.0196
+  kurtosis: -0.8935
+  unique_values: 2492303.0000
+  iqr: 2.0437
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0779
+  corr_with_original_signal: -0.0805
+ADOSC:
+  mean: -2.1075
+  median: -0.6578
+  std: 171.6688
+  skew: -0.1727
+  kurtosis: 30.8090
+  unique_values: 2499987.0000
+  iqr: 108.6077
+  outlier_percentage: 11.3239
+  corr_with_target: -0.0770
+  corr_with_original_signal: -0.0802
+RSI:
+  mean: 50.0970
+  median: 50.1612
+  std: 11.6954
+  skew: -0.0221
+  kurtosis: -0.1037
+  unique_values: 2354023.0000
+  iqr: 15.9693
+  outlier_percentage: 0.5375
+  corr_with_target: -0.0752
+  corr_with_original_signal: -0.0779
+CMO:
+  mean: 0.1940
+  median: 0.3224
+  std: 23.3908
+  skew: -0.0221
+  kurtosis: -0.1037
+  unique_values: 2433828.0000
+  iqr: 31.9387
+  outlier_percentage: 0.5375
+  corr_with_target: -0.0752
+  corr_with_original_signal: -0.0779
+ATR:
+  mean: 0.0002
+  median: 0.0001
+  std: 0.0001
+  skew: 2.2023
+  kurtosis: 9.6162
+  unique_values: 2499985.0000
+  iqr: 0.0001
+  outlier_percentage: 3.7082
+  corr_with_target: 0.0745
+  corr_with_original_signal: 0.0809
+NATR:
+  mean: 0.0142
+  median: 0.0118
+  std: 0.0097
+  skew: 2.3258
+  kurtosis: 10.5230
+  unique_values: 2499986.0000
+  iqr: 0.0105
+  outlier_percentage: 4.1071
+  corr_with_target: 0.0743
+  corr_with_original_signal: 0.0808
+CCI:
+  mean: 0.6425
+  median: 1.8256
+  std: 109.0657
+  skew: -0.0220
+  kurtosis: -0.5289
+  unique_values: 2497258.0000
+  iqr: 171.9733
+  outlier_percentage: 0.1074
+  corr_with_target: -0.0737
+  corr_with_original_signal: -0.0761
+WILLR:
+  mean: -49.6194
+  median: -49.9404
+  std: 30.9046
+  skew: -0.0167
+  kurtosis: -1.3029
+  unique_values: 93906.0000
+  iqr: 55.9776
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0714
+  corr_with_original_signal: -0.0737
+STOCHF_K:
+  mean: 50.1922
+  median: 50.0000
+  std: 31.8815
+  skew: -0.0105
+  kurtosis: -1.3320
+  unique_values: 49484.0000
+  iqr: 58.7528
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0697
+  corr_with_original_signal: -0.0720
+MACDHIST:
+  mean: -0.0000
+  median: 0.0000
+  std: 0.0000
+  skew: -0.0929
+  kurtosis: 21.6474
+  unique_values: 2499967.0000
+  iqr: 0.0000
+  outlier_percentage: 7.5440
+  corr_with_target: -0.0658
+  corr_with_original_signal: -0.0679
+STOCHRSI_K:
+  mean: 50.1972
+  median: 50.4523
+  std: 41.9527
+  skew: -0.0079
+  kurtosis: -1.6969
+  unique_values: 1065169.0000
+  iqr: 100.0000
+  outlier_percentage: 0.0000
+  corr_with_target: -0.0645
+  corr_with_original_signal: -0.0668
+
+
+==================== Periodic Patterns - 2025-05-21 01:29:23 ====================
+
+lag_77: 0.0048
+lag_60: 0.0047
+lag_64: 0.0047
+lag_93: 0.0047
+lag_61: 0.0046
+
+
+==================== Feature Importance - 2025-05-21 02:55:56 ====================
+
+
+Mutual Information Scores (Top 20):
+1. HT_TRENDMODE: 0.146032
+2. STOCHRSI_K: 0.067083
+3. AROON_DOWN: 0.028972
+4. AROON_UP: 0.027963
+5. CDLBELTHOLD: 0.021230
+6. CDLDOJI: 0.020646
+7. CDLLONGLINE: 0.017547
+8. CDLLONGLEGGEDDOJI: 0.016892
+9. CDLCLOSINGMARUBOZU: 0.013093
+10. AROONOSC: 0.012367
+11. CDLSHORTLINE: 0.010624
+12. CDLSPINNINGTOP: 0.009960
+13. TRANGE: 0.007426
+14. STOCHRSI_D: 0.005970
+15. STOCHF_K: 0.005388
+16. BOP: 0.005250
+17. EFI: 0.005124
+18. CDLHIGHWAVE: 0.004767
+19. MOM: 0.004622
+20. CDLRICKSHAWMAN: 0.004541
+
+Random Forest Feature Importance (Top 20):
+1. Volume: 0.019167
+2. EFI: 0.017984
+3. z_score: 0.017502
+4. HT_DCPHASE: 0.016316
+5. CCI: 0.016083
+6. RSI: 0.015446
+7. TRIX: 0.015353
+8. HT_SINE: 0.015298
+9. HT_DCPERIOD: 0.015232
+10. MINUS_DM: 0.015127
+11. CMO: 0.015106
+12. BOP: 0.014974
+13. STOCHRSI_D: 0.014954
+14. HT_PHASOR_INPHASE: 0.014867
+15. ADOSC: 0.014741
+16. HT_PHASOR_QUADRATURE: 0.014700
+17. HT_LEADSINE: 0.014685
+18. TRANGE: 0.014681
+19. MFI: 0.014622
+20. ROCR: 0.014518
+
+
+==================== SHAP Analysis - 2025-05-21 02:56:41 ====================
+
+
+SHAP analysis not completed or failed.
+
+
+==================== Time Series Stability - 2025-05-21 03:51:28 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+Volume                        0.0189         0.0375         4.8381e-04     
+z_score                       0.0177         0.0455         -4.2028e-04    
+EFI                           0.0175         0.0124         -2.3594e-05    
+HT_DCPHASE                    0.0165         0.0177         -7.7174e-05    
+CCI                           0.0161         0.0192         -2.0012e-04    
+RSI                           0.0155         0.0405         -3.0077e-04    
+HT_SINE                       0.0155         0.0426         -3.9174e-04    
+BOP                           0.0154         0.0224         4.7063e-05     
+CMO                           0.0154         0.0238         -1.6246e-04    
+HT_DCPERIOD                   0.0152         0.0092         -1.2305e-05    
+TRIX                          0.0152         0.0135         -2.6492e-05    
+STOCHRSI_D                    0.0152         0.0162         -1.1203e-04    
+OBV                           0.0149         0.0581         -8.0766e-05    
+MINUS_DM                      0.0148         0.0250         1.2420e-04     
+ROCP                          0.0148         0.0124         -1.0062e-04    
+ROCR                          0.0148         0.0210         -1.8166e-04    
+MFI                           0.0147         0.0126         -1.1763e-04    
+HT_LEADSINE                   0.0147         0.0158         -8.0595e-05    
+MINUS_DI                      0.0147         0.0182         -1.5982e-05    
+ADOSC                         0.0147         0.0114         -8.2421e-05    
+
+
+==================== Important Features - 2025-05-21 03:51:28 ====================
+
+=== IMPORTANT FEATURES ===
+
+# Features with high importance and stability:
+AD
+ADOSC
+ADX
+ADXR
+APO
+AROON_DOWN
+AROON_UP
+ATR
+BOP
+CCI
+CDLBELTHOLD
+CDLDOJI
+CDLLONGLINE
+CMO
+DX
+EFI
+HT_DCPERIOD
+HT_DCPHASE
+HT_LEADSINE
+HT_PHASOR_INPHASE
+HT_PHASOR_QUADRATURE
+HT_SINE
+HT_TRENDMODE
+MACD
+MACDHIST
+MACDSIGNAL
+MFI
+MINUS_DI
+MINUS_DM
+NATR
+OBV
+PLUS_DI
+PLUS_DM
+PPO
+ROC
+ROCP
+ROCR
+ROCR100
+RSI
+STOCHF_D
+STOCHF_K
+STOCHRSI_D
+STOCHRSI_K
+STOCH_D
+STOCH_K
+TRANGE
+TRIX
+ULTOSC
+VWAP
+Volume
+WILLR
+rolling_std
+z_score
+
+# Top stable features across time periods:
+Volume: 0.0189
+z_score: 0.0177
+EFI: 0.0175
+HT_DCPHASE: 0.0165
+CCI: 0.0161
+RSI: 0.0155
+HT_SINE: 0.0155
+BOP: 0.0154
+CMO: 0.0154
+HT_DCPERIOD: 0.0152
+TRIX: 0.0152
+STOCHRSI_D: 0.0152
+OBV: 0.0149
+MINUS_DM: 0.0148
+ROCP: 0.0148
+ROCR: 0.0148
+MFI: 0.0147
+HT_LEADSINE: 0.0147
+MINUS_DI: 0.0147
+ADOSC: 0.0147
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-05-21 03:51:28

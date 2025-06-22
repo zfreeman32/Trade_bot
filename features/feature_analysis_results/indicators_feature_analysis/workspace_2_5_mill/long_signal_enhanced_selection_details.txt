@@ -1,0 +1,108 @@
+=== ENHANCED FEATURE SELECTION DETAILS ===
+
+Target: long_signal
+Mode: Classification
+Target Features: 75
+Best Method: rfe
+
+METHOD COMPARISON:
+==================================================
+
+STATISTICAL:
+  Description: Mutual Information + Percentile
+  Features Selected: 74
+  Cross-validation Score: 0.994817 ± 0.001404
+
+RFE:
+  Description: Recursive Feature Elimination CV
+  Features Selected: 33
+  Cross-validation Score: 0.995397 ± 0.000898
+
+REGULARIZATION:
+  Description: Lasso/L1 Regularization
+  Features Selected: 75
+  Cross-validation Score: 0.993845 ± 0.002656
+
+MODEL_BASED:
+  Description: Random Forest Importance
+  Features Selected: 75
+  Cross-validation Score: 0.994121 ± 0.002093
+
+ENSEMBLE:
+  Description: Ensemble Ranking
+  Features Selected: 75
+  Cross-validation Score: 0.993979 ± 0.002361
+
+
+SELECTED FEATURES (33):
+==================================================
+ 1. Volume
+ 2. ADXR
+ 3. APO
+ 4. BOP
+ 5. CCI
+ 6. CMO
+ 7. MACD
+ 8. MACDHIST
+ 9. MFI
+10. MINUS_DI
+11. MINUS_DM
+12. PLUS_DI
+13. ROC
+14. ROCP
+15. RSI
+16. STOCHRSI_D
+17. TRIX
+18. ULTOSC
+19. WILLR
+20. AD
+21. ADOSC
+22. OBV
+23. TRANGE
+24. HT_DCPERIOD
+25. HT_DCPHASE
+26. HT_PHASOR_INPHASE
+27. HT_PHASOR_QUADRATURE
+28. HT_SINE
+29. HT_LEADSINE
+30. rolling_std
+31. z_score
+32. VWAP
+33. EFI
+
+
+FEATURE SCORES (RFE):
+==================================================
+ 1. Volume: 1.000000
+ 2. ADXR: 1.000000
+ 3. APO: 1.000000
+ 4. BOP: 1.000000
+ 5. CCI: 1.000000
+ 6. CMO: 1.000000
+ 7. MACD: 1.000000
+ 8. MACDHIST: 1.000000
+ 9. MFI: 1.000000
+10. MINUS_DI: 1.000000
+11. MINUS_DM: 1.000000
+12. PLUS_DI: 1.000000
+13. ROC: 1.000000
+14. ROCP: 1.000000
+15. RSI: 1.000000
+16. STOCHRSI_D: 1.000000
+17. TRIX: 1.000000
+18. ULTOSC: 1.000000
+19. WILLR: 1.000000
+20. AD: 1.000000
+21. ADOSC: 1.000000
+22. OBV: 1.000000
+23. TRANGE: 1.000000
+24. HT_DCPERIOD: 1.000000
+25. HT_DCPHASE: 1.000000
+26. HT_PHASOR_INPHASE: 1.000000
+27. HT_PHASOR_QUADRATURE: 1.000000
+28. HT_SINE: 1.000000
+29. HT_LEADSINE: 1.000000
+30. rolling_std: 1.000000
+31. z_score: 1.000000
+32. VWAP: 1.000000
+33. EFI: 1.000000

@@ -1,0 +1,24 @@
+=== SAVED MODELS SUMMARY ===
+
+# Generated on: 2025-06-20 23:53:30
+
+Target: long_signal
+Mode: Classification
+Enhanced Selection: Enabled
+Selection Method: rfe
+Selected Features: 33
+Models directory: models_long_signal_20250620_181732
+
+Saved models:
+  cpu_random_forest_profitable_signal: models_long_signal_20250620_181732/cpu_random_forest_profitable_signal.joblib
+  shap_model_profitable_signal: models_long_signal_20250620_181732/shap_model_profitable_signal.joblib
+  time_split_0_profitable_signal: models_long_signal_20250620_181732/time_split_0_profitable_signal.joblib
+  time_split_1_profitable_signal: models_long_signal_20250620_181732/time_split_1_profitable_signal.joblib
+  time_split_2_profitable_signal: models_long_signal_20250620_181732/time_split_2_profitable_signal.joblib
+  time_split_3_profitable_signal: models_long_signal_20250620_181732/time_split_3_profitable_signal.joblib
+  time_split_4_profitable_signal: models_long_signal_20250620_181732/time_split_4_profitable_signal.joblib
+
+To load a model:
+import joblib
+model = joblib.load('path_to_model.joblib')
+# For pickle files: with open('path_to_model.pkl', 'rb') as f: model = pickle.load(f)

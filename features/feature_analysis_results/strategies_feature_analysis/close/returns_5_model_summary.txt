@@ -1,0 +1,22 @@
+=== SAVED MODELS SUMMARY ===
+
+# Generated on: 2025-06-22 22:05:24
+
+Target: returns_5
+Mode: Regression
+Enhanced Selection: Enabled
+Models directory: models_returns_5_20250622_212921
+
+Saved models:
+  cpu_random_forest_returns_5: models_returns_5_20250622_212921/cpu_random_forest_returns_5.joblib
+  shap_model_returns_5: models_returns_5_20250622_212921/shap_model_returns_5.joblib
+  time_split_0_returns_5: models_returns_5_20250622_212921/time_split_0_returns_5.joblib
+  time_split_1_returns_5: models_returns_5_20250622_212921/time_split_1_returns_5.joblib
+  time_split_2_returns_5: models_returns_5_20250622_212921/time_split_2_returns_5.joblib
+  time_split_3_returns_5: models_returns_5_20250622_212921/time_split_3_returns_5.joblib
+  time_split_4_returns_5: models_returns_5_20250622_212921/time_split_4_returns_5.joblib
+
+To load a model:
+import joblib
+model = joblib.load('path_to_model.joblib')
+# For pickle files: with open('path_to_model.pkl', 'rb') as f: model = pickle.load(f)

@@ -1,0 +1,97 @@
+SHAP Analysis - Started at 2025-06-22 21:13:33
+
+Target column: returns_1
+Mode: Regression
+
+GPU Acceleration: Enabled
+
+
+--- Partial SHAP Importance after 6000/10000 samples (60.0%) - 21:19:28 ---
+1. returns_1: 0.981922
+2. direction_1: 0.015634
+3. returns_5: 0.000683
+4. returns_3: 0.000521
+5. returns_10: 0.000247
+6. Mass_Index: 0.000193
+7. returns_14: 0.000132
+8. Volume: 0.000066
+9. Date: 0.000056
+10. current_candle_height: 0.000048
+11. RSI: 0.000040
+12. pmo_sell_signal: 0.000039
+13. spectrum_bars_buy_signal: 0.000037
+14. macd_conv_sell_signal: 0.000030
+15. average_candle_height: 0.000026
+16. rocwb_buy_signal: 0.000024
+17. gap_up_le_buy_signal: 0.000023
+18. stc_oversold_signal: 0.000022
+19. moving_average_buy_signal: 0.000021
+20. eom_sell_signal: 0.000021
+21. STC: 0.000019
+22. dpo_buy_signal: 0.000017
+23. hacolt: 0.000015
+24. ehlers_stoch_buy_signal: 0.000015
+25. vortex_sell_signal: 0.000012
+26. sve_ha_typ_cross_sell_signal: 0.000012
+27. gap_momentum_sell_signal: 0.000010
+28. cmf_buy_signal: 0.000009
+29. w5_8_13_sell_signal: 0.000008
+30. ift_stoch_buy_signal: 0.000008
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-22 21:23:15
+GPU Acceleration: Enabled
+Processed 10000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. returns_1: 0.982244
+2. direction_1: 0.015635
+3. returns_5: 0.000512
+4. returns_3: 0.000370
+5. returns_10: 0.000291
+6. returns_14: 0.000191
+7. Mass_Index: 0.000141
+8. Volume: 0.000056
+9. Date: 0.000051
+10. current_candle_height: 0.000047
+11. RSI: 0.000033
+12. hacolt: 0.000032
+13. STC: 0.000031
+14. spectrum_bars_buy_signal: 0.000028
+15. pmo_sell_signal: 0.000027
+16. average_candle_height: 0.000021
+17. stc_oversold_signal: 0.000021
+18. macd_conv_sell_signal: 0.000020
+19. eom_sell_signal: 0.000017
+20. moving_average_buy_signal: 0.000017
+21. rocwb_buy_signal: 0.000016
+22. gap_momentum_sell_signal: 0.000016
+23. gap_up_le_buy_signal: 0.000015
+24. cmf_buy_signal: 0.000014
+25. dpo_buy_signal: 0.000014
+26. ehlers_stoch_buy_signal: 0.000012
+27. sve_ha_typ_cross_sell_signal: 0.000010
+28. vortex_sell_signal: 0.000008
+29. direction_3class_14: 0.000008
+30. w5_8_13_sell_signal: 0.000007
+31. cci_bearish_signal: 0.000007
+32. w5_8_13_buy_signal: 0.000006
+33. vpn_sell_signal: 0.000006
+34. vols_switch_buy_signal: 0.000006
+35. ift_stoch_buy_signal: 0.000005
+36. direction_3class_5: 0.000005
+37. svesc_buy_signal: 0.000004
+38. eom_buy_signal: 0.000004
+39. price_swing_sell_signal: 0.000004
+40. adx_trend_buy_signal: 0.000004
+41. aroon_sell_signal: 0.000004
+42. pzo_lx_sell_signal: 0.000004
+43. vols_switch_sell_signal: 0.000004
+44. rsi_oversold_signal: 0.000003
+45. ironbot_sell_signal: 0.000003
+46. stoch_sell_signal: 0.000003
+47. rsi_overbought_signal: 0.000002
+48. Ao_sell_signal: 0.000002
+49. ConsBarsDownSE_sell_signal: 0.000002
+50. direction_14: 0.000002

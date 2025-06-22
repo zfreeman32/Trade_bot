@@ -1,0 +1,65 @@
+SHAP Analysis - Started at 2025-06-22 16:01:02
+
+Target column: direction_1
+Mode: Classification
+
+GPU Acceleration: Enabled
+
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-22 16:04:21
+GPU Acceleration: Enabled
+Processed 6000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. direction_1: 0.478442
+2. returns_1: 0.365171
+3. direction_3: 0.038812
+4. returns_3: 0.034264
+5. direction_5: 0.015959
+6. returns_5: 0.012681
+7. returns_10: 0.011300
+8. returns_14: 0.007861
+9. direction_10: 0.006308
+10. direction_14: 0.002633
+11. current_candle_height: 0.002254
+12. direction_3class_5: 0.001726
+13. direction_3class_3: 0.001346
+14. gap_up_le_buy_signal: 0.001279
+15. direction_3class_14: 0.001265
+16. direction_3class_10: 0.001080
+17. RSI: 0.001016
+18. williams_sell_signal: 0.000710
+19. kc_buy_signal: 0.000546
+20. eom_sell_signal: 0.000536
+21. williams_buy_signal: 0.000488
+22. direction_3class_1: 0.000458
+23. svesc_buy_signal: 0.000432
+24. cci_bearish_signal: 0.000422
+25. stochastic_strat_buy_signal: 0.000414
+26. rocwb_buy_signal: 0.000412
+27. cmf_buy_signal: 0.000405
+28. sve_zl_rb_perc_sell_signal: 0.000387
+29. camarilla_buy_signal: 0.000372
+30. camarilla_sell_signal: 0.000349
+31. dpo_overbought_signal: 0.000344
+32. pzosx_buy_signal: 0.000325
+33. stochrsi_overbought_signal: 0.000325
+34. gap_momentum_buy_signal: 0.000318
+35. pzo_lx_sell_signal: 0.000318
+36. ehlers_stoch_buy_signal: 0.000315
+37. volatility_band_buy_signal: 0.000315
+38. 5_8_13_sell_signal: 0.000309
+39. bb_short_entry_signal: 0.000289
+40. vols_switch_buy_signal: 0.000288
+41. gap_momentum_sell_signal: 0.000286
+42. ironbot_sell_signal: 0.000284
+43. stc_oversold_signal: 0.000282
+44. vwma_breakouts_buy_signal: 0.000280
+45. stoch_sell_signal: 0.000276
+46. stochrsi_oversold_signal: 0.000267
+47. golden_cross_buy_signal: 0.000256
+48. cci_bullish_signal: 0.000254
+49. cmf_sell_signal: 0.000251
+50. 5_8_13_buy_signal: 0.000251

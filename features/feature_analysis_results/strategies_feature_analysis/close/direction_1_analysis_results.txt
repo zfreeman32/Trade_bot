@@ -1,0 +1,348 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-06-22 14:41:42
+
+
+==================== Analysis Started - 2025-06-22 14:41:42 ====================
+
+
+
+==================== Dataset Structure - 2025-06-22 14:42:04 ====================
+
+total_samples: 1000000
+feature_count: 195
+memory_usage_MB: 1474.380615234375
+missing_values: 327241
+datatypes: {dtype('int64'): 172, dtype('float64'): 18, dtype('O'): 3, dtype('bool'): 2}
+gpu_acceleration: Enabled
+signal_distribution: {'original_signals': 461925, 'profitable_signals': 461925, 'no_original_signals': 538075, 'no_profitable_signals': 538075, 'original_signal_ratio': np.float64(0.461925), 'profitable_signal_ratio': np.float64(0.461925), 'profit_rate': np.float64(1.0), 'imbalance_warning': np.False_}
+
+
+==================== Feature Filtering - 2025-06-22 14:42:04 ====================
+
+Original features: 186
+Features after constant removal: 159
+Features after collinearity removal: 142
+Features after stability filtering: 142
+
+Removed features by category:
+Constant features (27): BB_Divergence_Strat_buy_signal, BB_Divergence_Strat_sell_signal, stiffness_strat_sell_signal, stiffness_strat_buy_signal, adx_breakout_buy_signal, atr_trailing_stop_le_buy_signal, day_of_week, dc_buy_signal, dc_sell_signal, donchian_buy_signals
+... and 17 more
+High collinearity features (17): RSI_buy_signal, ehlers_stoch_sell_signal, EMA_bearish_signal, volatility_band_sell_signal, High, moving_average_sell_signal, RSI_sell_signal, golden_cross_sell_signal, stochastic_strat_sell_signal, dpo_oversold_signal
+... and 7 more
+Unstable features (0): 
+
+Filtered feature set (142): Date, Low, Volume, adx_trend_buy_signal, adx_trend_sell_signal, Ao_buy_signal, Ao_sell_signal, ConsBarsDownSE_sell_signal, pzosx_buy_signal, acc_dist_buy_signal, acc_dist_sell_signal, aroon_buy_signal, aroon_sell_signal, current_candle_height, average_candle_height, atr_high_sma_breakouts_le_buy_signal, atr_se_sell_signal, bb_short_entry_signal, camarilla_buy_signal, camarilla_sell_signal, cci_bullish_signal, cci_bearish_signal, cci_buy_signal, cci_sell_signal, cmf_buy_signal, cmf_sell_signal, cons_bars_up_le_buy_signal, dpo_overbought_signal, dpo_buy_signal, dpo_sell_signal, ehlers_stoch_buy_signal, eight_month_avg_buy_signal, eight_month_avg_sell_signal, EMA_bullish_signal, EMA_buy_signal, EMA_sell_signal, eom_buy_signal, eom_sell_signal, gap_down_se_sell_signals, gap_momentum_buy_signal, gap_momentum_sell_signal, gap_up_le_buy_signal, golden_cross_buy_signal, ma_buy_signal, ma_sell_signal, wma_buy_signal, wma_sell_signal, hacolt, ichi_buy_signal, ichi_sell_signal, ift_stoch_buy_signal, ift_stoch_sell_signal, inside_bar_sell_signal, ironbot_buy_signal, ironbot_sell_signal, kama_cross_buy_signal, kama_cross_sell_signal, kc_buy_signal, kc_sell_signal, key_rev_buy_signal, key_rev_sell_signals, kst_buy_signal, kst_sell_signal, macd_conv_buy_signal, Mass_Index, mass_buy_signal, mass_sell_signal, mfi_buy_signal, mfi_sell_signal, momentumle_buy_signal, mov_avg_two_lines_buy_signal, mov_avg_two_lines_sell_signal, moving_average_buy_signal, pmo_buy_signal, pmo_sell_signal, PPO, PPO_buy_signal, price_swing_buy_signal, price_swing_sell_signal, profit_target_sell_signal, psar_buy_signal, psar_sell_signal, pzo_lx_sell_signal, pzo_buy_signal, pzo_sell_signal.1, rocwb_buy_signal, rsi_overbought_signal, rsi_oversold_signal, RSI, wma_buy_signal.1, wma_sell_signal.1, spectrum_bars_buy_signal, STC, stc_overbought_signal, stc_oversold_signal, stoch_buy_signal, stoch_sell_signal, stochastic_strat_buy_signal, stochrsi_overbought_signal, stochrsi_oversold_signal, stop_loss_sell_signal, stop_loss_buy_signal, 5_8_13_buy_signal, 5_8_13_sell_signal, w5_8_13_buy_signal, w5_8_13_sell_signal, sve_ha_typ_cross_buy_signal, sve_ha_typ_cross_sell_signal, sve_zl_rb_perc_buy_signal, sve_zl_rb_perc_sell_signal, svesc_buy_signal, svesc_sell_signal, three_bar_inside_bar_sell_signal, tsi_buy_signal, tsi_sell_signal, vhf_buy_signal, vhf_sell_signal, volatility_band_buy_signal, vols_switch_buy_signal, vols_switch_sell_signal, volty_expan_close_lx_sell_signal, vortex_buy_signal, vortex_sell_signal, vpn_sell_signal, vwma_breakouts_buy_signal, williams_buy_signal, williams_sell_signal, direction_1, direction_3class_1, returns_1, direction_3, direction_3class_3, returns_3, direction_5, direction_3class_5, returns_5, direction_10, direction_3class_10, returns_10, direction_14, direction_3class_14, returns_14
+
+
+==================== Enhanced Feature Selection - 2025-06-22 15:56:02 ====================
+
+Enhanced selection method: statistical
+Final selected features: 74
+
+Method Performance Comparison:
+----------------------------------------
+STATISTICAL:
+  Method: Mutual Information + Percentile
+  Features: 74
+  CV Score: 1.0000 ± 0.0000
+
+RFE:
+  Method: Recursive Feature Elimination CV
+  Features: 10
+  CV Score: 1.0000 ± 0.0000
+
+REGULARIZATION:
+  Method: Direction-Optimized Regularization
+  Features: 75
+  CV Score: 1.0000 ± 0.0000
+
+MODEL_BASED:
+  Method: Random Forest Importance
+  Features: 75
+  CV Score: 1.0000 ± 0.0000
+
+ENSEMBLE:
+  Method: Ensemble Ranking
+  Features: 75
+  CV Score: 1.0000 ± 0.0000
+
+Selected Features (74):
+ 1. adx_trend_buy_signal
+ 2. adx_trend_sell_signal
+ 3. pzosx_buy_signal
+ 4. current_candle_height
+ 5. atr_se_sell_signal
+ 6. bb_short_entry_signal
+ 7. camarilla_buy_signal
+ 8. camarilla_sell_signal
+ 9. cci_bullish_signal
+10. cci_bearish_signal
+11. cmf_buy_signal
+12. cmf_sell_signal
+13. dpo_overbought_signal
+14. dpo_buy_signal
+15. dpo_sell_signal
+16. ehlers_stoch_buy_signal
+17. eight_month_avg_buy_signal
+18. eight_month_avg_sell_signal
+19. EMA_bullish_signal
+20. eom_buy_signal
+21. eom_sell_signal
+22. gap_momentum_buy_signal
+23. gap_momentum_sell_signal
+24. gap_up_le_buy_signal
+25. golden_cross_buy_signal
+26. ironbot_buy_signal
+27. ironbot_sell_signal
+28. kama_cross_sell_signal
+29. kc_buy_signal
+30. kc_sell_signal
+31. moving_average_buy_signal
+32. pzo_lx_sell_signal
+33. rocwb_buy_signal
+34. RSI
+35. spectrum_bars_buy_signal
+36. stc_overbought_signal
+37. stc_oversold_signal
+38. stoch_buy_signal
+39. stoch_sell_signal
+40. stochastic_strat_buy_signal
+41. stochrsi_overbought_signal
+42. stochrsi_oversold_signal
+43. 5_8_13_buy_signal
+44. 5_8_13_sell_signal
+45. w5_8_13_buy_signal
+46. w5_8_13_sell_signal
+47. sve_ha_typ_cross_buy_signal
+48. sve_ha_typ_cross_sell_signal
+49. sve_zl_rb_perc_buy_signal
+50. sve_zl_rb_perc_sell_signal
+51. svesc_buy_signal
+52. svesc_sell_signal
+53. volatility_band_buy_signal
+54. vols_switch_buy_signal
+55. vols_switch_sell_signal
+56. vpn_sell_signal
+57. vwma_breakouts_buy_signal
+58. williams_buy_signal
+59. williams_sell_signal
+60. direction_1
+61. direction_3class_1
+62. returns_1
+63. direction_3
+64. direction_3class_3
+65. returns_3
+66. direction_5
+67. direction_3class_5
+68. returns_5
+69. direction_10
+70. direction_3class_10
+71. returns_10
+72. direction_14
+73. direction_3class_14
+74. returns_14
+
+
+==================== Feature Importance - 2025-06-22 16:01:02 ====================
+
+
+Mutual Information Scores (Top 20):
+1. direction_1: 0.768805
+2. returns_1: 0.690245
+3. direction_3: 0.123501
+4. returns_3: 0.099699
+5. direction_5: 0.085803
+6. direction_3class_3: 0.076059
+7. bb_short_entry_signal: 0.075790
+8. direction_3class_1: 0.069209
+9. direction_10: 0.062146
+10. direction_3class_14: 0.059139
+11. direction_3class_10: 0.058463
+12. direction_14: 0.056473
+13. returns_5: 0.056252
+14. cci_bullish_signal: 0.054615
+15. cci_bearish_signal: 0.054252
+16. direction_3class_5: 0.051254
+17. golden_cross_buy_signal: 0.044179
+18. EMA_bullish_signal: 0.043864
+19. vwma_breakouts_buy_signal: 0.043846
+20. moving_average_buy_signal: 0.043701
+
+Random Forest Feature Importance (Top 20):
+1. direction_1: 0.526670
+2. returns_1: 0.371884
+3. returns_3: 0.030387
+4. direction_3: 0.028389
+5. returns_5: 0.010280
+6. direction_5: 0.009668
+7. returns_10: 0.005707
+8. returns_14: 0.004101
+9. direction_10: 0.002585
+10. direction_3class_5: 0.001420
+11. gap_up_le_buy_signal: 0.001164
+12. direction_3class_3: 0.001041
+13. direction_3class_14: 0.000919
+14. current_candle_height: 0.000836
+15. direction_14: 0.000831
+16. direction_3class_10: 0.000608
+17. RSI: 0.000521
+18. direction_3class_1: 0.000371
+19. gap_momentum_sell_signal: 0.000076
+20. camarilla_sell_signal: 0.000075
+
+
+==================== SHAP Analysis - 2025-06-22 16:04:21 ====================
+
+
+SHAP Feature Importance (Top 20):
+1. direction_1: 0.478442
+2. returns_1: 0.365171
+3. direction_3: 0.038812
+4. returns_3: 0.034264
+5. direction_5: 0.015959
+6. returns_5: 0.012681
+7. returns_10: 0.011300
+8. returns_14: 0.007861
+9. direction_10: 0.006308
+10. direction_14: 0.002633
+11. current_candle_height: 0.002254
+12. direction_3class_5: 0.001726
+13. direction_3class_3: 0.001346
+14. gap_up_le_buy_signal: 0.001279
+15. direction_3class_14: 0.001265
+16. direction_3class_10: 0.001080
+17. RSI: 0.001016
+18. williams_sell_signal: 0.000710
+19. kc_buy_signal: 0.000546
+20. eom_sell_signal: 0.000536
+
+
+==================== Time Series Stability - 2025-06-22 16:04:44 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+direction_1                   0.5248         0.0144         1.9128e-03     
+returns_1                     0.3680         0.0244         1.1505e-03     
+returns_3                     0.0324         0.0517         2.8522e-04     
+direction_3                   0.0290         0.0583         -3.2304e-04    
+returns_5                     0.0101         0.0456         -2.3406e-04    
+direction_5                   0.0084         0.0698         -3.9442e-05    
+returns_10                    0.0061         0.0539         -1.7154e-04    
+returns_14                    0.0044         0.0627         -1.8532e-04    
+direction_10                  0.0026         0.0576         -3.0872e-05    
+direction_3class_5            0.0024         0.3067         -5.0817e-04    
+direction_3class_3            0.0019         0.3658         -4.7557e-04    
+gap_up_le_buy_signal          0.0010         0.0701         3.1093e-05     
+current_candle_height         0.0010         0.1808         -1.0389e-04    
+direction_3class_14           0.0009         0.1707         -8.2956e-05    
+direction_14                  0.0009         0.1420         2.4435e-05     
+direction_3class_1            0.0008         0.3914         -2.1823e-04    
+RSI                           0.0008         0.3147         -1.5892e-04    
+direction_3class_10           0.0007         0.2173         -5.2975e-05    
+golden_cross_buy_signal       0.0001         0.3169         -2.2882e-05    
+gap_momentum_sell_signal      0.0001         0.3057         -2.0767e-05    
+
+
+==================== Important Features - 2025-06-22 16:04:44 ====================
+
+=== ENHANCED SELECTED FEATURES ===
+
+Selection method: statistical
+Total features: 74
+
+# Top features selected by enhanced method:
+ 1. adx_trend_buy_signal
+ 2. adx_trend_sell_signal
+ 3. pzosx_buy_signal
+ 4. current_candle_height
+ 5. atr_se_sell_signal
+ 6. bb_short_entry_signal
+ 7. camarilla_buy_signal
+ 8. camarilla_sell_signal
+ 9. cci_bullish_signal
+10. cci_bearish_signal
+11. cmf_buy_signal
+12. cmf_sell_signal
+13. dpo_overbought_signal
+14. dpo_buy_signal
+15. dpo_sell_signal
+16. ehlers_stoch_buy_signal
+17. eight_month_avg_buy_signal
+18. eight_month_avg_sell_signal
+19. EMA_bullish_signal
+20. eom_buy_signal
+21. eom_sell_signal
+22. gap_momentum_buy_signal
+23. gap_momentum_sell_signal
+24. gap_up_le_buy_signal
+25. golden_cross_buy_signal
+26. ironbot_buy_signal
+27. ironbot_sell_signal
+28. kama_cross_sell_signal
+29. kc_buy_signal
+30. kc_sell_signal
+31. moving_average_buy_signal
+32. pzo_lx_sell_signal
+33. rocwb_buy_signal
+34. RSI
+35. spectrum_bars_buy_signal
+36. stc_overbought_signal
+37. stc_oversold_signal
+38. stoch_buy_signal
+39. stoch_sell_signal
+40. stochastic_strat_buy_signal
+41. stochrsi_overbought_signal
+42. stochrsi_oversold_signal
+43. 5_8_13_buy_signal
+44. 5_8_13_sell_signal
+45. w5_8_13_buy_signal
+46. w5_8_13_sell_signal
+47. sve_ha_typ_cross_buy_signal
+48. sve_ha_typ_cross_sell_signal
+49. sve_zl_rb_perc_buy_signal
+50. sve_zl_rb_perc_sell_signal
+51. svesc_buy_signal
+52. svesc_sell_signal
+53. volatility_band_buy_signal
+54. vols_switch_buy_signal
+55. vols_switch_sell_signal
+56. vpn_sell_signal
+57. vwma_breakouts_buy_signal
+58. williams_buy_signal
+59. williams_sell_signal
+60. direction_1
+61. direction_3class_1
+62. returns_1
+63. direction_3
+64. direction_3class_3
+65. returns_3
+66. direction_5
+67. direction_3class_5
+68. returns_5
+69. direction_10
+70. direction_3class_10
+71. returns_10
+72. direction_14
+73. direction_3class_14
+74. returns_14
+
+
+==================== Model Information - 2025-06-22 16:04:44 ====================
+
+Saved Models:
+  cpu_random_forest_direction_1: models_direction_1_20250622_144158/cpu_random_forest_direction_1.joblib
+  shap_model_direction_1: models_direction_1_20250622_144158/shap_model_direction_1.joblib
+  time_split_0_direction_1: models_direction_1_20250622_144158/time_split_0_direction_1.joblib
+  time_split_1_direction_1: models_direction_1_20250622_144158/time_split_1_direction_1.joblib
+  time_split_2_direction_1: models_direction_1_20250622_144158/time_split_2_direction_1.joblib
+  time_split_3_direction_1: models_direction_1_20250622_144158/time_split_3_direction_1.joblib
+  time_split_4_direction_1: models_direction_1_20250622_144158/time_split_4_direction_1.joblib
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-06-22 16:04:44
+Enhanced Selection: Enabled
+Best Selection Method: statistical
+Selected Features: 74
+Models saved in: models_direction_1_20250622_144158
+Total models saved: 7

@@ -1,0 +1,132 @@
+=== ENHANCED TRADING DATASET ANALYSIS ===
+Started: 2025-06-22 21:29:15
+
+
+==================== Analysis Started - 2025-06-22 21:29:15 ====================
+
+
+
+==================== Feature Importance - 2025-06-22 21:39:33 ====================
+
+
+Random Forest Feature Importance (Top 20):
+
+
+==================== SHAP Analysis - 2025-06-22 21:59:15 ====================
+
+
+SHAP Feature Importance (Top 20):
+1. returns_5: 0.997181
+2. direction_5: 0.001847
+3. returns_14: 0.000197
+4. Low: 0.000195
+5. returns_3: 0.000080
+6. profit_target_sell_signal: 0.000055
+7. average_candle_height: 0.000049
+8. Date: 0.000047
+9. returns_1: 0.000038
+10. STC: 0.000022
+11. RSI: 0.000019
+12. dpo_sell_signal: 0.000018
+13. Mass_Index: 0.000018
+14. hacolt: 0.000018
+15. ift_stoch_buy_signal: 0.000017
+16. gap_momentum_buy_signal: 0.000012
+17. gap_momentum_sell_signal: 0.000011
+18. sve_zl_rb_perc_sell_signal: 0.000009
+19. moving_average_buy_signal: 0.000008
+20. eom_sell_signal: 0.000008
+
+
+==================== Time Series Stability - 2025-06-22 22:05:24 ====================
+
+Feature                       Mean ImportanceStability (CV) Trend          
+---------------------------------------------------------------------------
+returns_5                     0.9991         0.0003         -1.1688e-04    
+returns_14                    0.0004         0.3076         5.4702e-05     
+STC                           0.0002         0.4903         2.5663e-05     
+RSI                           0.0001         0.4555         1.9372e-05     
+cmf_buy_signal                0.0001         0.5930         6.1569e-06     
+direction_5                   0.0000         0.6845         1.5403e-05     
+Low                           0.0000         0.3429         -1.0440e-06    
+average_candle_height         0.0000         0.4026         -1.6984e-06    
+returns_3                     0.0000         0.7900         5.7296e-06     
+returns_1                     0.0000         0.6029         3.3467e-06     
+Mass_Index                    0.0000         0.7205         -3.1709e-06    
+ironbot_buy_signal            0.0000         0.9968         -1.7527e-06    
+hacolt                        0.0000         0.6787         7.1465e-07     
+Date                          0.0000         0.7150         -1.3939e-06    
+sve_zl_rb_perc_sell_signal    0.0000         0.3409         -9.7626e-07    
+williams_sell_signal          0.0000         1.0901         -1.8464e-07    
+ma_buy_signal                 0.0000         0.8959         -1.0844e-07    
+eom_buy_signal                0.0000         0.5592         -6.2008e-07    
+EMA_bullish_signal            0.0000         0.6445         -1.4593e-06    
+key_rev_buy_signal            0.0000         0.7794         1.5413e-06     
+
+
+==================== Important Features - 2025-06-22 22:05:24 ====================
+
+=== IMPORTANT FEATURES (Legacy Method) ===
+
+# Features with high importance and stability:
+Low
+RSI
+STC
+atr_se_sell_signal
+average_candle_height
+camarilla_buy_signal
+direction_1
+direction_3class_1
+eight_month_avg_buy_signal
+eom_sell_signal
+gap_up_le_buy_signal
+momentumle_buy_signal
+moving_average_buy_signal
+price_swing_sell_signal
+returns_14
+returns_5
+stochrsi_overbought_signal
+sve_zl_rb_perc_sell_signal
+three_bar_inside_bar_sell_signal
+w5_8_13_sell_signal
+
+# Top stable features across time periods:
+returns_5: 0.9991
+returns_14: 0.0004
+STC: 0.0002
+RSI: 0.0001
+Low: 0.0000
+average_candle_height: 0.0000
+sve_zl_rb_perc_sell_signal: 0.0000
+direction_3class_1: 0.0000
+stochrsi_overbought_signal: 0.0000
+eight_month_avg_buy_signal: 0.0000
+direction_1: 0.0000
+atr_se_sell_signal: 0.0000
+camarilla_buy_signal: 0.0000
+eom_sell_signal: 0.0000
+w5_8_13_sell_signal: 0.0000
+moving_average_buy_signal: 0.0000
+momentumle_buy_signal: 0.0000
+price_swing_sell_signal: 0.0000
+three_bar_inside_bar_sell_signal: 0.0000
+gap_up_le_buy_signal: 0.0000
+
+
+==================== Model Information - 2025-06-22 22:05:24 ====================
+
+Saved Models:
+  cpu_random_forest_returns_5: models_returns_5_20250622_212921/cpu_random_forest_returns_5.joblib
+  shap_model_returns_5: models_returns_5_20250622_212921/shap_model_returns_5.joblib
+  time_split_0_returns_5: models_returns_5_20250622_212921/time_split_0_returns_5.joblib
+  time_split_1_returns_5: models_returns_5_20250622_212921/time_split_1_returns_5.joblib
+  time_split_2_returns_5: models_returns_5_20250622_212921/time_split_2_returns_5.joblib
+  time_split_3_returns_5: models_returns_5_20250622_212921/time_split_3_returns_5.joblib
+  time_split_4_returns_5: models_returns_5_20250622_212921/time_split_4_returns_5.joblib
+
+
+============================== ANALYSIS COMPLETED ==============================
+Completed at: 2025-06-22 22:05:24
+Enhanced Selection: Enabled
+Models saved in: models_returns_5_20250622_212921
+Total models saved: 7

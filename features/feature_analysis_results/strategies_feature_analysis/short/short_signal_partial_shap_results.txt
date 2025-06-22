@@ -1,0 +1,65 @@
+SHAP Analysis - Started at 2025-06-21 08:26:27
+
+Target column: profitable_signal
+Mode: Classification
+
+GPU Acceleration: Enabled
+
+
+
+==================== FINAL SHAP RESULTS ====================
+Completed at: 2025-06-21 08:30:51
+GPU Acceleration: Enabled
+Processed 6000 samples out of 10000 total
+
+Top 50 features by SHAP importance:
+1. Volume: 0.097561
+2. RSI: 0.056850
+3. hacolt: 0.050469
+4. current_candle_height: 0.049097
+5. stochrsi_overbought_signal: 0.040480
+6. PPO: 0.038600
+7. williams_sell_signal: 0.036469
+8. cci_bearish_signal: 0.035589
+9. average_candle_height: 0.034634
+10. bb_short_entry_signal: 0.032489
+11. STC: 0.031659
+12. Low: 0.028526
+13. Date: 0.025604
+14. kc_buy_signal: 0.024561
+15. camarilla_buy_signal: 0.023646
+16. Mass_Index: 0.023375
+17. rsi_overbought_signal: 0.018595
+18. camarilla_sell_signal: 0.018216
+19. ironbot_buy_signal: 0.017855
+20. svesc_buy_signal: 0.014074
+21. stochastic_strat_buy_signal: 0.012982
+22. eom_buy_signal: 0.012471
+23. rocwb_buy_signal: 0.011736
+24. sve_zl_rb_perc_buy_signal: 0.011733
+25. cmf_buy_signal: 0.011296
+26. cons_bars_up_le_buy_signal: 0.010222
+27. eom_sell_signal: 0.009190
+28. w5_8_13_buy_signal: 0.009066
+29. 5_8_13_buy_signal: 0.008455
+30. psar_buy_signal: 0.008435
+31. cci_buy_signal: 0.008258
+32. stoch_buy_signal: 0.007539
+33. adx_trend_buy_signal: 0.007379
+34. ehlers_stoch_buy_signal: 0.007057
+35. pzo_lx_sell_signal: 0.006956
+36. price_swing_sell_signal: 0.006894
+37. stc_overbought_signal: 0.006781
+38. pzosx_buy_signal: 0.006574
+39. dpo_sell_signal: 0.006569
+40. dpo_overbought_signal: 0.006289
+41. golden_cross_buy_signal: 0.005621
+42. vwma_breakouts_buy_signal: 0.005610
+43. gap_momentum_buy_signal: 0.005519
+44. 5_8_13_sell_signal: 0.005358
+45. gap_momentum_sell_signal: 0.005091
+46. kama_cross_buy_signal: 0.005060
+47. sve_zl_rb_perc_sell_signal: 0.005004
+48. vols_switch_sell_signal: 0.004996
+49. dpo_buy_signal: 0.004749
+50. kst_buy_signal: 0.004632

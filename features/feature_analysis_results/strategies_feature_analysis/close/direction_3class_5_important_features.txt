@@ -1,0 +1,83 @@
+=== ENHANCED SELECTED FEATURES ===
+
+# Generated on: 2025-06-22 21:04:05
+# Target: direction_3class_5
+# Mode: Classification
+# Enhanced Selection: Enabled
+# Selection Method: statistical
+# Total Features: 74
+
+ 1. Date
+ 2. Low
+ 3. Volume
+ 4. adx_trend_buy_signal
+ 5. adx_trend_sell_signal
+ 6. pzosx_buy_signal
+ 7. current_candle_height
+ 8. average_candle_height
+ 9. bb_short_entry_signal
+10. camarilla_buy_signal
+11. camarilla_sell_signal
+12. cci_bullish_signal
+13. cci_bearish_signal
+14. cmf_buy_signal
+15. cmf_sell_signal
+16. dpo_overbought_signal
+17. dpo_buy_signal
+18. dpo_sell_signal
+19. ehlers_stoch_buy_signal
+20. eight_month_avg_buy_signal
+21. eight_month_avg_sell_signal
+22. EMA_bullish_signal
+23. eom_buy_signal
+24. eom_sell_signal
+25. gap_momentum_buy_signal
+26. gap_momentum_sell_signal
+27. golden_cross_buy_signal
+28. hacolt
+29. ironbot_buy_signal
+30. ironbot_sell_signal
+31. kc_buy_signal
+32. kc_sell_signal
+33. moving_average_buy_signal
+34. PPO
+35. pzo_lx_sell_signal
+36. rocwb_buy_signal
+37. spectrum_bars_buy_signal
+38. stc_overbought_signal
+39. stc_oversold_signal
+40. stoch_buy_signal
+41. stoch_sell_signal
+42. stochastic_strat_buy_signal
+43. stochrsi_overbought_signal
+44. stochrsi_oversold_signal
+45. 5_8_13_buy_signal
+46. 5_8_13_sell_signal
+47. w5_8_13_buy_signal
+48. w5_8_13_sell_signal
+49. sve_zl_rb_perc_buy_signal
+50. sve_zl_rb_perc_sell_signal
+51. svesc_buy_signal
+52. svesc_sell_signal
+53. volatility_band_buy_signal
+54. vols_switch_buy_signal
+55. vols_switch_sell_signal
+56. vpn_sell_signal
+57. vwma_breakouts_buy_signal
+58. williams_buy_signal
+59. williams_sell_signal
+60. direction_1
+61. direction_3class_1
+62. returns_1
+63. direction_3
+64. direction_3class_3
+65. returns_3
+66. direction_5
+67. direction_3class_5
+68. returns_5
+69. direction_10
+70. direction_3class_10
+71. returns_10
+72. direction_14
+73. direction_3class_14
+74. returns_14
