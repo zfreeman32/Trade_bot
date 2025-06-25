@@ -1,12 +1,12 @@
 === ENHANCED TRADING DATASET ANALYSIS ===
-Started: 2025-06-20 18:17:09
+Started: 2025-06-22 02:24:42
 
 
-==================== Analysis Started - 2025-06-20 18:17:09 ====================
+==================== Analysis Started - 2025-06-22 02:24:42 ====================
 
 
 
-==================== Dataset Structure - 2025-06-20 18:17:44 ====================
+==================== Dataset Structure - 2025-06-22 02:25:46 ====================
 
 total_samples: 2500000
 feature_count: 143
@@ -17,23 +17,22 @@ gpu_acceleration: Enabled
 signal_distribution: {'original_signals': 12085, 'profitable_signals': 11269, 'no_original_signals': 2487915, 'no_profitable_signals': 2488731, 'original_signal_ratio': np.float64(0.004834), 'profitable_signal_ratio': np.float64(0.0045076), 'profit_rate': np.float64(0.9324782788580885), 'imbalance_warning': np.True_}
 
 
-==================== Feature Filtering - 2025-06-20 18:17:44 ====================
+==================== Feature Filtering - 2025-06-22 02:25:46 ====================
 
 Original features: 136
 Features after constant removal: 136
 Features after collinearity removal: 129
-Features after stability filtering: 118
+Features after stability filtering: 123
 
 Removed features by category:
 Constant features (0): 
-High collinearity features (7): CDLTAKURI, Open, WCLPRICE, AVGPRICE, MEDPRICE, TYPPRICE, High
-Unstable features (11): CDL3INSIDE, CDLDOJISTAR, CDLDRAGONFLYDOJI, CDLGRAVESTONEDOJI, CDLHAMMER, CDLHARAMI, CDLIDENTICAL3CROWS, CDLMARUBOZU, CDLMATCHINGLOW, CDLRISEFALL3METHODS
-... and 1 more
+High collinearity features (7): High, Open, MEDPRICE, TYPPRICE, AVGPRICE, CDLTAKURI, WCLPRICE
+Unstable features (6): CDLDRAGONFLYDOJI, CDLHANGINGMAN, CDLHARAMI, CDLIDENTICAL3CROWS, CDLMORNINGSTAR, CDLRICKSHAWMAN
 
-Filtered feature set (118): Date, Low, Volume, UPPERBAND, MIDDLEBAND, LOWERBAND, DEMA, EMA_10, EMA_20, EMA_50, EMA_200, HT_TRENDLINE, KAMA, MA_10, MA_50, MA_200, MAMA, FAMA, SAR, SAREXT, SMA, T3, TEMA, TRIMA, WMA, ADX, ADXR, APO, AROON_DOWN, AROON_UP, AROONOSC, BOP, CCI, CMO, DX, MACD, MACDSIGNAL, MACDHIST, MFI, MINUS_DI, MINUS_DM, MOM, PLUS_DI, PLUS_DM, PPO, ROC, ROCP, ROCR, ROCR100, RSI, STOCH_K, STOCH_D, STOCHF_K, STOCHF_D, STOCHRSI_K, STOCHRSI_D, TRIX, ULTOSC, WILLR, AD, ADOSC, OBV, ATR, NATR, TRANGE, HT_DCPERIOD, HT_DCPHASE, HT_PHASOR_INPHASE, HT_PHASOR_QUADRATURE, HT_SINE, HT_LEADSINE, HT_TRENDMODE, rolling_mean, rolling_std, z_score, VWAP, HMA, KELTNER_UPPER, KELTNER_LOWER, DONCHIAN_HIGH, DONCHIAN_LOW, EFI, SUPER_TREND, CDL3BLACKCROWS, CDL3LINESTRIKE, CDL3WHITESOLDIERS, CDLADVANCEBLOCK, CDLBELTHOLD, CDLCLOSINGMARUBOZU, CDLCOUNTERATTACK, CDLDARKCLOUDCOVER, CDLDOJI, CDLENGULFING, CDLEVENINGDOJISTAR, CDLEVENINGSTAR, CDLGAPSIDESIDEWHITE, CDLHANGINGMAN, CDLHARAMICROSS, CDLHIGHWAVE, CDLHIKKAKE, CDLHIKKAKEMOD, CDLHOMINGPIGEON, CDLINNECK, CDLINVERTEDHAMMER, CDLLONGLEGGEDDOJI, CDLLONGLINE, CDLMORNINGDOJISTAR, CDLMORNINGSTAR, CDLPIERCING, CDLRICKSHAWMAN, CDLSHOOTINGSTAR, CDLSHORTLINE, CDLSPINNINGTOP, CDLSTALLEDPATTERN, CDLSTICKSANDWICH, CDLTHRUSTING, CDLTRISTAR, CDLXSIDEGAP3METHODS
+Filtered feature set (123): Date, Low, Volume, UPPERBAND, MIDDLEBAND, LOWERBAND, DEMA, EMA_10, EMA_20, EMA_50, EMA_200, HT_TRENDLINE, KAMA, MA_10, MA_50, MA_200, MAMA, FAMA, SAR, SAREXT, SMA, T3, TEMA, TRIMA, WMA, ADX, ADXR, APO, AROON_DOWN, AROON_UP, AROONOSC, BOP, CCI, CMO, DX, MACD, MACDSIGNAL, MACDHIST, MFI, MINUS_DI, MINUS_DM, MOM, PLUS_DI, PLUS_DM, PPO, ROC, ROCP, ROCR, ROCR100, RSI, STOCH_K, STOCH_D, STOCHF_K, STOCHF_D, STOCHRSI_K, STOCHRSI_D, TRIX, ULTOSC, WILLR, AD, ADOSC, OBV, ATR, NATR, TRANGE, HT_DCPERIOD, HT_DCPHASE, HT_PHASOR_INPHASE, HT_PHASOR_QUADRATURE, HT_SINE, HT_LEADSINE, HT_TRENDMODE, rolling_mean, rolling_std, z_score, VWAP, HMA, KELTNER_UPPER, KELTNER_LOWER, DONCHIAN_HIGH, DONCHIAN_LOW, EFI, SUPER_TREND, CDL3BLACKCROWS, CDL3INSIDE, CDL3LINESTRIKE, CDL3WHITESOLDIERS, CDLADVANCEBLOCK, CDLBELTHOLD, CDLCLOSINGMARUBOZU, CDLCOUNTERATTACK, CDLDARKCLOUDCOVER, CDLDOJI, CDLDOJISTAR, CDLENGULFING, CDLEVENINGDOJISTAR, CDLEVENINGSTAR, CDLGAPSIDESIDEWHITE, CDLGRAVESTONEDOJI, CDLHAMMER, CDLHARAMICROSS, CDLHIGHWAVE, CDLHIKKAKE, CDLHIKKAKEMOD, CDLHOMINGPIGEON, CDLINNECK, CDLINVERTEDHAMMER, CDLLONGLEGGEDDOJI, CDLLONGLINE, CDLMARUBOZU, CDLMATCHINGLOW, CDLMORNINGDOJISTAR, CDLPIERCING, CDLRISEFALL3METHODS, CDLSEPARATINGLINES, CDLSHOOTINGSTAR, CDLSHORTLINE, CDLSPINNINGTOP, CDLSTALLEDPATTERN, CDLSTICKSANDWICH, CDLTHRUSTING, CDLTRISTAR, CDLXSIDEGAP3METHODS
 
 
-==================== Enhanced Feature Selection - 2025-06-20 23:33:11 ====================
+==================== Enhanced Feature Selection - 2025-06-22 07:30:29 ====================
 
 Enhanced selection method: rfe
 Final selected features: 33
@@ -43,7 +42,7 @@ Method Performance Comparison:
 STATISTICAL:
   Method: Mutual Information + Percentile
   Features: 74
-  CV Score: 0.9947 ± 0.0015
+  CV Score: 0.9948 ± 0.0014
 
 RFE:
   Method: Recursive Feature Elimination CV
@@ -53,17 +52,17 @@ RFE:
 REGULARIZATION:
   Method: Lasso/L1 Regularization
   Features: 75
-  CV Score: 0.9943 ± 0.0019
+  CV Score: 0.9938 ± 0.0027
 
 MODEL_BASED:
   Method: Random Forest Importance
   Features: 75
-  CV Score: 0.9940 ± 0.0022
+  CV Score: 0.9941 ± 0.0021
 
 ENSEMBLE:
   Method: Ensemble Ranking
   Features: 75
-  CV Score: 0.9941 ± 0.0021
+  CV Score: 0.9940 ± 0.0024
 
 Selected Features (33):
  1. Volume
@@ -101,7 +100,7 @@ Selected Features (33):
 33. EFI
 
 
-==================== Feature Statistics - 2025-06-20 23:33:14 ====================
+==================== Feature Statistics - 2025-06-22 07:30:32 ====================
 
 Top 20 Features by Target Correlation:
 --------------------------------------------------
@@ -327,7 +326,7 @@ PLUS_DI:
   corr_with_original_signal: -0.0529
 
 
-==================== Periodic Patterns - 2025-06-20 23:33:15 ====================
+==================== Periodic Patterns - 2025-06-22 07:30:33 ====================
 
 lag_77: 0.0048
 lag_60: 0.0047
@@ -336,7 +335,7 @@ lag_93: 0.0047
 lag_61: 0.0046
 
 
-==================== Feature Importance - 2025-06-20 23:41:20 ====================
+==================== Feature Importance - 2025-06-22 07:38:55 ====================
 
 
 Mutual Information Scores (Top 20):
@@ -384,33 +383,33 @@ Random Forest Feature Importance (Top 20):
 20. MINUS_DI: 0.029812
 
 
-==================== SHAP Analysis - 2025-06-20 23:44:11 ====================
+==================== SHAP Analysis - 2025-06-22 07:42:07 ====================
 
 
 SHAP Feature Importance (Top 20):
-1. ROCP: 0.093284
-2. z_score: 0.077760
-3. EFI: 0.070512
-4. RSI: 0.065444
-5. HT_LEADSINE: 0.057178
-6. ROC: 0.055908
-7. CMO: 0.050273
-8. Volume: 0.047442
-9. HT_DCPHASE: 0.039811
-10. rolling_std: 0.032118
-11. BOP: 0.029781
-12. HT_SINE: 0.029373
-13. CCI: 0.029239
-14. WILLR: 0.027501
-15. MACD: 0.025771
-16. MINUS_DI: 0.022659
-17. MINUS_DM: 0.022471
-18. TRANGE: 0.020304
-19. PLUS_DI: 0.017878
-20. MACDHIST: 0.017532
+1. z_score: 0.142504
+2. ROCP: 0.064007
+3. RSI: 0.063049
+4. EFI: 0.054783
+5. CMO: 0.048321
+6. ROC: 0.039439
+7. MACD: 0.037523
+8. WILLR: 0.037137
+9. BOP: 0.036225
+10. CCI: 0.034407
+11. Volume: 0.034007
+12. TRANGE: 0.030678
+13. rolling_std: 0.027620
+14. HT_LEADSINE: 0.025349
+15. STOCHRSI_D: 0.024597
+16. HT_DCPHASE: 0.023085
+17. MACDHIST: 0.022340
+18. HT_SINE: 0.020426
+19. MINUS_DM: 0.020088
+20. PLUS_DI: 0.019957
 
 
-==================== Time Series Stability - 2025-06-20 23:53:30 ====================
+==================== Time Series Stability - 2025-06-22 07:51:05 ====================
 
 Feature                       Mean ImportanceStability (CV) Trend          
 ---------------------------------------------------------------------------
@@ -436,7 +435,7 @@ PLUS_DI                       0.0296         0.0067         8.7236e-05
 HT_PHASOR_INPHASE             0.0296         0.0103         1.4843e-04     
 
 
-==================== Important Features - 2025-06-20 23:53:30 ====================
+==================== Important Features - 2025-06-22 07:51:05 ====================
 
 === ENHANCED SELECTED FEATURES ===
 
@@ -479,22 +478,22 @@ Total features: 33
 33. EFI
 
 
-==================== Model Information - 2025-06-20 23:53:30 ====================
+==================== Model Information - 2025-06-22 07:51:05 ====================
 
 Saved Models:
-  cpu_random_forest_profitable_signal: models_long_signal_20250620_181732/cpu_random_forest_profitable_signal.joblib
-  shap_model_profitable_signal: models_long_signal_20250620_181732/shap_model_profitable_signal.joblib
-  time_split_0_profitable_signal: models_long_signal_20250620_181732/time_split_0_profitable_signal.joblib
-  time_split_1_profitable_signal: models_long_signal_20250620_181732/time_split_1_profitable_signal.joblib
-  time_split_2_profitable_signal: models_long_signal_20250620_181732/time_split_2_profitable_signal.joblib
-  time_split_3_profitable_signal: models_long_signal_20250620_181732/time_split_3_profitable_signal.joblib
-  time_split_4_profitable_signal: models_long_signal_20250620_181732/time_split_4_profitable_signal.joblib
+  cpu_random_forest_profitable_signal: models_long_signal_20250622_022504/cpu_random_forest_profitable_signal.joblib
+  shap_model_profitable_signal: models_long_signal_20250622_022504/shap_model_profitable_signal.joblib
+  time_split_0_profitable_signal: models_long_signal_20250622_022504/time_split_0_profitable_signal.joblib
+  time_split_1_profitable_signal: models_long_signal_20250622_022504/time_split_1_profitable_signal.joblib
+  time_split_2_profitable_signal: models_long_signal_20250622_022504/time_split_2_profitable_signal.joblib
+  time_split_3_profitable_signal: models_long_signal_20250622_022504/time_split_3_profitable_signal.joblib
+  time_split_4_profitable_signal: models_long_signal_20250622_022504/time_split_4_profitable_signal.joblib
 
 
 ============================== ANALYSIS COMPLETED ==============================
-Completed at: 2025-06-20 23:53:30
+Completed at: 2025-06-22 07:51:05
 Enhanced Selection: Enabled
 Best Selection Method: rfe
 Selected Features: 33
-Models saved in: models_long_signal_20250620_181732
+Models saved in: models_long_signal_20250622_022504
 Total models saved: 7

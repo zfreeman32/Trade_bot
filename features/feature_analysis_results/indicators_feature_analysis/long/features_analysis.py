@@ -75,10 +75,6 @@ LOG_LEVEL_WARNING = 2
 LOG_LEVEL_ERROR = 3
 CURRENT_LOG_LEVEL = LOG_LEVEL_INFO  # Set default log level
 
-# Default target settings - will be overridden in configurations
-target_col = 'long_signal'
-regression_mode = False
-
 class AdvancedFeatureSelector:
     """
     Advanced feature selection combining multiple methods with validation
@@ -381,19 +377,10 @@ class AdvancedFeatureSelector:
         
         return summary
 
-def write_partial_results(results, section_name, file_path=None, mode='a'):
+def write_partial_results(results, section_name, file_path, mode='a'):  # Remove default None
     """
     Write partial results to file as they become available
-    
-    Args:
-        results: Dictionary of results to write
-        section_name: Name of the current section
-        file_path: Path to output file
-        mode: File open mode ('w' for new file, 'a' for append)
     """
-    if file_path is None:
-        file_path = f"{target_col}_analysis_results.txt"
-    
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     with open(file_path, mode) as f:
@@ -887,16 +874,16 @@ def quick_stability_check(df, numeric_features, target_col, n_splits=3, cv_thres
     return unstable_features
 
 class EnhancedTradingDataAnalyzer:
-    def __init__(self, df, target_col=target_col, regression_mode=regression_mode, forecast_periods=14):
+    def __init__(self, df, target_col='long_signal', regression_mode=False, forecast_periods=14):  # Use string defaults
         self.df = df.copy()
-        self.original_target_col = target_col
+        self.original_target_col = target_col  # Store the actual target column
         self.regression_mode = regression_mode
         self.forecast_periods = forecast_periods
         self.feature_stats = {}
         self.saved_models = {}
         
-        # Create models directory
-        self.models_dir = f"models_{target_col}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        # Create models directory using the INSTANCE target_col, not global
+        self.models_dir = f"models_{self.original_target_col}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         os.makedirs(self.models_dir, exist_ok=True)
         
         # 🔥 OPTIMIZED GPU INITIALIZATION
@@ -1909,7 +1896,7 @@ class EnhancedTradingDataAnalyzer:
         end_section()
         return sorted_stability
 
-def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=regression_mode, 
+def analyze_trading_dataset(file_path, target_col='long_signal', regression_mode=False, 
                          forecast_periods=14, run_shap=True, max_shap_time_minutes=30,
                          run_enhanced_selection=True, target_features=75):
     """
@@ -1917,11 +1904,10 @@ def analyze_trading_dataset(file_path, target_col=target_col, regression_mode=re
     """
     start_section("analyze_trading_dataset")
     
-    # Set up output file path
+    # Set up output file path using the PARAMETER target_col, not global
     output_file = f"{target_col}_analysis_results.txt"
     # Start with a new file
     write_partial_results({}, "Analysis Started", file_path=output_file, mode='w')
-    
     log(f"Loading dataset from {file_path}")
     df = pd.read_csv(file_path)
     log(f"Dataset loaded with shape: {df.shape}")
@@ -2134,7 +2120,8 @@ def run_configuration(config, file_path, run_shap, max_shap_time, run_enhanced_s
 
 if __name__ == "__main__":
     # File Path should be csv of all features
-    file_path = r'./data/EURUSD_1min_sampled_indicators.csv'
+
+    file_path = r'./EURUSD_1min_sampled_indicators.csv'
     
     # Enhanced Feature Selection Configuration
     run_enhanced_selection = True  # Set to True to enable enhanced feature selection
@@ -2142,7 +2129,7 @@ if __name__ == "__main__":
     
     # Set to False to skip SHAP if it's causing issues
     run_shap = True
-    max_shap_time = 1024  # minutes
+    max_shap_time = 700  # minutes
     
     start_section("main")
     
@@ -2154,8 +2141,8 @@ if __name__ == "__main__":
     
     # Configuration to run
     configurations = [
-        {"target_col": "long_signal", "regression_mode": False}
-        # {"target_col": "short_signal", "regression_mode": False},
+        {"target_col": "long_signal", "regression_mode": False},
+        {"target_col": "short_signal", "regression_mode": False},
         # {"target_col": "Close", "regression_mode": True}
     ]
     

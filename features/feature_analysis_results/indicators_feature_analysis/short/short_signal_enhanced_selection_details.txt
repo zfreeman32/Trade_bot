@@ -10,53 +10,55 @@ METHOD COMPARISON:
 
 STATISTICAL:
   Description: Mutual Information + Percentile
-  Features Selected: 70
-  Cross-validation Score: 0.995811 ± 0.001372
+  Features Selected: 74
+  Cross-validation Score: 0.995342 ± 0.001028
 
 RFE:
   Description: Recursive Feature Elimination CV
-  Features Selected: 10
-  Cross-validation Score: 0.995862 ± 0.001371
+  Features Selected: 11
+  Cross-validation Score: 0.995366 ± 0.001034
 
 REGULARIZATION:
   Description: Lasso/L1 Regularization
-  Features Selected: 28
-  Cross-validation Score: 0.995636 ± 0.001137
+  Features Selected: 75
+  Cross-validation Score: 0.995352 ± 0.001010
 
 MODEL_BASED:
   Description: Random Forest Importance
   Features Selected: 75
-  Cross-validation Score: 0.995819 ± 0.001360
+  Cross-validation Score: 0.995340 ± 0.001019
 
 ENSEMBLE:
   Description: Ensemble Ranking
   Features Selected: 75
-  Cross-validation Score: 0.995836 ± 0.001381
+  Cross-validation Score: 0.995341 ± 0.001029
 
 
-SELECTED FEATURES (10):
+SELECTED FEATURES (11):
 ==================================================
- 1. CCI
- 2. CMO
- 3. MINUS_DI
- 4. PLUS_DM
- 5. ROCR100
- 6. STOCH_D
- 7. TRIX
+ 1. SMA
+ 2. CCI
+ 3. ROCP
+ 4. TRIX
+ 5. AD
+ 6. ATR
+ 7. HT_DCPERIOD
  8. HT_DCPHASE
- 9. z_score
-10. EFI
+ 9. HT_PHASOR_INPHASE
+10. z_score
+11. EFI
 
 
 FEATURE SCORES (RFE):
 ==================================================
- 1. CCI: 1.000000
- 2. CMO: 1.000000
- 3. MINUS_DI: 1.000000
- 4. PLUS_DM: 1.000000
- 5. ROCR100: 1.000000
- 6. STOCH_D: 1.000000
- 7. TRIX: 1.000000
+ 1. SMA: 1.000000
+ 2. CCI: 1.000000
+ 3. ROCP: 1.000000
+ 4. TRIX: 1.000000
+ 5. AD: 1.000000
+ 6. ATR: 1.000000
+ 7. HT_DCPERIOD: 1.000000
  8. HT_DCPHASE: 1.000000
- 9. z_score: 1.000000
-10. EFI: 1.000000
+ 9. HT_PHASOR_INPHASE: 1.000000
+10. z_score: 1.000000
+11. EFI: 1.000000

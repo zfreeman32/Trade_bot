@@ -11,7 +11,7 @@ METHOD COMPARISON:
 STATISTICAL:
   Description: Mutual Information + Percentile
   Features Selected: 74
-  Cross-validation Score: 0.994662 ± 0.001487
+  Cross-validation Score: 0.994817 ± 0.001404
 
 RFE:
   Description: Recursive Feature Elimination CV
@@ -21,17 +21,17 @@ RFE:
 REGULARIZATION:
   Description: Lasso/L1 Regularization
   Features Selected: 75
-  Cross-validation Score: 0.994269 ± 0.001946
+  Cross-validation Score: 0.993845 ± 0.002656
 
 MODEL_BASED:
   Description: Random Forest Importance
   Features Selected: 75
-  Cross-validation Score: 0.994043 ± 0.002239
+  Cross-validation Score: 0.994121 ± 0.002093
 
 ENSEMBLE:
   Description: Ensemble Ranking
   Features Selected: 75
-  Cross-validation Score: 0.994118 ± 0.002109
+  Cross-validation Score: 0.993979 ± 0.002361
 
 
 SELECTED FEATURES (33):
