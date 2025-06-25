@@ -158,3 +158,15 @@ Configurations automatically adapt to available computational resources, scaling
 
 ### Model Persistence & Deployment
 Trained models are saved in architecture-specific directories with comprehensive hyperparameter logging, enabling easy model comparison and production deployment.
+
+## Classification Models
+- build_LSTM_classifier,
+- build_GRU_classifier,
+- build_Conv1D_classifier,
+- build_Conv1D_LSTM_classifier,
+- build_BiLSTM_Attention_classifier,
+- build_Transformer_classifier
+- build_BiLSTM_Attention_classifier
+- build_MultiStream_Hybrid_classifier
+- build_ResNet_classifier
+- build_TCN_classifier

@@ -15,6 +15,14 @@ The core functionality includes:
 - Evaluation metrics for multi-step forecasting
 - Visualization and export of results
 
+## 🎯 Target Variables
+
+### Returns Prediction Models
+- **`returns_1`**: 1-period ahead return forecasting for short-term momentum prediction
+- **`returns_5`**: 5-period ahead return forecasting for medium-term trend analysis
+
+Both models utilize the same comprehensive architecture suite but are optimized independently for their respective forecasting horizons, enabling precise magnitude and timing predictions for trading applications.
+
 ---
 
 ## ⚙️ Key Components
@@ -79,16 +87,30 @@ Two-stage training:
 
 ## 📈 Training Pipeline
 
+### Returns Model Training
 ```python
+# Train returns_1 model (1-period forecasting)
 if __name__ == "__main__":
+    config = ConfigManager()
+    config.target_column = 'returns_1'
+    config.forecast_horizon = 1
+    train_regression_models(config)
+
+# Train returns_5 model (5-period forecasting)  
+if __name__ == "__main__":
+    config = ConfigManager()
+    config.target_column = 'returns_5'
+    config.forecast_horizon = 5
     train_regression_models(config)
 ```
-This initiates the full pipeline:
+
+This initiates the full pipeline for each target:
 - Loads config and data
-- Preprocesses and frames dataset
+- Preprocesses and frames dataset for specific forecast horizon
 - Tunes and validates models
-- Trains final model with selected HPs
+- Trains final model with selected hyperparameters
 - Evaluates and logs results
+- Saves trained models as `returns_1_regressor.joblib` and `returns_5_regressor.joblib`
 
 ---
 
@@ -105,3 +127,46 @@ This initiates the full pipeline:
 | Hardware Support   | GPU auto-detection and memory growth                      |
 
 ---
+
+## 🏗️ Available Regression Model Architectures
+
+### Deep Learning Models
+- `build_LSTM_model` - Long Short-Term Memory networks
+- `build_GRU_model` - Gated Recurrent Units
+- `build_SimpleRNN_model` - Basic recurrent networks
+- `build_Conv1D_model` - 1D Convolutional networks
+- `build_Conv1DPooling_model` - Conv1D with pooling layers
+- `build_Conv1D_LSTM_model` - Hybrid CNN-RNN architecture
+- `build_LSTM_CNN_Hybrid_model` - Alternative hybrid approach
+- `build_Attention_LSTM_model` - LSTM with attention mechanism
+- `build_Transformer_model` - Self-attention transformer
+- `build_BiLSTM_Attention_model` - Bidirectional LSTM with attention
+- `build_ConvLSTM2D_model` - Convolutional LSTM for 2D data
+- `build_MultiStream_Hybrid_model` - Multi-path processing
+- `build_ResNet_model` - Residual network architecture
+- `build_TCN_model` - Temporal Convolutional Networks
+
+### Traditional ML Models
+- `build_RandomForestRegressor_model` - Ensemble tree-based regressor
+- `build_XGBoostRegressor_model` - Gradient boosting framework
+- `build_GradientBoostingRegressor_model` - Scikit-learn gradient boosting
+- `build_LightGBMRegressor_model` - Microsoft's gradient boosting
+- `build_CatBoostRegressor_model` - Yandex's categorical boosting
+
+## 📊 Model Output Integration
+
+Trained models are saved and can be integrated into trading systems:
+
+```python
+# Load trained models for ensemble prediction
+import joblib
+
+returns_1_model = joblib.load('models/returns_1_regressor.joblib')
+returns_5_model = joblib.load('models/returns_5_regressor.joblib')
+
+# Generate multi-horizon forecasts
+short_term_forecast = returns_1_model.predict(live_data)  # 1-period ahead
+medium_term_forecast = returns_5_model.predict(live_data)  # 5-period ahead
+```
+
+These models provide magnitude and timing predictions that complement binary classification signals in comprehensive trading strategies.

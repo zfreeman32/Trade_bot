@@ -44,3 +44,16 @@ Raw EURUSD Data → Sample Limiting → Duplicate Removal → Categorical Encodi
 ```
 
 This preprocessing approach balances computational efficiency with statistical best practices, ensuring the resulting dataset is optimized for machine learning model training while preserving the essential characteristics of the EURUSD trading data.
+
+## Resources:
+1/5/30 min, 1hr, and 1 day Historical Intraday OHLCV from 1-Jan-2010 through 13-Feb-2025
+https://firstratedata.com/i/fx/EURUSD
+
+Indicators: ta-Lib
+https://ta-lib.org/functions/
+
+Strategies:
+www.quantifiedstrategies.com/trading-strategies
+
+Market Sentiment
+https://www.bls.gov/eag/eag.us.htm
